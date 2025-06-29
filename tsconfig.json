@@ -1,5 +1,21 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"]
+  "exclude": ["dist"],
+  "mdx": {
+    "checkMdx": false,
+  },
+  "ts-node": {
+    "typeCheck": true,
+  },
+  "compilerOptions": {
+    "checkJs": true
+  },
+  "buildOptions": {
+    "incremental": false
+  },
+  "typeAcquisition": {
+    "enable": false
+  },
+  "compileOnSave": false  
 }

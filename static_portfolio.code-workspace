@@ -1,0 +1,46 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"[astro]": {
+			"editor.colorDecorators": true,
+		},
+		// "[html]": {},
+		// "[javascript]": {},
+		// "[javascriptreact]": {},
+		// "[typescript]": {},
+		// "[typescriptreact]": {},
+		// "[json]": {},
+		// "[code-referencing]": {},
+		"[jsonc]": {
+			"editor.quickSuggestions": {
+				"strings": true
+			},
+			"editor.suggest.insertMode": "replace"
+		},
+		// "[sass]": {},
+		// "[less]": {
+		// 	"editor.suggest.insertMode": "replace"
+		// },
+		// "[yaml]": {},
+		"[markdown]": {
+			"editor.unicodeHighlight.ambiguousCharacters": false,
+			"editor.unicodeHighlight.invisibleCharacters": false,
+			"diffEditor.ignoreTrimWhitespace": false,
+			"editor.wordWrap": "on",
+			"editor.quickSuggestions": {
+				"comments": "off",
+				"strings": "off",
+				"other": "off"
+			}
+		},
+		"astro.content-intellisense": true,
+		"npm-intellisense.packageSubfoldersIntellisense": true,
+		"npm-intellisense.scanDevDependencies": true,
+		// "[css]": {}, 
+		// "[scss]": {},
+	}
+}
