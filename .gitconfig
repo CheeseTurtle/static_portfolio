@@ -1,4 +1,4 @@
-autocrlf = true
+core.autocrlf = true
 
 # Auto detect text files and perform LF normalization
 * text=auto
