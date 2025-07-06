@@ -1,0 +1,231 @@
+---
+// import "../../styles/story.css";
+
+import StorySection from "./StorySection.astro";
+import SidebarSection from "./SidebarSection.astro";
+import FloatingNav from "./FloatingNav.astro";
+import ParallaxBackdrop from "./ParallaxBackdrop.astro";
+import ParallaxWindow from "./ParallaxWindow.astro";
+import StoryAnimator from "./StoryAnimator";
+
+// import { compile } from "@mdx-js/mdx";
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkMdx from "remark-mdx";
+import { visit } from "unist-util-visit";
+
+import fs from "node:fs/promises";
+import path from "node:path";
+
+import type { MdxJsxAttribute } from "mdast-util-mdx-jsx";
+
+// declare type VisitedNode = import("unist").Node;
+import type {Node as VisitedNode} from "unist";
+
+import type { MarkdownInstance, MDXInstance } from "astro";
+import { getCollection, getEntries, getEntry, render, reference } from "astro:content";
+import StorySidebar from "./StorySidebar.astro";
+
+import type {ContentMarkerData, FullContentMarkerDataEntry, ContentMarkerDataEntry} from "./ContentMarker";
+
+import {v4 as uuidv4} from 'uuid';
+
+const allSectionsRecord = import.meta.glob<
+  | MarkdownInstance<StorySectionFrontmatter>
+  | MDXInstance<StorySectionFrontmatter>
+>("/src/pages/story/sections/*.{md,mdx}", { eager: true });
+const allSections = Object.values(allSectionsRecord);
+// console.log("HELLO");
+function parseDate(x: string): Date {
+  let m = /(?<year>\d{4})(?:-(?<month>\d\d?)(?:-(?:(?<day>\d\d?)(?: (?<hour>\d\d?):(?<minute>\d\d))?)?)?)?/.exec(x);
+  // console.assert(m !== null && m.groups, `Invalid date string: ${x}`);
+  if (!m || !m.groups || m.groups.year === undefined) {
+    throw `Invalid date string: ${x}`;
+  } // TODO
+  let month=m.groups.month, day=m.groups.day, year = m.groups.year;
+  if (m.groups.month === undefined) {
+    month = m.groups.day = "01";
+  } else {
+    if (!(m.groups.month.length & 0b10)) {
+      month = "0" + m.groups.month;
+    }
+    if (m.groups.day === undefined) {
+      day = "01";
+    } else {
+        if (!(m.groups.day.length & 2)) {
+            day = "0" + m.groups.day;
+        }
+    }
+  }
+
+  let dateStr = `${year}-${month}-${day}`;
+  if(m.groups.hour !== undefined) {
+    let minuteStr = (m.groups.minute === undefined) ? '00' : m.groups.minute;
+    let hourString = m.groups.hour;
+    if(!(hourString.length & 0b10)) hourString = '0' + hourString;
+    dateStr += ` ${hourString}:${minuteStr}`;
+  } else {
+    dateStr += ' 00:00';
+  }
+  const date = new Date(dateStr);
+
+  // console.log(year,month,day,date);
+  return date;
+//   return new Date(`${m.groups.year}-${m.groups.month}-${m.groups.day}`);
+}
+
+function parseDateOrder(x: string): number {
+  const d = parseDate(x);
+  return d.valueOf();
+}
+
+allSections.sort(
+  (a, b) =>
+    parseDateOrder(a.frontmatter.date) - parseDateOrder(b.frontmatter.date)
+);
+
+const allFrontmatter = allSections.map((s) => s.frontmatter);
+
+
+// const allSections = await getCollection('storySections');
+// const entry = allSections[0];
+
+async function getMdxSource(filePath: string) {
+//   const filePath = path.join(process.cwd(), "src/pages/story/sections", `${slug}.mdx`);
+  const fileContents = await fs.readFile(filePath, "utf-8");
+  return fileContents;
+}
+
+
+async function extractContentMarkers(mdxSource: string) {
+  const tree = unified().use(remarkParse).use(remarkMdx).parse(mdxSource);
+  const found: Array<ContentMarkerDataEntry> = [];
+  visit(tree, (node) => {
+    if (
+      node.type === "mdxJsxFlowElement" && // || node.type === 'mdxJsxTextElement')
+      node.name === "ContentMarker"
+    ) {
+
+      // const idAttr = node.attributes.find(attr=>attr.type==='mdxJsxAttribute' && attr.name==='markerId');
+      // if(idAttr === undefined) {
+      //   console.log(node.attributes, node.data)
+      //   throw "Content marker has no `data-marker-id` attribute"
+      // }
+      // const markerId = idAttr.value;
+      // if(typeof markerId !== 'string')
+      //   throw `Content marker has invalid \`data-marker-id\` attribute type: ${typeof markerId} (${markerId})`;
+
+
+      const markerId = uuidv4();
+
+      // const nameAttr = node.attributes.find(attr => attr.type === 'mdxJsxAttribute' && attr.name==='imageName');
+      // if(typeof nameAttr?.value === 'string') {
+      //     found.push([node,nameAttr.value]);
+      // } else if(nameAttr?.value && typeof nameAttr.value === 'object') {
+      //     console.warn("Dynamic value for ContentMarker name is not supported:", nameAttr.value);
+      // } else {
+      //     console.warn("Invalid ContentMarker. Image name is invalid or missing:", nameAttr?.value);
+      // }
+      // // TODO:
+      //   console.log("node.children:", node.children)
+      if(!node.children?.length) { 
+        let nameAttr: MdxJsxAttribute | undefined = undefined;
+        // console.log("node.attributes:", node.attributes)
+        for (const attr of node.attributes) {
+            if (attr.type === "mdxJsxAttribute") {
+            if (attr.name === "imageName" || attr.name === "contentFile") {
+                if (typeof attr.value === "string") {
+                  found.push([markerId, [node, attr.value, attr.name[0]==='c']]);
+                  nameAttr=attr;
+                  break;
+                } else if (attr.value && typeof attr.value === "object") {
+                console.warn(
+                    "Dynamic value for ContentMarker name is not supported:",
+                    attr.value
+                );
+                } else {
+                console.warn(
+                    "Unsupported attribute value type for `imageName`:",
+                    typeof attr.value
+                );
+                }
+            } else {
+                console.warn("Skipping unknown attribute:", attr.name, attr.value);
+            }
+            } else {
+            // if(attr.type === 'mdxJsxExpressionAttribute') {
+            console.warn(
+                "Skipping spread attributes on ContentMarker:",
+                attr.value
+            );
+            }
+        }
+        if (nameAttr === undefined) {
+            console.error("Content marker missing `imageName`/`contentFile` attribute"); // TODO: Provide more context?
+        }
+      }
+    }
+  });
+  return found;
+}
+
+function isMdxInstance(x: MarkdownInstance<any>|MDXInstance<any>): x is MDXInstance<any> {
+    // console.log("Is MDX Instance?", x);
+    return !('rawContent' in x);
+}
+
+function getContentMarkers(section: MDXInstance<StorySectionFrontmatter>): Promise<FullContentMarkerDataEntry[]> {
+    const filePath = path.isAbsolute(section.file) ? section.file : path.join(process.cwd(),section.file);
+    // console.log("FILEPATH:", filePath);
+    const source = getMdxSource(filePath);
+    // console.log("Source:", source);
+    const markers = source.then(extractContentMarkers).then((markers)=>markers.map(
+        (pair): FullContentMarkerDataEntry => [pair[0], [section,...pair[1]]])
+    );
+    return markers;
+}
+
+// const futures = allSections.map((section) => extractContentMarkers(section.file))
+const contentMarkerData = await (async (sections) => {
+    // const collectionEntries = await getCollection('storySections');
+    // const filePaths = collectionEntries.map((entry)=>entry.filePath).filter(x=>x!==undefined);
+    // console.log("Sections:", sections);
+    const promises = sections.map(getContentMarkers);
+    const sectionContentMarkers = await Promise.allSettled(promises);
+    const results: Array<FullContentMarkerDataEntry> = [];
+    for(const result of sectionContentMarkers) {
+        // console.log("Result:", result)
+        if(result.status === 'fulfilled') {
+            results.push(...result.value);
+        } else {
+            console.warn("Parsing of file failed because of:", result.reason)
+        }
+    }
+    return results;
+})(allSections.filter(isMdxInstance));
+
+// console.log("contentMarkerData:", contentMarkerData)
+
+---
+
+<div class='story'>
+  <ParallaxBackdrop specs={allFrontmatter} />
+
+  <div class='story-main'>
+    <StorySidebar specs={allFrontmatter} markerData={contentMarkerData} />
+
+    <div id="story-sections" class="story-sections">
+        {
+        allSections.map((section) => (
+            <StorySection {...section} />
+        ))
+        }
+        <div class="story-sections-end"></div>
+    </div>
+    
+  </div>
+  
+  <FloatingNav sections={allSections} />
+
+  <StoryAnimator sections={allSections} markers={contentMarkerData} client:load />
+</div>

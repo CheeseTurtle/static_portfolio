@@ -1,14 +1,25 @@
 {
   "extends": "astro/tsconfigs/strict",
+  "ts-node": {
+    "compiler": "typescript",
+    "scopeDir": "First of: `tsconfig.json` \"rootDir\" if specified, directory containing `tsconfig.json`, or cwd if no `tsconfig.json` is loaded.",
+    "typeCheck": true,
+    "compilerOptions": {
+      "diagnostics": true
+    }
+  },
   "include": [
     ".astro/types.d.ts",
     "src/**/*"
   ],
   "exclude": [
-    "dist"
+    "dist",
+    "node_modules"
   ],
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "preact"
+    "jsxImportSource": "preact",
+    "checkJs": true,
+    "diagnostics": true,
   }
 }

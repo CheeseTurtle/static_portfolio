@@ -1,0 +1,35 @@
+---
+import type { MarkdownInstance } from "astro";
+
+// const {
+//   id,
+//   title,
+//   //   imageWindows = [],
+//   //   sideContent = null,
+//   //   sideImage = null,
+// } = Astro.props as {
+//   id: string;
+//   title: string;
+//   //   imageWindows: ImageWindow[];
+//   //   sideContent: string | Element;
+//   //   sideImage: string | Element;
+// };
+
+const { frontmatter, ...data } =
+  Astro.props as MarkdownInstance<StorySectionFrontmatter>;
+
+// const headings = data.getHeadings()
+
+
+// TODO: Prepare for animation/pinning choreography
+// TODO: Adjust if needed for nav headings
+// TODO: Figure out slots for custom Timeline
+
+---
+
+<section class="story-section markdown" id={frontmatter.id} data-section-id={frontmatter.id}>
+  <h2>{frontmatter.title}</h2>
+  <data.Content></data.Content>
+  <slot />
+  <slot name="script" />
+</section>

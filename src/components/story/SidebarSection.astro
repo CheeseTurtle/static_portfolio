@@ -1,0 +1,14 @@
+---
+import type { MarkdownInstance } from "astro";
+
+// const {sectionId} = Astro.props;
+
+const {frontmatter, ...data} = Astro.props as MarkdownInstance<StorySectionFrontmatter>;
+
+
+---
+
+<div class="sidebar-section" data-section-id={frontmatter.id}>
+    
+
+</div>

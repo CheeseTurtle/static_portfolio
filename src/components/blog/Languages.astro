@@ -1,27 +1,35 @@
 ---
-const allPosts = await Astro.glob("../../pages/blog/posts/*.md");
-const languages = [
-    ...new Set(allPosts.map((post) => post.frontmatter.languages).flat()),
-];
+// const allPosts = await Astro.glob("../../pages/blog/posts/*.md");
 import Capsule from "../ui/Capsule.astro";
+import type { MarkdownInstance } from "astro";
+const allPostsRecord = import.meta.glob<MarkdownInstance<Record<string, any>>>(
+  "../../pages/blog/posts/*.md",
+  { eager: true }
+);
+const allPosts = Object.values(allPostsRecord);
+
+const languages = [
+  ...new Set(allPosts.map((post) => post.frontmatter.languages).flat()),
+];
+
 
 const { variant = "default" } = Astro.props;
 
 const baseClasses = "flex flex-wrap";
 
 const variantClasses = {
-    default: "gap-3 max-lg:gap-1",
-    vertical: "gap-6 flex-col"
+  default: "gap-3 max-lg:gap-1",
+  vertical: "gap-6 flex-col",
 } as const;
 
 const classes = `${baseClasses} ${variantClasses[variant as keyof typeof variantClasses] || variantClasses.default}`;
+
 ---
 
 <div class={classes}>
-    {languages.map((language) => (
-        <Capsule lang={language} linkEnabled={true} size="md" />
-    ))}
+  {
+    languages.map((language) => (
+      <Capsule lang={language} linkEnabled={true} size="md" />
+    ))
+  }
 </div>
-
-
-

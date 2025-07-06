@@ -1,0 +1,68 @@
+---
+import { getCollection, getEntry } from "astro:content";
+import LazyTextFileInstance from "../../src/utils/textloader";
+
+const { type, start, count } = Astro.props as {
+  type: string;
+  start?: number;
+  count?: number;
+};
+
+// const coll = await getCollection('loremIpsum');
+// console.log(coll);
+
+const obj: LazyTextFileInstance | { id: string; data: {id: string, path: string}, collection: string } = await getEntry(
+  "loremIpsum",
+  type
+);
+const startIdx = start ?? 0;
+const endIdx = startIdx + (count ?? 0);
+// const numParagraphs = endIdx + 1 - startIdx;
+
+const paragraphs = await (async () => {
+  let result: string | undefined, instance: LazyTextFileInstance;
+  if ("load" in obj) {
+    instance = obj;
+  } else {
+    // console.log(obj);
+    instance = new LazyTextFileInstance(obj.data.path);
+  }
+  result = await instance.load();
+  if (result === undefined) throw "Failed to load text from file";
+
+  if (endIdx === startIdx) return [await instance.getParagraph(startIdx)];
+  const paragraphs: string[] = [];
+  for (let i = startIdx; i < endIdx; i++)
+    paragraphs.push(await instance.getParagraph(i));
+  return paragraphs;
+})();
+
+// console.log("Paragraphs:", paragraphs, endIdx, startIdx);
+
+// const spans = Array(numParagraphs).map((_, i) => {
+//   const el = new HTMLParagraphElement();
+//   el.className = "lorem-ipsum";
+//   el.attributes["data-lorem-ipsum-type"] = type;
+//   el.innerText = paragraphs[i];
+//   return el;
+// });
+
+// text.then((paragraphs)=>paragraphs.forEach((str,i)=>{
+//     // spans[i].textContent = str;
+//     // spans[i].innerHTML = str;
+//     spans[i].innerText = str;
+// }));
+
+// const frag = Fragment();
+// console.log("entries:", Object.entries(frag));
+
+---
+
+<Fragment> 
+<!-- {
+    // paragraphs.forEach(x=>console.log(x))
+    console.log(paragraphs.length)
+}     -->
+{
+    paragraphs.map(x=>(<p>{x}</p>))
+} </Fragment>

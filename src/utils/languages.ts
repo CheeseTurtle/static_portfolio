@@ -5,106 +5,85 @@ export interface Language {
 }
 
 export const languages: Record<string, Language> = {
-  angular: {
-    name: "Angular",
-    iconName: "angular",
+  c: {
+    name: "C",
+    iconName: "C"
   },
-  astro: {
-    name: "Astro",
-    iconName: "astro",
+  c_sharp: {
+    name: "C#",
+    iconName: "csharp"
   },
-  bootstrap: {
-    name: "Bootstrap",
-    iconName: "bootstrap",
+  blender: {
+    name: "Blender 3D",
+    iconName: "Blender"
   },
-  cloudflare: {
-    name: "Cloudflare",
-    iconName: "cloudflare",
+  bash: {
+    name: "Bash",
+    iconName: "Bash"
   },
-  html: {
-    name: "HTML 5",
-    iconName: "html",
+  emacs: {
+    name: "Emacs",
+    iconName: "GNU Emacs"
   },
-  javascript: {
-    name: "JavaScript",
-    iconName: "javascript",
+  rocq: {
+    name: "ROCQ",
+    iconName: "icon-rocq-orange"
   },
-  mongo: {
-    name: "MongoDb",
-    iconName: "mongo",
+  latex: {
+    name: "LaTeX",
+    iconName: "LaTeX"
   },
-  mysql: {
-    name: "MySQL",
-    className: "bg-[#f6ece1]!",
-    iconName: "mysql",
+  max_msp: {
+    name: "Max/MSP",
+    iconName: "Logo_Max_8_software.jpg"
   },
-  wordpress: {
-    name: "Wordpress",
-    iconName: "wordpress",
+  lua: {
+    name: "Lua",
+    iconName: "Lua"
   },
-  node: {
-    name: "Node.js",
-    iconName: "node",
+  matlab: {
+    name: "MATLAB",
+    iconName: "MATLAB"
   },
-  tailwind: {
-    name: "Tailwind CSS",
-    iconName: "tailwind",
+  nvim: {
+    name: "NeoVim",
+    iconName: "Neovim-mark"
   },
-  figma: {
-    name: "Figma",
-    iconName: "figma",
+  powershell: {
+    name: "PowerShell",
+    iconName: "Powershell"
   },
-  firebase: {
-    name: "Firebase",
-    iconName: "firebase",
+  pytorch: {
+    name: "PyTorch",
+    iconName: "PyTorch"
   },
-  markdown: {
-    name: "Markdown",
-    iconName: "markdown",
+  swipl: {
+    name: "SWI-Prolog",
+    iconName: "swipl-128.png"
   },
-  php: {
-    name: "PHP",
-    iconName: "php",
+  typst: {
+    name: "Typst",
+    iconName: "typst.jpeg"
   },
-  sass: {
-    name: "Sass",
-    iconName: "sass",
+  ubuntu: {
+    name: "Ubuntu",
+    iconName: "Ubuntu"
   },
-  ts: {
-    name: "TypeScript",
-    iconName: "typescript",
-  },
+  // numpy: {
+  //   name: "NumPy",
+  //   iconName: "NumPy"
+  // },
+  // pandas: {
+  //   name: "PANDAS",
+  //   iconName: "Pandas"
+  // },
+  // markdown: {
+  //   name: "Markdown",
+  //   iconName: "markdown",
+  // },
   git: {
     name: "Git",
     iconName: "git",
-  },
-  css: {
-    name: "CSS",
-    iconName: "css",
-  },
-  vercel: {
-    name: "Vercel",
-    iconName: "vercel",
-  },
-  netlify: {
-    name: "Netlify",
-    iconName: "netlify",
-  },
-  gatsby: {
-    name: "Gatsby",
-    iconName: "gatsby",
-  },
-  windsurf: {
-    name: "Windsurf",
-    iconName: "windsurf-logo",
-  },
-  cursor: {
-    name: "Cursor",
-    iconName: "cursor-ia",
-  },
-  deepseek: {
-    name: "DeepSeek",
-    iconName: "deepseek",
   },
   python: {
     name: "Python",
@@ -113,5 +92,6 @@ export const languages: Record<string, Language> = {
 };
 
 export const getLanguage = (lang: string): Language => {
-  return languages[lang] || languages.html;
+  // console.log(lang)
+  return languages[lang] || languages.python;
 }; 

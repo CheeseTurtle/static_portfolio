@@ -23,7 +23,7 @@ Developed with **Astro** and styled with **TailwindCSS**, NeonMint focuses on sp
 - Developed with **Astro**
 - Styled with **TailwindCSS**
 
-## 💡 Technologies used
+## 💡 Technologies use
 
 - Astro
 - TailwindCSS

@@ -1,34 +1,40 @@
 ---
-const allTools = [
-  "html",
-  "javascript",
-  "ts",
-  "angular",
-  "astro",
+import {languages} from "../../utils/languages";
+import Languages from "../blog/Languages.astro";
+
+const allTools = Object.keys(languages)
+
+
+// const allTools = [
+  // "html",
+  // "javascript",
+  // "ts",
+  // "angular",
+  // "astro",
   
-  "node",
+  // "node",
 
-  "css",
-  "tailwind",
-  "sass",
-  "bootstrap",
+  // "css",
+  // "tailwind",
+  // "sass",
+  // "bootstrap",
 
-  "mongo",
-  "firebase",
-  "mysql",
+  // "mongo",
+  // "firebase",
+  // "mysql",
 
-  "cloudflare",
+  // "cloudflare",
 
-  "figma",
-  "vercel",
-  "netlify",
+  // "figma",
+  // "vercel",
+  // "netlify",
   
-  "git",
-  "markdown",
+  // "git",
+  // "markdown",
 
-  "php",
-  "wordpress",
-];
+  // "php",
+  // "wordpress",
+// ];
 
 import Capsule from "../ui/Capsule.astro";
 
@@ -43,10 +49,11 @@ const variantClasses: Record<ToolVariant, string> = {
   center: "justify-center cursor-default",
 };
 
-const { variant = "default", linkEnabled = false, size = "md" } = Astro.props;
+const { variant = "default", linkEnabled = true, size = "md" } = Astro.props;
 
 // Combine base classes with variant-specific classes
 const classes = `${baseClasses} ${variantClasses[variant as ToolVariant]}`;
+
 ---
 
 <div class={classes}>

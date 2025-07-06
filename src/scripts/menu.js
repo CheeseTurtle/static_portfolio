@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 document.querySelector('.hamburger').addEventListener('click', () => {
   const navLinks = document.querySelector('.nav-links');
   const hamburger = document.querySelector('.hamburger');
@@ -8,5 +9,3 @@ document.querySelector('.hamburger').addEventListener('click', () => {
   // Toggle the 'active' class for the hamburger icon
   hamburger.classList.toggle('active');
 });
-
-

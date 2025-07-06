@@ -1,11 +1,12 @@
 import rss, { pagesGlobToRssItems } from '@astrojs/rss';
 
+// @ts-ignore
 export async function GET(context) {
   return rss({
-    title: 'Web Development and Technology Blog | Fernando López | EFEELE',
-    description: 'Welcome to my blog, where I share my passion for frontend development, web design, and the latest technology trends.',
+    title: 'Stan Soo - Portfolio',
+    description: 'Simple portfolio showcasing recent projects',
     site: context.site,
     items: await pagesGlobToRssItems(import.meta.glob('./**/*.md')),
-    customData: `<language>es</language>`,
+    customData: `<language>en</language>`,
   });
 }

@@ -1,0 +1,38 @@
+---
+// import Picture from "astro/components/Picture.astro";
+import ParallaxWindow from "./ParallaxWindow.astro";
+
+// const { imageWindows } = Astro.props as { imageWindows: ImageWindowArgs[] };
+const { specs } = Astro.props as { specs: StorySectionFrontmatter[] };
+
+const imageLoaders = import.meta.glob<{ default: ImageMetadata }>(
+  "/public/images/story/backdrop/*.{jpeg,jpg,png,gif}"
+);
+
+
+
+// Extract image windows
+
+// TODO: Match images to loaders
+
+const imageWindows: ImageWindowArgs[] = specs.flatMap((s) =>
+  s.imageWindows
+    ? s.imageWindows.map((w, i, arr) => {
+        return { sectionId: s.id, ...w } as ImageWindowArgs;
+      }, s)
+    : []
+);
+
+// TODO: Set up grid dimensions based on...?
+---
+
+<div class="parallax-backdrop">
+  <!-- grid -->
+  {
+    // TODO: Scroll pinning etc?
+    // Set element id inside PW
+    imageWindows.map((spec) => {
+      <ParallaxWindow {...spec} />;
+    })
+  }
+</div>

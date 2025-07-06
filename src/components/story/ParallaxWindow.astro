@@ -1,0 +1,30 @@
+---
+const {
+  sectionId,
+  image,
+  x,
+  y,
+  windowWidth = "initial",
+  windowHeight,
+  imageWidth = "auto",
+  imageHeight,
+} = Astro.props as ImageWindowArgs;
+
+// Parse windowWidth, windowHeight, imageWidth, imageHeight?
+// Set element id
+
+
+
+---
+
+<div class="parallax-image-wrapper" data-section-id={sectionId}>
+  <img class="parallax-image" src={image} />
+</div>
+
+<!--
+<picture class="image_cont">
+   <source srcset="https://images.unsplash.com/photo-1506744038136-46273834b3fb?crop=entropy&amp;cs=srgb&amp;fm=jpg&amp;ixid=MnwxNDU4OXwwfDF8cmFuZG9tfHx8fHx8fHx8MTY0NDMzNTU3OA&amp;ixlib=rb-1.2.1&amp;q=85&amp;w=1500" media="(min-width: 1500px)">
+   <source srcset="https://images.unsplash.com/photo-1506744038136-46273834b3fb?crop=entropy&amp;cs=srgb&amp;fm=jpg&amp;ixid=MnwxNDU4OXwwfDF8cmFuZG9tfHx8fHx8fHx8MTY0NDMzNTU3OA&amp;ixlib=rb-1.2.1&amp;q=85&amp;w=1000" media="(min-width: 700px)">
+   <img class="" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?crop=entropy&amp;cs=srgb&amp;fm=jpg&amp;ixid=MnwxNDU4OXwwfDF8cmFuZG9tfHx8fHx8fHx8MTY0NDMzNTU3OA&amp;ixlib=rb-1.2.1&amp;q=85&amp;w=600" data-speed="auto" data-lag="0" style="translate: none; rotate: none; scale: none; transform: translate(0px, 0px); will-change: transform;">
+  </picture>
+-->

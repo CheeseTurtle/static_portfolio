@@ -12,7 +12,7 @@ const hobbies = [
     "Board Games"
 ];
 
-import Hobbie from "./Hobbie.astro";
+import Hobby from "./Hobby.astro";
 
 const baseClasses = "max-w-7xl gap-3 py-4 max-md:py-3";
 
@@ -26,7 +26,7 @@ const classes = variants[variant];
 ---
 
 <div id="tags" class={classes}>
-    {hobbies.map((hobby) => <Hobbie tag={hobby} />)}
+    {hobbies.map((hobby) => <Hobby tag={hobby} />)}
 </div>
 
 

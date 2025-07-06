@@ -1,7 +1,7 @@
 {
 	"folders": [
 		{
-			"path": "."
+			"path": ".",
 		}
 	],
 	"settings": {
@@ -9,9 +9,31 @@
 			"editor.colorDecorators": true,
 		},
 		// "[html]": {},
-		// "[javascript]": {},
+		"[javascript]": {
+			"javascript.autoClosingTags": true,
+			"javascript.preferences.jsxAttributeCompletionStyle": "auto",
+			"javascript.preferences.quoteStyle": "auto",
+			"javascript.suggest.enabled": true,
+			"javascript.suggest.completeJSDocs": true,
+			"javascript.suggest.jsdoc.generateReturns": true,
+			"javascript.preferences.renameMatchingJsxTags": true,
+			"javascript.preferences.useAliasesForRenames": true,
+			"javascript.preferences.importModuleSpecifier": "shortest",
+			"javascript.preferences.importModuleSpecifierEnding": "auto"
+		},
 		// "[javascriptreact]": {},
-		// "[typescript]": {},
+		"[typescript]": {
+			"typescript.autoClosingTags": true,
+			"typescript.preferences.importModuleSpecifier": "shortest",
+			"typescript.preferences.importModuleSpecifierEnding": "auto",
+			"typescript.preferences.quoteStyle": "auto",
+			"typescript.preferences.jsxAttributeCompletionStyle": "auto",
+			"typescript.preferences.renameMatchingJsxTags": true,
+			"typescript.preferences.useAliasesForRenames": true,
+			"typescript.suggest.completeJSDocs": true,
+			"typescript.suggest.enabled": true,
+			"typescript.suggest.jsdoc.generateReturns": true,
+		},
 		// "[typescriptreact]": {},
 		// "[json]": {},
 		// "[code-referencing]": {},
@@ -35,12 +57,24 @@
 				"comments": "off",
 				"strings": "off",
 				"other": "off"
-			}
+			},
+			// "editor.minimap.markSectionHeaderRegex": "\\bMARK:\\s*(?<separator>-?)\\s*(?<label>.*)$"
 		},
 		"astro.content-intellisense": true,
 		"npm-intellisense.packageSubfoldersIntellisense": true,
 		"npm-intellisense.scanDevDependencies": true,
 		// "[css]": {}, 
 		// "[scss]": {},
+		"[github-actions-workflow]": {
+			
+		},
+		"markdown.validate.enabled": false,
+		"svg.preview.background": "editor",
+		"files.exclude": {
+			// "**/node_modules": true
+		},
+		"files.readonlyInclude": {
+			"**/node_modules": true
+		}
 	}
 }

@@ -1,0 +1,60 @@
+---
+import type { MarkdownHeading, MarkdownInstance, MarkdownLayoutProps } from "astro"
+
+
+const {sections} = Astro.props as {sections: MarkdownInstance<StorySectionFrontmatter>[]};
+
+
+// TODO: Populate and set up with ScrollTrigger, ScrollTo, ScrollSmoother?
+
+
+interface MarkdownHeadingInfo extends MarkdownHeading {
+    sectionId: string;
+    elementId?: string;
+}
+
+// console.log("Sections:", sections);
+
+
+const headings: MarkdownHeadingInfo[] = sections.flatMap(({frontmatter, ...section}) => {
+    // frontmatter.id
+    const headings: MarkdownHeadingInfo[] = section.getHeadings().map(h=>({sectionId: frontmatter.id, ...h}));
+    headings.unshift({
+        depth: 2,
+        slug: frontmatter.id,
+        text: frontmatter.title,
+        sectionId: frontmatter.id,
+    });
+    let slugs = new Array(5).fill('');
+    let lastDepth = 0;
+    for(const h of headings) {
+        h.depth -= 2;
+        slugs[h.depth] = h.slug = h.slug.trim();
+        h.elementId = h.slug;
+        
+        if(h.depth < lastDepth) {
+            for(let i=lastDepth; i > h.depth; i--) slugs[h.depth] = '';
+        }
+        if(h.depth)
+            h.slug = slugs.slice(0,h.depth+1).filter(x=>x.length).join('#')
+
+        // h.slug = '#' + h.slug;
+    }
+    return headings;
+});
+
+// console.log("Headings:", headings);
+
+---
+
+<nav class="floating-nav" role="navigation">
+{
+    headings.map((h) => (
+        // TODO: Create nav for each section
+        // console.log(h);
+        <div class="nav-item" data-nav-depth={h.depth} data-nav-depth-string={`${h.depth}`}>
+            <a class="nav-link" href={'#' + h.elementId} data-nav-slug={h.slug}>{h.text}</a>
+        </div>
+    ))
+}
+</nav>

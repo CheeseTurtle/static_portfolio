@@ -1,0 +1,20 @@
+{
+  "extends": [
+    "development"
+  ],
+  "ignoredUrls": [
+    {
+      "domain": "node_modules/*",
+      "hints": ["*"]
+    }
+  ],
+  "hints": {
+    "manifest-app-name": "off",
+    "axe/text-alternatives": [
+      "default",
+      {
+        "document-title": "off"
+      }
+    ]
+  }
+}

@@ -43,13 +43,14 @@ const getIconContainerClasses = () => {
     selectedLanguage.className ? selectedLanguage.className : ""
   }`;
 };
+
 ---
 
 {
   linkEnabled ? (
     <a
       class="cursor-pointer"
-      href={`/blog/techs/${lang}`}
+      href={`/blog/topics/${lang}`}
       aria-label={`View articles about ${selectedLanguage.name}`}
       role="link"
     >

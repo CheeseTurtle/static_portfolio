@@ -26,7 +26,7 @@ const { frontmatter } = Astro.props;
         <div class="flex gap-2 flex-wrap">
           {
             frontmatter.languages.map((language: string) => (
-              <Capsule linkEnabled={false} lang={language} />
+              <Capsule linkEnabled={true} lang={language} />
             ))
           }
         </div>

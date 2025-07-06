@@ -1,0 +1,133 @@
+---
+// import type { MarkdownInstance } from "astro";
+// import StorySection from "./StorySection.astro";
+import type { MDXInstance } from "astro";
+import SidebarSection from "./SidebarSection.astro";
+import Image from "astro/components/Image.astro";
+import type { Component } from "preact";
+import type { AstroComponentInstance } from "astro/runtime/server/index.js";
+
+const { specs } = Astro.props as { specs: StorySectionFrontmatter[] };
+
+const imageLoaders = import.meta.glob<{ default: ImageMetadata }>(
+  "/public/images/story/sidebar/*.{jpeg,jpg,png,gif}"
+);
+
+const contentInstances = import.meta.glob<MDXInstance<SidebarSectionFrontmatter>>(
+  "/src/pages/story/sidebar/*.mdx", {eager: true}
+);
+
+// TODO: Match sections with imageLoaders and/or content elements (slot, or load from .md(x)?)
+
+// TODO: Populate sidebar and align with StorySections
+// TODO: Prepare for animation/pinning choreography
+
+
+type ContentInstance = MDXInstance<SidebarSectionFrontmatter>;
+type ImageLoader = () => Promise<{default: ImageMetadata}>;
+
+type SidebarSectionSpec1 = {
+      sectionId: string;
+      contentElem: Element;
+    };
+type SidebarSectionSpec2 = {
+      sectionId: string;
+      contentInstance: ContentInstance;
+    };
+type SidebarSectionSpec3 = {
+      sectionId: string;
+      imageLoader: ImageLoader;
+    };
+
+type SidebarSectionSpec = SidebarSectionSpec1 | SidebarSectionSpec2 | SidebarSectionSpec3;
+
+type SidebarSectionSpecArg = {
+    sectionId: string;
+    contentElem?: Element;
+    contentInstance?: ContentInstance;
+    imageLoader?: ImageLoader;
+}
+
+const sidebarSectionSpecs: (null | SidebarSectionSpec)[] = specs.map((spec) => {
+  if (spec.sideContent) {
+    let contentPath = "";
+    let sourcePath: string | null = null;
+    // TODO: Proper exception throwing
+    switch (typeof spec.sideContent) {
+      case "boolean": // Use section ID to find corresponding file
+        sourcePath = spec.id;
+      case "string": // Name of file (without extension)
+        sourcePath = sourcePath ?? spec.sideContent;
+        if (sourcePath in contentInstances) {
+          contentPath = sourcePath;
+        } else if (
+          (contentPath = `/pages/story/sidebar/${sourcePath}.md`) in
+          contentInstances
+        ) {
+        } else if (
+          (contentPath = `/pages/story/sidebar/${sourcePath}.mdx`) in
+          contentInstances
+        ) {
+        } else {
+          throw "Cannot find section";
+        }
+        return {
+          sectionId: spec.id,
+          contentInstance: contentInstances[contentPath],
+        } as SidebarSectionSpec2;
+      default: // Element
+        return { sectionId: spec.id, contentElem: spec.sideContent } as SidebarSectionSpec1;
+    }
+  } else if (spec.sideImage) {
+    let path = spec.sideImage;
+    if (!(path in imageLoaders)) {
+      // Not an absolute path
+        const prePath = "/public/images/story/sidebar/" + path;
+      if (path.match(/\.(?:jpe?g|png|gif)$/)) {
+        // Has an extension
+        path = prePath;
+      } else {
+        // No extension
+        if(!(
+            ((path=(prePath+'.jpeg')) in imageLoaders)
+            ||
+            ((path=(prePath+'.jpg')) in imageLoaders)
+            ||
+            ((path=(prePath+'.png')) in imageLoaders)
+            ||
+            ((path=(prePath+'.gif')) in imageLoaders)
+        )) {
+            throw "Cannot find sidebar image";
+        }
+      }
+    }
+    return {sectionId: spec.id, imageLoader: imageLoaders[path]} as SidebarSectionSpec3;
+  }
+  return null;
+});
+
+console.log("Sidebar", sidebarSectionSpecs);    
+
+---
+
+{sidebarSectionSpecs.map((spec: SidebarSectionSpecArg|null) => {
+    console.log("Spec:", spec);
+    if(spec === null) return console.log("Spec is null");
+    if(!(spec.contentElem || spec.contentInstance || spec.imageLoader))
+        throw "Unexpectedly empty sidebar section spec";
+    const typeClass = (
+        (spec.contentElem ? 'elem' : (spec.contentInstance ? 'markdown' : 'image'))
+    );
+    return <div class={`story-sidebar-section sidebar-${typeClass}-section`} data-section-id={spec.sectionId}>
+    {
+        (): AstroComponentInstance|Element => {
+            if(spec.contentElem !== undefined)
+                return spec.contentElem;
+            if(spec.contentInstance !== undefined) {
+                return (<spec.contentInstance.Content></spec.contentInstance.Content>)
+            }
+            return (<Image src={(spec as SidebarSectionSpec3).imageLoader()} alt="Turtles"/>) // <!-- TODO: Alt -->
+        }
+    }
+    </div>
+})}

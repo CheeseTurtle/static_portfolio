@@ -1,0 +1,40 @@
+---
+import type { AstroComponentInstance } from "astro/runtime/server/index.js";
+import type { MDXInstance, MarkdownInstance } from "astro";
+import type { SectionContentInstance } from "./types";
+import Image from "astro/components/Image.astro";
+
+const { sectionId, markerId, instance, image, elem } = Astro.props as {
+  sectionId: string;
+  markerId: string;
+  instance?: SectionContentInstance;
+  image?: ImageMetadata | string;
+  elem?: Element | AstroComponentInstance;
+};
+
+let content: Element | AstroComponentInstance;
+
+let itemType: string;
+
+if (elem != undefined) {
+  content = elem;
+  itemType = "element";
+} else if (instance != undefined) {
+  content = <instance.Content />;
+  itemType = "markdown";
+} else if (image === undefined) {
+  throw "Sidebar item cannot be empty";
+} else if (typeof image === "string") {
+  const metadata: ImageMetadata = await import(/* @vite-ignore */ image);
+  content = <Image src={metadata} alt="(TODO)"></Image>;
+  itemType = "image";
+} else {
+  // ImageMetadata
+  content = <Image src={image} alt="(TODO)"></Image>;
+  itemType = "image";
+}
+---
+
+<div class={`sidebar-item sidebar-${itemType}`} data-section-id={sectionId} data-marker-id={markerId}>
+  {content}
+</div>
