@@ -1,0 +1,73 @@
+header, footer {
+    display: none;
+    visibility: hidden;
+}
+
+/* body {
+    background-color: gray;
+} */
+
+
+section.active * {
+    opacity: 1;
+    filter: blur(0px);
+    color: white;
+}
+
+section {
+    background-color: black;
+    padding: 1rem 2rem;
+    margin: 0rem 1rem;
+    border-style: dashed;
+    border-collapse: collapse;
+}
+
+section * {
+    opacity: 0.3;
+    color: #bbb;
+    filter: blur(0.1rem);
+    transition: filter 500ms, color 500ms;
+}
+
+p {
+    margin: 1rem 0;
+}
+
+#wrapper {
+    overflow-y: auto;
+    height: 100svh;
+}
+
+#sections {
+    overflow: visible;
+}
+
+/* section.active {
+    margin-top: 4rem;
+    margin-bottom: 4rem;
+} */
+
+/* section.pre-active > * {
+    transform: translateY(-15svh);
+}
+section.post-active > * {
+    transform: translateY(15svh);
+}
+section > * {
+    transform: translateY(0);
+    transition-property: transform;
+    transition-duration: 250ms;
+    transition-delay: 100ms;
+} */
+
+section {
+    
+    /* transition: color 800ms; */
+        /* transform 1000ms; */
+    /* min-height: 100svh; */
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-content: stretch;
+    justify-content: flex-start;
+}

@@ -3,12 +3,12 @@ import Image from "astro/components/Image.astro";
 import type { AstroComponentInstance } from "astro/runtime/server/index.js";
 import type { ComponentSlotValue } from "astro/runtime/server/render/slot.js";
 
-declare type ColumnsProps = {
+type ColumnsProps = {
   image?: string;
   right?: boolean|string;
 };
 
-declare interface ColumnsSlots {
+interface ColumnsSlots {
   image?: AstroComponentInstance; //typeof Image;
   default?: ComponentSlotValue;
 }
@@ -18,8 +18,8 @@ const { image, right = false } = Astro.props as ColumnsProps;
 const { default: default_, image: imageSlot } = Astro.slots as ColumnsSlots;
 const hasDefault = Astro.slots.has("default");
 
-declare type ImageGetterResult = { default: ImageMetadata };
-// declare type ImageLoader = () => ImageGetterResult;
+type ImageGetterResult = { default: ImageMetadata };
+// type ImageLoader = () => ImageGetterResult;
 
 function isImageMetadata(value: unknown): value is ImageMetadata {
   return (
@@ -33,12 +33,12 @@ function isImageMetadata(value: unknown): value is ImageMetadata {
   );
 }
 
-// declare type CreateInfo = {
+// type CreateInfo = {
 //   imageElem?: AstroComponentInstance;
 //   imageMetadata?: ImageMetadata|Promise<ImageGetterResult>|string;
 // }
-declare type CreateInfo1 = {imageElem: AstroComponentInstance, imageMetadata?: undefined};
-declare type CreateInfo2 = {imageElem?: undefined, imageMetadata: ImageMetadata};
+type CreateInfo1 = {imageElem: AstroComponentInstance, imageMetadata?: undefined};
+type CreateInfo2 = {imageElem?: undefined, imageMetadata: ImageMetadata};
 
 let createInfo: CreateInfo1|CreateInfo2;
 let imageElem: AstroComponentInstance | undefined = undefined;

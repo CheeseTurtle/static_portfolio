@@ -1,0 +1,35 @@
+---
+import ScriptElem from "../../dev/components/ScriptElem.tsx";
+import Layout from "../layouts/Layout.astro";
+import Lorem from "../../dev/components/Lorem.astro";
+---
+
+<Layout storyPage="true">
+  <link rel="stylesheet" href="/src/styles/scratch2.css" slot="style" />
+
+  <div id="wrapper">
+    <div id="sections">
+      <section id="section1" class="active">
+        <Lorem type="bacon" count="3" />
+      </section>
+      <section id="section2">
+        <Lorem type="space" count="2" />
+      </section>
+      <section id="section3">
+        <Lorem type="obama" count="2" />
+      </section>
+      <section id="section4">
+        <Lorem type="cheese_med" count="2" />
+      </section>
+      <section id="section5">
+        <Lorem type="cupcake" count="3" />
+      </section>
+      <section id="section 6">
+        <Lorem type="journo" count="2" />
+      </section>
+      <div id="section-padding"></div>
+    </div>
+  </div>
+
+  <ScriptElem client:only />
+</Layout>

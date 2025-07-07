@@ -1,0 +1,8 @@
+---
+
+const { id=null, ...attrs } = Astro.props as { id?: string } & Record<string, any>;
+
+---
+
+<div class="story-subsection" {...attrs}><slot/></div>
+

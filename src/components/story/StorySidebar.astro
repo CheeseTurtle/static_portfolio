@@ -10,8 +10,6 @@ import type { AstroComponentInstance } from "astro/runtime/server/index.js";
 
 import type { FullContentMarkerDataEntry } from "./ContentMarker";
 
-declare type VisitedNode = import("unist").Node;
-
 const { specs, markerData } = Astro.props as {
   specs: StorySectionFrontmatter[];
   markerData: Array<FullContentMarkerDataEntry>;

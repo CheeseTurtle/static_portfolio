@@ -19,16 +19,26 @@ import path from "node:path";
 
 import type { MdxJsxAttribute } from "mdast-util-mdx-jsx";
 
-// declare type VisitedNode = import("unist").Node;
-import type {Node as VisitedNode} from "unist";
+// import type {Node as VisitedNode} from "unist";
 
 import type { MarkdownInstance, MDXInstance } from "astro";
-import { getCollection, getEntries, getEntry, render, reference } from "astro:content";
+import {
+  getCollection,
+  getEntries,
+  getEntry,
+  render,
+  reference,
+} from "astro:content";
 import StorySidebar from "./StorySidebar.astro";
 
-import type {ContentMarkerData, FullContentMarkerDataEntry, ContentMarkerDataEntry} from "./ContentMarker";
+import type {
+  ContentMarkerData,
+  FullContentMarkerDataEntry,
+  ContentMarkerDataEntry,
+} from "./ContentMarker";
 
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from "uuid";
+import Footer from "../layout/Footer.astro";
 
 const allSectionsRecord = import.meta.glob<
   | MarkdownInstance<StorySectionFrontmatter>
@@ -37,12 +47,17 @@ const allSectionsRecord = import.meta.glob<
 const allSections = Object.values(allSectionsRecord);
 // console.log("HELLO");
 function parseDate(x: string): Date {
-  let m = /(?<year>\d{4})(?:-(?<month>\d\d?)(?:-(?:(?<day>\d\d?)(?: (?<hour>\d\d?):(?<minute>\d\d))?)?)?)?/.exec(x);
+  let m =
+    /(?<year>\d{4})(?:-(?<month>\d\d?)(?:-(?:(?<day>\d\d?)(?: (?<hour>\d\d?):(?<minute>\d\d))?)?)?)?/.exec(
+      x
+    );
   // console.assert(m !== null && m.groups, `Invalid date string: ${x}`);
   if (!m || !m.groups || m.groups.year === undefined) {
     throw `Invalid date string: ${x}`;
   } // TODO
-  let month=m.groups.month, day=m.groups.day, year = m.groups.year;
+  let month = m.groups.month,
+    day = m.groups.day,
+    year = m.groups.year;
   if (m.groups.month === undefined) {
     month = m.groups.day = "01";
   } else {
@@ -52,26 +67,26 @@ function parseDate(x: string): Date {
     if (m.groups.day === undefined) {
       day = "01";
     } else {
-        if (!(m.groups.day.length & 2)) {
-            day = "0" + m.groups.day;
-        }
+      if (!(m.groups.day.length & 2)) {
+        day = "0" + m.groups.day;
+      }
     }
   }
 
   let dateStr = `${year}-${month}-${day}`;
-  if(m.groups.hour !== undefined) {
-    let minuteStr = (m.groups.minute === undefined) ? '00' : m.groups.minute;
+  if (m.groups.hour !== undefined) {
+    let minuteStr = m.groups.minute === undefined ? "00" : m.groups.minute;
     let hourString = m.groups.hour;
-    if(!(hourString.length & 0b10)) hourString = '0' + hourString;
+    if (!(hourString.length & 0b10)) hourString = "0" + hourString;
     dateStr += ` ${hourString}:${minuteStr}`;
   } else {
-    dateStr += ' 00:00';
+    dateStr += " 00:00";
   }
   const date = new Date(dateStr);
 
   // console.log(year,month,day,date);
   return date;
-//   return new Date(`${m.groups.year}-${m.groups.month}-${m.groups.day}`);
+  //   return new Date(`${m.groups.year}-${m.groups.month}-${m.groups.day}`);
 }
 
 function parseDateOrder(x: string): number {
@@ -86,16 +101,14 @@ allSections.sort(
 
 const allFrontmatter = allSections.map((s) => s.frontmatter);
 
-
 // const allSections = await getCollection('storySections');
 // const entry = allSections[0];
 
 async function getMdxSource(filePath: string) {
-//   const filePath = path.join(process.cwd(), "src/pages/story/sections", `${slug}.mdx`);
+  //   const filePath = path.join(process.cwd(), "src/pages/story/sections", `${slug}.mdx`);
   const fileContents = await fs.readFile(filePath, "utf-8");
   return fileContents;
 }
-
 
 async function extractContentMarkers(mdxSource: string) {
   const tree = unified().use(remarkParse).use(remarkMdx).parse(mdxSource);
@@ -105,7 +118,6 @@ async function extractContentMarkers(mdxSource: string) {
       node.type === "mdxJsxFlowElement" && // || node.type === 'mdxJsxTextElement')
       node.name === "ContentMarker"
     ) {
-
       // const idAttr = node.attributes.find(attr=>attr.type==='mdxJsxAttribute' && attr.name==='markerId');
       // if(idAttr === undefined) {
       //   console.log(node.attributes, node.data)
@@ -114,7 +126,6 @@ async function extractContentMarkers(mdxSource: string) {
       // const markerId = idAttr.value;
       // if(typeof markerId !== 'string')
       //   throw `Content marker has invalid \`data-marker-id\` attribute type: ${typeof markerId} (${markerId})`;
-
 
       const markerId = uuidv4();
 
@@ -128,40 +139,49 @@ async function extractContentMarkers(mdxSource: string) {
       // }
       // // TODO:
       //   console.log("node.children:", node.children)
-      if(!node.children?.length) { 
+      if (!node.children?.length) {
         let nameAttr: MdxJsxAttribute | undefined = undefined;
         // console.log("node.attributes:", node.attributes)
         for (const attr of node.attributes) {
-            if (attr.type === "mdxJsxAttribute") {
+          if (attr.type === "mdxJsxAttribute") {
             if (attr.name === "imageName" || attr.name === "contentFile") {
-                if (typeof attr.value === "string") {
-                  found.push([markerId, [node, attr.value, attr.name[0]==='c']]);
-                  nameAttr=attr;
-                  break;
-                } else if (attr.value && typeof attr.value === "object") {
+              if (typeof attr.value === "string") {
+                found.push([
+                  markerId,
+                  [node, attr.value, attr.name[0] === "c"],
+                ]);
+                nameAttr = attr;
+                break;
+              } else if (attr.value && typeof attr.value === "object") {
                 console.warn(
-                    "Dynamic value for ContentMarker name is not supported:",
-                    attr.value
+                  "Dynamic value for ContentMarker name is not supported:",
+                  attr.value
                 );
-                } else {
+              } else {
                 console.warn(
-                    "Unsupported attribute value type for `imageName`:",
-                    typeof attr.value
+                  "Unsupported attribute value type for `imageName`:",
+                  typeof attr.value
                 );
-                }
+              }
             } else {
-                console.warn("Skipping unknown attribute:", attr.name, attr.value);
+              console.warn(
+                "Skipping unknown attribute:",
+                attr.name,
+                attr.value
+              );
             }
-            } else {
+          } else {
             // if(attr.type === 'mdxJsxExpressionAttribute') {
             console.warn(
-                "Skipping spread attributes on ContentMarker:",
-                attr.value
+              "Skipping spread attributes on ContentMarker:",
+              attr.value
             );
-            }
+          }
         }
         if (nameAttr === undefined) {
-            console.error("Content marker missing `imageName`/`contentFile` attribute"); // TODO: Provide more context?
+          console.error(
+            "Content marker missing `imageName`/`contentFile` attribute"
+          ); // TODO: Provide more context?
         }
       }
     }
@@ -169,63 +189,80 @@ async function extractContentMarkers(mdxSource: string) {
   return found;
 }
 
-function isMdxInstance(x: MarkdownInstance<any>|MDXInstance<any>): x is MDXInstance<any> {
-    // console.log("Is MDX Instance?", x);
-    return !('rawContent' in x);
+function isMdxInstance(
+  x: MarkdownInstance<any> | MDXInstance<any>
+): x is MDXInstance<any> {
+  // console.log("Is MDX Instance?", x);
+  return !("rawContent" in x);
 }
 
-function getContentMarkers(section: MDXInstance<StorySectionFrontmatter>): Promise<FullContentMarkerDataEntry[]> {
-    const filePath = path.isAbsolute(section.file) ? section.file : path.join(process.cwd(),section.file);
-    // console.log("FILEPATH:", filePath);
-    const source = getMdxSource(filePath);
-    // console.log("Source:", source);
-    const markers = source.then(extractContentMarkers).then((markers)=>markers.map(
-        (pair): FullContentMarkerDataEntry => [pair[0], [section,...pair[1]]])
+function getContentMarkers(
+  section: MDXInstance<StorySectionFrontmatter>
+): Promise<FullContentMarkerDataEntry[]> {
+  const filePath = path.isAbsolute(section.file)
+    ? section.file
+    : path.join(process.cwd(), section.file);
+  // console.log("FILEPATH:", filePath);
+  const source = getMdxSource(filePath);
+  // console.log("Source:", source);
+  const markers = source
+    .then(extractContentMarkers)
+    .then((markers) =>
+      markers.map(
+        (pair): FullContentMarkerDataEntry => [pair[0], [section, ...pair[1]]]
+      )
     );
-    return markers;
+  return markers;
 }
 
 // const futures = allSections.map((section) => extractContentMarkers(section.file))
 const contentMarkerData = await (async (sections) => {
-    // const collectionEntries = await getCollection('storySections');
-    // const filePaths = collectionEntries.map((entry)=>entry.filePath).filter(x=>x!==undefined);
-    // console.log("Sections:", sections);
-    const promises = sections.map(getContentMarkers);
-    const sectionContentMarkers = await Promise.allSettled(promises);
-    const results: Array<FullContentMarkerDataEntry> = [];
-    for(const result of sectionContentMarkers) {
-        // console.log("Result:", result)
-        if(result.status === 'fulfilled') {
-            results.push(...result.value);
-        } else {
-            console.warn("Parsing of file failed because of:", result.reason)
-        }
+  // const collectionEntries = await getCollection('storySections');
+  // const filePaths = collectionEntries.map((entry)=>entry.filePath).filter(x=>x!==undefined);
+  // console.log("Sections:", sections);
+  const promises = sections.map(getContentMarkers);
+  const sectionContentMarkers = await Promise.allSettled(promises);
+  const results: Array<FullContentMarkerDataEntry> = [];
+  for (const result of sectionContentMarkers) {
+    // console.log("Result:", result)
+    if (result.status === "fulfilled") {
+      results.push(...result.value);
+    } else {
+      console.warn("Parsing of file failed because of:", result.reason);
     }
-    return results;
+  }
+  return results;
 })(allSections.filter(isMdxInstance));
 
 // console.log("contentMarkerData:", contentMarkerData)
-
 ---
 
-<div class='story'>
+<div class="story overflow-auto">
   <ParallaxBackdrop specs={allFrontmatter} />
 
-  <div class='story-main'>
-    <StorySidebar specs={allFrontmatter} markerData={contentMarkerData} />
+  <div class="story-scroll-content overflow-y-visible overflow-x-hidden">
+    <div class="header-space h-[15vh]"></div>
+    <!-- <div class="story-expand"> -->
+      <div class="story-title">
+        <h1>My Story</h1>
+      </div>
+      <div class="story-main">
+        <StorySidebar specs={allFrontmatter} markerData={contentMarkerData} />
 
-    <div id="story-sections" class="story-sections">
-        {
-        allSections.map((section) => (
-            <StorySection {...section} />
-        ))
-        }
-        <div class="story-sections-end"></div>
-    </div>
-    
+        <div id="story-sections" class="story-sections overflow-y-visible">
+          {allSections.map((section) => <StorySection {...section} />)}
+          <div class="story-sections-end"></div>
+        </div>
+      </div>
+    <!-- </div> -->
+    <Footer />
   </div>
-  
+
   <FloatingNav sections={allSections} />
 
-  <StoryAnimator sections={allSections} markers={contentMarkerData} client:load />
+  <StoryAnimator
+    sections={allSections}
+    markers={contentMarkerData}
+    client:only
+  />
 </div>

@@ -32,6 +32,11 @@ export default defineConfig({
   devToolbar: {
     enabled: false,
   },
+  server: {
+    watch: {
+      usePolling: true
+    }
+  },
   vite: {
     plugins: [/** @type {PluginOption} */ tailwindcss()],
     // esbuild: {

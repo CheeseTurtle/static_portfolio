@@ -1,0 +1,17 @@
+---
+
+/**
+ * Wrapper for ContentMarker.tsx Preact component
+ */
+
+import PreactContentMarker from "./ContentMarker.tsx";
+
+import type {ContentMarkerProps} from "./ContentMarker.tsx";
+
+const props: ContentMarkerProps = Astro.props;
+
+---
+
+<PreactContentMarker {...props} client:load>
+    <slot/>
+</PreactContentMarker>

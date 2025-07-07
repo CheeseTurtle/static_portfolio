@@ -17,7 +17,8 @@ import { GSDevTools } from "gsap/GSDevTools";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
-import { useEffect } from "preact/hooks";
+// import { useEffect } from "preact/hooks";
+import { useCallback, useContext, useDebugValue, useEffect, useErrorBoundary, useId, useLayoutEffect, useMemo, useState } from "preact/hooks";
 
 import type { MarkdownInstance, MDXInstance } from "astro";
 import type {Node as VisitedNode} from "unist";
@@ -40,13 +41,23 @@ type Props = {
     markers: FullContentMarkerDataEntry[]
 };
 
+// export type AnimatorState = {
+//     value: number
+// };
+
 
 export default function StoryAnimator({sections, markers}: Props) {
+
     useEffect(() => {
         console.log("STORY ANIMATOR COMPONENT", sections);
-
+        
+        const scroller = document.querySelector('.story')!;
         // Set up StorySidebar
         gsap.defaults({overwrite: 'auto'});
+
+        ScrollTrigger.defaults({
+            scroller: scroller
+        })
 
         gsap.set('.story-sidebar > *', {xPercent: -50, yPercent: -50});
 
@@ -80,17 +91,40 @@ export default function StoryAnimator({sections, markers}: Props) {
             }
         });
 
+        
+        const sectionElems: HTMLElement[] = gsap.utils.toArray('.story-section');
+        const starts = sectionElems.map(x=>x.offsetTop);
+
+        let refreshTimeout: NodeJS.Timeout|undefined = undefined;
+        function safeRefresh() {
+            clearTimeout(refreshTimeout);
+            refreshTimeout = setTimeout(() => {
+                ScrollTrigger.refresh();
+                // TODO: Check if last one changed?
+                sectionElems.forEach((el,i)=>{
+                    starts[i] = el.offsetTop;
+                });
+            }, 100);
+        }
+
+        let first_ = true;
+
         let lastContent: ContentMarkerContentElement|null = null;
-        function getCurrentSection(self: ScrollTrigger) {
-            // console.log("getCurrentSection", self);
+        function getCurrentSection(self: ScrollTrigger, first=first_) {
+            first_ = false;
             let newContent: ContentMarkerContentElement|null = null; 
-            const currScroll = scrollY;
+            const currScroll = scroller.scrollTop; // scrollY;
 
             // Find current section
             for(const marker of contentMarkers) {
                 // console.log(currScroll, marker.offsetTop);
                 if(currScroll <= marker.offsetTop) break;
                 newContent = marker.content;
+            }
+
+            if(first && !newContent && contentMarkers.length) {
+                newContent = contentMarkers[0].content;
+                // console.log("First!", first, newContent)
             }
 
             // If current section differs from last section, animate in
@@ -100,30 +134,56 @@ export default function StoryAnimator({sections, markers}: Props) {
             )) {
                 // Fade out last section
                 if(lastContent) lastContent.leave();
-
+                
                 // Animate in new section
                 newContent.enter();
-
+                
                 lastContent = newContent;
-            }
-            // console.log('lastContent:', lastContent);
+            }            
         }
 
-        // const endTrigger = document.querySelector('footer')!;
-
+        const headerSpace = document.querySelector('.header-space')!;
+        const footer = document.querySelector('footer')!;
+        const storyElem = document.querySelector('.story')!;
+        const storyMain = document.querySelector('.story-main')!;
+        const storySidebar = document.querySelector('.story-sidebar')!;
+        const storyTitle = document.querySelector('.story-title')!;
+        const header = document.querySelector('header')!;
+        const storyEnd = document.querySelector('.story-sections-end')!;
+        
+        storyMain.addEventListener('transitionend' as keyof ElementEventMap, ((evt: Event) =>{
+            if((evt as TransitionEvent).propertyName !== 'padding-right') {
+                return;
+            }
+            safeRefresh();
+        }));
         // Set up ScrollTrigger
+
         const ST = ScrollTrigger.create({
-            trigger: '.story-main',
-            endTrigger: '.story-sections-end',
-            start: 'top top',
-            end: 'bottom bottom',
-            // end: () => `+=${document.querySelector(".story-sections")!.scrollHeight}`,
-            markers: true,
-            // onEnter: (self)=>console.log("ST enter", self),
-            // onLeave: (self)=>console.log("ST onLeave", self),
-            onUpdate: getCurrentSection, 
-            pin: '.story-sidebar'
-        })
+            trigger: storyTitle,
+            start: 'bottom top',
+            endTrigger: footer,
+            end: 'top bottom',
+           
+            onUpdate: getCurrentSection, // TODO: Debounce/defer
+            pin: [storySidebar, storyMain],
+            pinSpacing: false,
+            pinSpacer: undefined,
+            // pinType: "fixed",
+            // markers: true,
+            id: "main",
+
+            toggleClass: {
+                targets: [storyElem],
+                className: 'immersive'
+            },
+            onToggle: (self) => {
+                // storyElem.classList.toggle('immersive', self.isActive);
+                gsap.delayedCall(1, safeRefresh);
+            }
+        });
+
+
 
         const media = window.matchMedia("screen and (max-width: 60rem)");
         function checkSTState() {
@@ -131,9 +191,6 @@ export default function StoryAnimator({sections, markers}: Props) {
         }
         
         ScrollTrigger.addEventListener("refreshInit", checkSTState);
-
-
-
 
         // Set up FloatingNav scrolling 
 
@@ -157,26 +214,117 @@ export default function StoryAnimator({sections, markers}: Props) {
                 trigger: elem,
                 start: "top center",
                 end: "bottom center",
+                id: elem.id,
                 onToggle: self=>self.isActive && setActive(a)
             });
             a.addEventListener('click', e=>{
                 e.preventDefault();
                 gsap.to(window, {duration: 1, scrollTo: linkST.start, overwrite: "auto"});
             });
-        }));
+        }));        
+
+        // let direction = 0;
+        const headerHideState = {
+            deltaThreshold: 0.01*window.innerHeight,
+            velocityThreshold: 0.25,
+            lastDirection: 0,
+            thresholdLocation: headerSpace.scrollTop + 0.5*headerSpace.scrollHeight
+        };
+
+        const hideHeader = gsap.to(header, {
+            paused: true,
+            yPercent: -100,
+            autoAlpha: 0
+        });
+
+        const showHeader = gsap.to(header, {
+            paused: true,
+            yPercent: 0,
+            autoAlpha: 1
+        });
+
+
+        const headerTimeline = gsap.timeline();
+        headerTimeline.fromTo(header, 
+            {yPercent: 0, autoAlpha: 1}, 
+            {yPercent: -100, autoAlpha: 0}
+        );
+    
+        // Modify header
+        const headerST = ScrollTrigger.create({
+            id: "header",
+            onUpdate: ((self: ScrollTrigger) => {
+                // console.log(self.direction, self.getVelocity(), self.progress, self.scroll());
+                if(self.direction != headerHideState.lastDirection) {
+                    // let activate: GSAPTween, deactivate: GSAPTween;
+                    let shouldReverse = Boolean(self.direction & 0b10);
+                    if(headerTimeline.reversed() != shouldReverse) {
+                        headerTimeline.reversed(shouldReverse);
+                    }
+                    if(!headerTimeline.isActive()) {
+                        headerTimeline.play()
+                    }
+                    headerHideState.lastDirection = self.direction; 
+                    // if(deactivate.isActive())
+                        
+                }
+            }),
+        });
+
 
         let resizeTimeout: ReturnType<typeof setTimeout>|null = null;
-        window.addEventListener("resize", () => {
-        if (resizeTimeout) clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => ScrollTrigger.refresh(), 250);
-        });
+        function onResize() {
+            if (resizeTimeout) clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                // console.log("onResize");
+                safeRefresh();
+            }, 250);
+        }
+        window.addEventListener("resize", onResize);
+
+        getCurrentSection(ST);
+
+        // Cleanup
+        return () => {
+            window.removeEventListener('resize', onResize);
+        }
+    });
+}
+
+
 
 
         // GSDevTools.create({
         //     css: { right: "200px" }
         // });
-    });
-}
+
+
+        // ScrollTrigger.create({
+        //     id: "snap",
+        //     trigger: '.story-section',
+        //     start: "top top",
+        //     end: "bottom bottom",
+        //     markers: true,
+        //     snap: {
+        //         snapTo: (value) =>
+        //             // Snap to nearest section index (0, 1, 2, ...)
+        //             // return Math.round(value);
+        //             gsap.utils.snap(starts, value),
+        //         duration: 0.5,
+        //         ease: "power1.inOut",
+        //         delay: 0.1,
+        //         inertia: true, // enables velocity-based snapping
+        //         onComplete: undefined,
+        //         onStart: undefined,
+        //         onInterrupt: undefined,
+        //         directional: false
+        //     },
+        //     toggleClass: 'active-section',
+        //     scrub: true,
+        //     invalidateOnRefresh: true
+        // });
+
+        
 
 
 
@@ -245,3 +393,126 @@ export default function StoryAnimator({sections, markers}: Props) {
             // }
             // console.log(marker.dataset, marker.attributes);
             // console.log(marker.content?.attributes);
+
+
+// // startAt: {},
+// onStart: undefined,
+// // onStartParams: [],
+// onReverseComplete: undefined,
+// // onReverseCompleteParams: undefined,
+// onComplete: undefined,
+// // onCompleteParams: undefined,
+// onRepeat: undefined,
+// onUpdate: undefined,
+// onInterrupt: undefined,
+
+
+// // attr: {},
+// // counterIncrement: {},
+// // counterReset: {},
+// // lazy: true,
+// // id: "test",
+// // keyframes: {},
+// // inertia: 0,
+// // direction: undefined,
+// // delay: 0,
+// // overwrite: "auto",
+// // morphSVG: {},
+// // motionPath: {},
+// // scrollTo: {},
+// // scrollTrigger: {}
+
+
+// onRefresh: ()=>{
+            //     console.log("On refresh")
+            // },
+            // onRefreshInit: () =>console.log("OnRefreshInit"),
+            // invalidateOnRefresh: true,
+            // anticipatePin: 0.1
+
+
+
+
+
+
+
+
+ // endTrigger: footer,
+
+            // end: 'bottom bottom',
+            
+            // end: () => `+=${document.querySelector(".story-sections")!.scrollHeight}`,
+            // markers: true,
+            // onEnter: (self)=>{
+            //     gsap.to(storyMain, {
+            //         duration: 0.4,
+            //         padding: 0,
+            //         background: 'black'
+            //     });
+            //     // self.refresh();
+            //     // ScrollTrigger.refresh();
+            //     safeRefresh();
+            // },
+            // onEnterBack: (self) => {
+                
+            // },
+            // onLeave: (self)=>{
+            //     console.log("Leave");
+            //     gsap.to(storyMain, {
+            //         duration: 0.4,
+            //         padding: '0 calc(min(8rem,5vw))',
+            //         background: 'none'
+            //     });
+            //     safeRefresh();
+            // },
+            // onLeaveBack: (self)=>{
+            // },
+
+
+
+// const ST2 = ScrollTrigger.create({
+        //     trigger: '.header-space',
+        //     onEnter: ()=>console.log("ENTER"),
+        //     onLeave: ()=>console.log("ONLEAVE")
+        // });
+
+
+
+
+
+
+
+    // const [state, setState] = useState<AnimatorState>({value: 0});
+
+    // const increment = useCallback(()=>{
+    //     setState({value: state.value + 1} as AnimatorState)
+    // }, [state])
+
+
+    
+    // const first = useRef(second)
+    
+    // useMemo(() => first, [second])
+
+    // const [state, dispatch] = useReducer(first, second, third)
+
+    // useImperativeHandle(
+    //     first,
+    //     () => {
+    //     second
+    //     },
+    //     [third],
+    // )
+
+    // useLayoutEffect(() => {
+    //     first
+    
+    //     return () => {
+    //     second
+    //     };
+    // }, [third])
+    
+
+    // useDebugValue(value)
+
+    // useErrorBoundary()

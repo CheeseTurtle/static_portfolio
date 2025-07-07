@@ -41,14 +41,13 @@
 }
 
 @property --border-angle{
-	  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
+	syntax: "<angle>";
+	inherits: false;
+	initial-value: 0deg;
 }
 
 ::selection {
 	@apply text-white bg-mint-500;
-	
   }
 *::-webkit-scrollbar-thumb{
 	border-radius: 20px;
@@ -57,7 +56,7 @@
 	scrollbar-color: #6ce9b7 #012d22;
 	scrollbar-width: thin;
 }
- *{
+* {
 	scrollbar-color: #6ce9b7 #d0fbe5;
 	scrollbar-width: thin;
 	box-sizing: border-box;
@@ -66,7 +65,7 @@
 
 pre, .dark pre {
 	scrollbar-color: #686868 #424242;
-	scrollbar-width:initial;
+	scrollbar-width: initial;
 }
 
 @keyframes rotate {
@@ -203,7 +202,6 @@ a.inline-block.leading-5.pl-12{
 
 /* Navigation bar styles */
 .hamburger {
-
 	cursor: pointer;
 }
 
@@ -268,5 +266,4 @@ a.inline-block.leading-5.pl-12{
 	z-index: -1;
 	border-radius: 50%;
 	filter: blur(10px);
-
 }
