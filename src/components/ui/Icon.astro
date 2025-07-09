@@ -54,7 +54,10 @@ const rasterNames = Object.fromEntries(rasterEntries);
 
 let [setName, iconName] = (name as string).split(":");
 
-const isRaster = iconName in rasterNames;
+if(iconName === undefined) iconName = name;
+
+let isRaster = iconName in rasterNames;
+
 
 if (iconName !== undefined) {
   // throw new Error(`iconName is falsy ("${name}", "${setName}", "${iconName}")`);
@@ -75,20 +78,21 @@ if (iconName !== undefined) {
   }
 }
 
-if (
-  (name.endsWith(".jpg") ||
-    name.endsWith(".jpeg") ||
-    name.endsWith(".png") ||
-    name.endsWith(".gif")) &&
-  !isRaster
-) {
-  throw new Error(
-    `Icon name "${iconName}" (from "${name}") does not appear in 'rasterNames'!\n${JSON.stringify(rasterNames, null, 2)}`,
-    {
-      cause: rasterNames,
-    }
-  );
-}
+// if (
+//   (name.endsWith(".jpg") ||
+//     name.endsWith(".jpeg") ||
+//     name.endsWith(".png") ||
+//     name.endsWith(".gif")) &&
+//   !isRaster
+// ) {
+//   throw new Error(
+//     `Icon name "${iconName}" (from "${name}") does not appear in 'rasterNames'!\n${JSON.stringify(rasterNames, null, 2)}`,
+//     {
+//       cause: rasterNames,
+//     }
+//   );
+// }
+
 ---
 
 {
