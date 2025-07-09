@@ -57,7 +57,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "20.19.2"
           cache: ${{ steps.detect-package-manager.outputs.manager }}
           cache-dependency-path: ${{ env.BUILD_PATH }}/${{ steps.detect-package-manager.outputs.lockfile }}
       - name: Setup Pages
@@ -74,6 +74,8 @@ jobs:
         run: node_modules/.bin/astro --version
       - name: Check if astro is globally installed
         run: command -v astro || echo "astro not globally available"
+      - name: Check Astro binary location
+        run: ls -l node_modules/.bin/astro
       - name: Build with Astro
         run: |
           ${{ steps.detect-package-manager.outputs.runner }} astro build \
