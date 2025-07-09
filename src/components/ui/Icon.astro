@@ -56,6 +56,13 @@ let [setName, iconName] = (name as string).split(":");
 
 const isRaster = iconName in rasterNames;
 
+
+if((iconName.endsWith(".jpg")||iconName.endsWith(".jpeg")||iconName.endsWith(".png")||iconName.endsWith(".gif")) && !isRaster) {
+  throw new Error(`Icon name "${iconName}" (from "${name}") does not appear in 'rasterNames'!\n${rasterNames}`, {
+    cause: rasterNames
+  });
+}
+
 ---
 
 {
