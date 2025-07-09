@@ -8,15 +8,15 @@ import mdx from "@astrojs/mdx";
 
 // https://astro.build/config
 export default defineConfig({
-  prefetch: true,
+  // prefetch: true,
   site: "https://cheeseturtle.github.io/static_profile",
-  experimental: {
-    // clientPrerender: true,
-    // headingIdCompat: true,
-    // liveContentCollections: false,
-    // preserveScriptOrder: undefined,
-    contentIntellisense: true,
-  },
+  // experimental: {
+  //   // clientPrerender: true,
+  //   // headingIdCompat: true,
+  //   // liveContentCollections: false,
+  //   // preserveScriptOrder: undefined,
+  //   contentIntellisense: true,
+  // },
   integrations: [
     preact(),
     icon(),

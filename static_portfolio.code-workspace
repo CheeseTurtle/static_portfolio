@@ -65,16 +65,17 @@
 		"npm-intellisense.scanDevDependencies": true,
 		// "[css]": {}, 
 		// "[scss]": {},
-		"[github-actions-workflow]": {
+		// "[github-actions-workflow]": {
 			
-		},
+		// },
 		"markdown.validate.enabled": false,
 		"svg.preview.background": "editor",
 		"files.exclude": {
 			// "**/node_modules": true
 		},
 		"files.readonlyInclude": {
+			"**/dist": true,
 			"**/node_modules": true
-		}
-	}
+		},
+	},
 }

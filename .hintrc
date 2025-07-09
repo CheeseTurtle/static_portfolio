@@ -6,6 +6,10 @@
     {
       "domain": "node_modules/*",
       "hints": ["*"]
+    },
+    {
+      "domain": "dist/*",
+      "hints": ["*"]
     }
   ],
   "hints": {
