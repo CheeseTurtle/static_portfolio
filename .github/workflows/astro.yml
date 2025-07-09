@@ -60,6 +60,7 @@ jobs:
           node-version: "20.19.2"
           cache: ${{ steps.detect-package-manager.outputs.manager }}
           cache-dependency-path: ${{ env.BUILD_PATH }}/${{ steps.detect-package-manager.outputs.lockfile }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}-fixastro
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
