@@ -2,27 +2,25 @@
 // import type { MarkdownInstance } from "astro";
 // import StorySection from "./StorySection.astro";
 import type { MarkdownInstance, MDXInstance } from "astro";
-import SidebarSection from "./SidebarSection.astro";
+// import SidebarSection from "./SidebarSection.astro";
 import Image from "astro/components/Image.astro";
-import type { Component } from "preact";
 import type { AstroComponentInstance } from "astro/runtime/server/index.js";
 // import { isRenderInstance } from "astro/runtime/server/render/common.js";
 
+import { isContentInstance, isImageMetadata } from "./util/typeCheck";
+
 import type { FullContentMarkerDataEntry } from "./ContentMarker";
+import type { StorySectionFrontmatter, SidebarSectionFrontmatter, AsyncDefaultLoader, ContentInstance } from "./util/types/types.ts";
 
 const { specs, markerData } = Astro.props as {
   specs: StorySectionFrontmatter[];
   markerData: Array<FullContentMarkerDataEntry>;
 };
 
-// console.log("markerData:", markerData)
 const imageLoaders = import.meta.glob<{ default: ImageMetadata }>(
   "/public/images/story/sidebar/*.{jpeg,jpg,png,gif}"
 );
 
-// const contentInstances = import.meta.glob<
-//   MDXInstance<SidebarSectionFrontmatter>|MDXInstance<SidebarSectionFrontmatter>
-// >("/src/pages/story/sidebar/*.{md,mdx}", { eager: true });
 
 const contentLoaders = import.meta.glob<
   | MDXInstance<SidebarSectionFrontmatter>
@@ -34,10 +32,7 @@ const contentLoaders = import.meta.glob<
 // TODO: Populate sidebar and align with StorySections
 // TODO: Prepare for animation/pinning choreography
 
-type ContentInstance =
-  | MarkdownInstance<StorySectionFrontmatter>
-  | MDXInstance<SidebarSectionFrontmatter>;
-type ImageLoader = () => Promise<{ default: ImageMetadata }>;
+type ImageLoader = AsyncDefaultLoader<ImageMetadata>;
 
 type SidebarSectionSpec1 = {
   sectionId: string;
@@ -47,7 +42,7 @@ type SidebarSectionSpec1 = {
 type SidebarSectionSpec2 = {
   sectionId: string;
   markerId: string;
-  contentInstance: ContentInstance;
+  contentInstance: ContentInstance<SidebarSectionFrontmatter>;
 };
 type SidebarSectionSpec3 = {
   sectionId: string;
@@ -63,7 +58,7 @@ type SidebarSectionSpec =
 type SidebarSectionSpecArg = {
   sectionId: string;
   contentElem?: Element;
-  contentInstance?: ContentInstance;
+  contentInstance?: ContentInstance<SidebarSectionFrontmatter>;
   imageLoader?: ImageLoader;
   markerId: string;
 };
@@ -89,20 +84,13 @@ function getMarkdownLoader(fn: string) {
   fpath += "x";
   if (fpath in contentLoaders) return contentLoaders[fpath];
 }
-function isContentInstance(x: any): x is ContentInstance {
-  return x !== undefined && "Content" in x;
-}
-function isImageMetadata(
-  x: any //ImageMetadata | MarkdownInstance<any> | MDXInstance<any>
-): x is ImageMetadata {
-  return "src" in x && "width" in x && "height" in x && "format" in x;
-}
+
 
 // console.log("PROPS:", Astro.props, markerData);
 const sidebarItemSpecs = (
   await Promise.allSettled(
     markerData.map(async (arr) => {
-      let result: undefined | ContentInstance | ImageLoader;
+      let result: undefined | ContentInstance<SidebarSectionFrontmatter> | ImageLoader;
       const markerId = arr[0];
       const sectionId = arr[1][0].frontmatter.id;
       const fn = arr[1][2];
@@ -131,12 +119,14 @@ const sidebarItemSpecs = (
         }
         if (isContentInstance(result)) {
           return {
-            sectionId, markerId,
+            sectionId,
+            markerId,
             contentInstance: result,
           } as SidebarSectionSpec2;
         } else if (typeof result === "function") {
           return {
-            sectionId, markerId,
+            sectionId,
+            markerId,
             imageLoader: result,
           } as SidebarSectionSpec3;
         } else {
@@ -145,7 +135,8 @@ const sidebarItemSpecs = (
       } else {
         // Element
         return {
-          sectionId, markerId,
+          sectionId,
+          markerId,
           contentElem: fn,
         } as SidebarSectionSpec1;
       }
@@ -155,70 +146,6 @@ const sidebarItemSpecs = (
   .map((result) => (result.status === "fulfilled" ? result.value : null))
   .filter((x) => x !== null);
 
-// const sidebarSectionSpecs: (null | SidebarSectionSpec)[] = specs.map((spec) => {
-//   if (spec.sideContent) {
-//     let contentPath = "";
-//     let sourcePath: string | null = null;
-//     // TODO: Proper exception throwing
-//     switch (typeof spec.sideContent) {
-//       case "boolean": // Use section ID to find corresponding file
-//         sourcePath = spec.id;
-//       case "string": // Name of file (without extension)
-//         sourcePath = sourcePath ?? spec.sideContent;
-//         if (sourcePath in contentInstances) {
-//           contentPath = sourcePath;
-//         } else if (
-//           (contentPath = `/pages/story/sidebar/${sourcePath}.md`) in
-//           contentInstances
-//         ) {
-//         } else if (
-//           (contentPath = `/pages/story/sidebar/${sourcePath}.mdx`) in
-//           contentInstances
-//         ) {
-//         } else {
-//           throw "Cannot find section";
-//         }
-//         return {
-//           sectionId: spec.id,
-//           contentInstance: contentInstances[contentPath],
-//         } as SidebarSectionSpec2;
-//       default: // Element
-//         return {
-//           sectionId: spec.id,
-//           contentElem: spec.sideContent,
-//         } as SidebarSectionSpec1;
-//     }
-//   } else if (spec.sideImage) {
-//     let path = spec.sideImage;
-//     if (!(path in imageLoaders)) {
-//       // Not an absolute path
-//       const prePath = "/public/images/story/sidebar/" + path;
-//       if (path.match(/\.(?:jpe?g|png|gif)$/)) {
-//         // Has an extension
-//         path = prePath;
-//       } else {
-//         // No extension
-//         if (
-//           !(
-//             (path = prePath + ".jpeg") in imageLoaders ||
-//             (path = prePath + ".jpg") in imageLoaders ||
-//             (path = prePath + ".png") in imageLoaders ||
-//             (path = prePath + ".gif") in imageLoaders
-//           )
-//         ) {
-//           throw "Cannot find sidebar image";
-//         }
-//       }
-//     }
-//     return {
-//       sectionId: spec.id,
-//       imageLoader: imageLoaders[path],
-//     } as SidebarSectionSpec3;
-//   }
-//   return null;
-// });
-
-// console.log("Sidebar specs", sidebarItemSpecs);
 ---
 
 <div class="story-sidebar">

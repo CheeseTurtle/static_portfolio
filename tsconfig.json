@@ -5,11 +5,29 @@
     "scopeDir": "First of: `tsconfig.json` \"rootDir\" if specified, directory containing `tsconfig.json`, or cwd if no `tsconfig.json` is loaded.",
     "typeCheck": true,
     "compilerOptions": {
-      "diagnostics": true
-    }
+      "diagnostics": true,
+      // "inlineSourceMap": false,
+      // "inlineSources": false,
+      // "sourceMap": true,
+      // "declarationMap": true,
+      // "watchFile": "useFsEvents",
+      // "watchDirectory": "useFsEvents",
+      // // "types": [],
+      // "typeRoots": ["src/components/story/util/types"]
+      // // "watch": true
+    },
   },
+  // "typeAcquisition": {
+  //   "enable": true,
+  //   "exclude": []
+  // },
+  // "mdx": {
+  //   "checkMdx": true,
+  //   // "plugins": []
+  // },
   "include": [
     ".astro/types.d.ts",
+    "dev/**/*",
     "src/**/*"
   ],
   "exclude": [
@@ -17,9 +35,32 @@
     "node_modules"
   ],
   "compilerOptions": {
+    "typeRoots": [
+      "src/components/story/util/types"
+    ],
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
     "checkJs": true,
+    // "allowJs": true,
     "diagnostics": true,
+    // "alwaysStrict": true,
+    // "declarationDir": ".decl",
+    // "declaration": true,
+    // "declarationMap": true,
+    // "disableReferencedProjectLoad": false,
+    // "disableSolutionSearching": false,
+    // "emitBOM": false,
+    // "emitDecoratorMetadata": false,
+    // "erasableSyntaxOnly": false,
+    // "esModuleInterop": false,
+    // "exactOptionalPropertyTypes": false,
+    // "generateCpuProfile": "profile.cpuprofile",
+    // "pretty": true,
+    // "resolveJsonModule": false,
+    // "resolvePackageJsonExports": false,
+    // "resolvePackageJsonImports": false,
+    // "importHelpers": false,
+    // "watch": true,
+    // "assumeChangesOnlyAffectDirectDependencies": false,
   }
 }

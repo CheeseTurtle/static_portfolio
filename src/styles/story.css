@@ -5,24 +5,6 @@
         text-decoration: 2px solid underline;
         text-align: center;
     }
-    /* h1 {
-        font-size: 2rem;
-    }
-    h2 {
-        font-size: 1.8rem;
-    }
-    h3 {
-        font-size: 1rem; 
-    }
-    h4 {
-        font-size: 1rem;
-    }
-    h5 {
-        font-size: 0.9rem;
-    } 
-    h6 {
-        font-size: 0.8rem;
-    }*/
 }
 
 
@@ -31,25 +13,11 @@
 
 .story-layout header {
     position: fixed;
-    /* bottom: -100%; */
-    /* background: none; */
-
-    /* &, & * {
-        background: transparent !important;
-        background-color: transparent !important;
-        opacity: 0;
-    } */
 }
-
-/* .story-layout footer {
-    display: none;
-} */
 
 /************* TITLE ****************************/
 
-.story .header-space {
-    
-}
+/* .story .header-space {} */
 
 .story-title {
     display: flex;
@@ -72,21 +40,13 @@
 
 .story.immersive {
 
-    & .story-scroll-content {
+    /* & .story-scroll-content {
         
-    }
+    } */
     & .story-main {
         padding: 0;
         background-color: black;
         scroll-padding-top: 0;
-
-        & .story-sidebar {
-
-        }
-
-        & .story-sections {
-
-        }
     }
 }
 
@@ -95,9 +55,6 @@
     height: 100lvh;
     display: none;
     overflow: hidden;
-    /* &.blur-circle {
-        display: none;
-    } */
 }
 
 
@@ -109,17 +66,14 @@
 }
 
 .story-layout .body-content {
+    position: absolute;
     overflow: hidden;
-    min-height: 100svh;
-    /* height: 100vh; */
-    /* position: absolute;  */
+    /* min-height: 100svh; */
+    height: 100vh;
+    width: 100vw;
 }
 
 .story {
-    position: sticky;
-    /* width: 100vw;
-    height: 100vw; */
-    /* width: 100vw; height: 100vh; */
     width: 100%; height: 100%;
     top: 0; left: 0; bottom: 0; right: 0;
     padding: 0; margin: 0;
@@ -127,32 +81,27 @@
 
 /* Desktop */
 @media screen and (width>=60rem) {
+    /* .story-scroll-content {} */
+
     .story-main {
-        /* padding: 0; */
-        /* transition-property: padding, background-color; */
-        /* transition-duration: 400ms; */
         transition: 
             padding 400ms, 
             background-color 500ms;
-
-        /* position: relative; */
-        /* position: absolute; */
         display: flex;
         flex-direction: row;
-        /* height: 100svh; width: 100vw; */
-        width: 100%; height: fit-content;
-        top: 0; left: 0; bottom: 0; right: 0;
+        width: 100%; 
+        /* height: 100vh; */
+        height: fit-content;
+        flex-grow: 0;
+        flex-shrink: 0;
+        /* top: 0; left: 0; bottom: 0; right: 0; */
         padding: 0; margin: 0;
         flex-wrap: nowrap;
-        /* align-items: stretch; */
         align-items: flex-start;
-        /* justify-items: space-between; */
         justify-items: center;
         justify-content: space-around;
-        /* padding: 6rem calc(min(8rem,5vw)); */
         padding: 0 calc(min(8rem, 5vw));
         gap: 4vw;
-        /* scroll-padding-top: 16rem; */
     }
 }
 
@@ -184,27 +133,19 @@
 }
 
 .story-section {
-    /* display: inline-flex;
-    flex-direction: column; */
-    /* display: block; */
     color: white;
-    /* background-color: rgba(0,0,  0,0.7); */
     clear: both;
-    /* outline: 8px solid lime !important; */
     outline-offset: -8px;
 }
 
 .story-section .story-subsection {
     min-height: 100vh;
-
-
 }
 
 .story-sections-end {
     display: block;
     height: 10vh;
     outline: 10px solid red;
-
 }
 
 .story-section:first-child h2:first-of-type {
@@ -311,21 +252,17 @@
     top: 50%;
     opacity: 0;
     visibility: hidden;
-    overflow: visible;
+    /* overflow: visible; */
 
     display: flex;
     height: 100%;
     width: auto;
     padding: 2vmin;
-    /* align-items: center; */
     justify-content: center;
     align-content: center;
-    /* align-items: stretch;
-    justify-items: stretch; */
 }
 
 .story-sidebar-image {
-    /* backface-visibility: hidden; */
     justify-items: center;
     align-items: center;
     max-height: 100%;
@@ -346,10 +283,6 @@
 /* .story-sidebar-elem {
 
 } */
-
-
-
-
 
 
 

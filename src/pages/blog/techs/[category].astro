@@ -11,12 +11,12 @@ interface Frontmatter {
   tags: string[];
   image: string;
 }
-export async function getStaticPaths(): Promise<
+export async function getStaticPaths(): (Promise<
   Array<{
     params: { category: string };
     props: { posts: MarkdownInstance<Frontmatter>[] };
   }>
-> {
+>) {
   // const allPosts: MarkdownInstance<Frontmatter>[] = await Astro.glob<Frontmatter>("../posts/*.md");
   const allPostsRecord = import.meta.glob<
     MarkdownInstance<Frontmatter>

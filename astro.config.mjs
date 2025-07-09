@@ -5,6 +5,7 @@ import preact from "@astrojs/preact";
 import sitemap from "@astrojs/sitemap"
 import icon from "astro-icon";
 import mdx from "@astrojs/mdx";
+import astro from "@astrojs/vite-plugin-astro";
 
 // https://astro.build/config
 export default defineConfig({
@@ -13,8 +14,8 @@ export default defineConfig({
   experimental: {
     // clientPrerender: true,
     // headingIdCompat: true,
-    liveContentCollections: false,
-    preserveScriptOrder: undefined,
+    // liveContentCollections: false,
+    // preserveScriptOrder: undefined,
     contentIntellisense: true,
   },
   integrations: [
@@ -38,7 +39,7 @@ export default defineConfig({
     }
   },
   vite: {
-    plugins: [/** @type {PluginOption} */ tailwindcss()],
+    plugins: [/** @type {PluginOption} */ tailwindcss(), astro()],
     // esbuild: {
     //   target: "es2018"
     // },
@@ -46,25 +47,25 @@ export default defineConfig({
       open: false,
       strictPort: true,
     },
-    build: {
-      // commonjsOptions: {
-      // },
-      // minify: false,
-      // watch: {
-      //   chokidar: {
-      //   },
-      //   // clearScreen: false,
-      //   exclude: [
-      //     "node_modules/**",
-      //     ".github/**",
-      //     ".vscode/**",
-      //     ".astro/**",
-      //   ],
-      //   include: [
-      //   ],
-      //   buildDelay: 500,
-      // }
-    },
+    // build: {
+    //   // commonjsOptions: {
+    //   // },
+    //   // minify: false,
+    //   // watch: {
+    //   //   chokidar: {
+    //   //   },
+    //   //   // clearScreen: false,
+    //   //   exclude: [
+    //   //     "node_modules/**",
+    //   //     ".github/**",
+    //   //     ".vscode/**",
+    //   //     ".astro/**",
+    //   //   ],
+    //   //   include: [
+    //   //   ],
+    //   //   buildDelay: 500,
+    //   // }
+    // },
     // optimizeDeps: {
 
     // }

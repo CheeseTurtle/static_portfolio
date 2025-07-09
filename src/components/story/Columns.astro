@@ -3,6 +3,8 @@ import Image from "astro/components/Image.astro";
 import type { AstroComponentInstance } from "astro/runtime/server/index.js";
 import type { ComponentSlotValue } from "astro/runtime/server/render/slot.js";
 
+import {isImageMetadata} from "./util/typeCheck";
+
 type ColumnsProps = {
   image?: string;
   right?: boolean|string;
@@ -21,17 +23,6 @@ const hasDefault = Astro.slots.has("default");
 type ImageGetterResult = { default: ImageMetadata };
 // type ImageLoader = () => ImageGetterResult;
 
-function isImageMetadata(value: unknown): value is ImageMetadata {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "src" in value &&
-    "width" in value &&
-    "format" in value &&
-    "orientation" in value &&
-    "height" in value
-  );
-}
 
 // type CreateInfo = {
 //   imageElem?: AstroComponentInstance;

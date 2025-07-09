@@ -46,29 +46,41 @@ type Props = {
 // };
 
 
+
+
 export default function StoryAnimator({sections, markers}: Props) {
-
     useEffect(() => {
-        console.log("STORY ANIMATOR COMPONENT", sections);
+        // console.log("STORY ANIMATOR COMPONENT", sections);
         
-        const scroller = document.querySelector('.story')!;
-        // Set up StorySidebar
-        gsap.defaults({overwrite: 'auto'});
+        const header = document.querySelector('header')!;
+        const headerSpace = document.querySelector('.header-space')!;
+        const footer = document.querySelector('footer')!;
+        const storyElem = document.querySelector('.story')!;
+        const storyTitle = document.querySelector('.story-title')!;
+        const storyMain = document.querySelector('.story-main')!;
 
+        const sectionElems: HTMLElement[] = gsap.utils.toArray('.story-section');
+        const starts = sectionElems.map(x=>x.offsetTop);
+
+        const storyEnd = document.querySelector('.story-sections-end')!;
+
+        const storySidebar = document.querySelector('.story-sidebar')!;
+        
+        const scroller = storyElem;
+        const contentMarkers = gsap.utils.toArray<ContentMarkerElement>(".content-marker");
+        console.log("Content markers: ", contentMarkers);
+        
+        // Set up defaults
+        gsap.defaults({overwrite: 'auto'});
         ScrollTrigger.defaults({
             scroller: scroller
         })
 
         gsap.set('.story-sidebar > *', {xPercent: -50, yPercent: -50});
-
-        const contentMarkers = gsap.utils.toArray<ContentMarkerElement>(".content-marker");
         
-        const sidebar = document.querySelector('.story-sidebar')!;
-        
-        console.log("Content markers: ", contentMarkers);
         contentMarkers.forEach((marker, i)=>{
             console.log(marker, markers[i])
-            marker.content = sidebar.querySelector(`.story-sidebar-item[data-marker-id="${markers[i][0]}"]`);
+            marker.content = storySidebar.querySelector(`.story-sidebar-item[data-marker-id="${markers[i][0]}"]`);
             if(marker.content === null) return;
             
             if(marker.content.classList.contains('sidebar-image')) {
@@ -92,8 +104,6 @@ export default function StoryAnimator({sections, markers}: Props) {
         });
 
         
-        const sectionElems: HTMLElement[] = gsap.utils.toArray('.story-section');
-        const starts = sectionElems.map(x=>x.offsetTop);
 
         let refreshTimeout: NodeJS.Timeout|undefined = undefined;
         function safeRefresh() {
@@ -108,7 +118,6 @@ export default function StoryAnimator({sections, markers}: Props) {
         }
 
         let first_ = true;
-
         let lastContent: ContentMarkerContentElement|null = null;
         function getCurrentSection(self: ScrollTrigger, first=first_) {
             first_ = false;
@@ -142,67 +151,64 @@ export default function StoryAnimator({sections, markers}: Props) {
             }            
         }
 
-        const headerSpace = document.querySelector('.header-space')!;
-        const footer = document.querySelector('footer')!;
-        const storyElem = document.querySelector('.story')!;
-        const storyMain = document.querySelector('.story-main')!;
-        const storySidebar = document.querySelector('.story-sidebar')!;
-        const storyTitle = document.querySelector('.story-title')!;
-        const header = document.querySelector('header')!;
-        const storyEnd = document.querySelector('.story-sections-end')!;
         
-        storyMain.addEventListener('transitionend' as keyof ElementEventMap, ((evt: Event) =>{
-            if((evt as TransitionEvent).propertyName !== 'padding-right') {
-                return;
-            }
-            safeRefresh();
-        }));
-        // Set up ScrollTrigger
-
+        
         const ST = ScrollTrigger.create({
-            trigger: storyTitle,
+            scroller: storyElem,
+            trigger: storyTitle ,
             start: 'bottom top',
-            endTrigger: footer,
+            endTrigger: storyEnd,
             end: 'top bottom',
-           
             onUpdate: getCurrentSection, // TODO: Debounce/defer
-            pin: [storySidebar, storyMain],
-            pinSpacing: false,
-            pinSpacer: undefined,
+            pin: storySidebar,
+            // pinSpacing: false,
+            // pinSpacer: undefined,
             // pinType: "fixed",
             // markers: true,
-            id: "main",
-
-            toggleClass: {
-                targets: [storyElem],
-                className: 'immersive'
-            },
-            onToggle: (self) => {
-                // storyElem.classList.toggle('immersive', self.isActive);
-                gsap.delayedCall(1, safeRefresh);
-            }
+            id: "pin-main"
         });
 
 
+        /* ***************** IMMERSION ********************* */
 
-        const media = window.matchMedia("screen and (max-width: 60rem)");
-        function checkSTState() {
-            if(media.matches) ST.disable();
-        }
-        
-        ScrollTrigger.addEventListener("refreshInit", checkSTState);
+        // ScrollTrigger.create({
+        //     id: "immerse",
+        //     toggleClass: {
+        //         targets: [storyElem],
+        //         className: 'immersive'
+        //     },
+        //     onToggle: (self) => {
+        //         // storyElem.classList.toggle('immersive', self.isActive);
+        //         gsap.delayedCall(1, safeRefresh);
+        //     }
+        // })
 
-        // Set up FloatingNav scrolling 
+        // storyMain.addEventListener('transitionend' as keyof ElementEventMap, ((evt: Event) =>{
+        //     if((evt as TransitionEvent).propertyName !== 'padding-right') {
+        //         return;
+        //     }
+        //     safeRefresh();
+        // }));
 
-        const links = gsap.utils.toArray<HTMLAnchorElement>("nav.floating-nav a");
-        
+
+        /* **************** SECTIONS *********************** */
+        // const sectionScrollTriggers = sectionElems.map<ScrollTrigger>((el, i, _arr)=>{
+        //     return ScrollTrigger.create({
+        //         trigger: el,
+
+
+        //     });
+        // });
+
+        // /* ************ NAVIGATION ***********/
+
+        const links = gsap.utils.toArray<HTMLAnchorElement>("nav.floating-nav a");        
         function setActive(link: HTMLAnchorElement) {
             links.forEach((el)=>{
                 el.classList.remove("active");
             });
             link.classList.add("active");
         }
-
         links.forEach(((a, i, _)=>{
             const href = a.getAttribute("href")!;
             // if(href === null) throw "Anchor without href";
@@ -210,6 +216,7 @@ export default function StoryAnimator({sections, markers}: Props) {
             const linkST = ScrollTrigger.create({
                 trigger: elem, start: "top top"
             });
+            // Create ScrollTrigger for content marker
             ScrollTrigger.create({
                 trigger: elem,
                 start: "top center",
@@ -219,10 +226,16 @@ export default function StoryAnimator({sections, markers}: Props) {
             });
             a.addEventListener('click', e=>{
                 e.preventDefault();
-                gsap.to(window, {duration: 1, scrollTo: linkST.start, overwrite: "auto"});
+                gsap.to(scroller, {duration: 1, scrollTo: linkST.start, overwrite: "auto"});
             });
         }));        
 
+
+        
+        
+        
+        // /* ***************** HEADER ******************** */
+        
         // let direction = 0;
         const headerHideState = {
             deltaThreshold: 0.01*window.innerHeight,
@@ -230,20 +243,18 @@ export default function StoryAnimator({sections, markers}: Props) {
             lastDirection: 0,
             thresholdLocation: headerSpace.scrollTop + 0.5*headerSpace.scrollHeight
         };
-
         const hideHeader = gsap.to(header, {
             paused: true,
             yPercent: -100,
             autoAlpha: 0
         });
-
         const showHeader = gsap.to(header, {
             paused: true,
             yPercent: 0,
             autoAlpha: 1
         });
 
-
+        
         const headerTimeline = gsap.timeline();
         headerTimeline.fromTo(header, 
             {yPercent: 0, autoAlpha: 1}, 
@@ -266,10 +277,21 @@ export default function StoryAnimator({sections, markers}: Props) {
                     }
                     headerHideState.lastDirection = self.direction; 
                     // if(deactivate.isActive())
-                        
+                    
                 }
             }),
         });
+        
+
+
+
+        /* *************** RESIZING ****************** */
+
+        const media = window.matchMedia("screen and (max-width: 60rem)");
+        function checkSTState() {
+            if(media.matches) ST.disable();
+        }
+        ScrollTrigger.addEventListener("refreshInit", checkSTState);
 
 
         let resizeTimeout: ReturnType<typeof setTimeout>|null = null;
@@ -281,6 +303,10 @@ export default function StoryAnimator({sections, markers}: Props) {
             }, 250);
         }
         window.addEventListener("resize", onResize);
+
+
+
+        /* INITIALIZATION */
 
         getCurrentSection(ST);
 
