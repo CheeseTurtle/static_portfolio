@@ -9,7 +9,7 @@ import mdx from "@astrojs/mdx";
 // https://astro.build/config
 export default defineConfig({
   // prefetch: true,
-  site: "https://cheeseturtle.github.io/static_profile",
+  site: "https://cheeseturtle.github.io/static_profile/",
   // experimental: {
   //   // clientPrerender: true,
   //   // headingIdCompat: true,
