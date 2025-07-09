@@ -65,6 +65,10 @@ jobs:
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
+      - name: Verify base_path and origin
+        run: |
+          echo "base_path=${{ steps.pages.outputs.base_path }}"
+          echo "origin=${{ steps.pages.outputs.origin }}"
       - name: Install dependencies
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
         working-directory: ${{ env.BUILD_PATH }}
