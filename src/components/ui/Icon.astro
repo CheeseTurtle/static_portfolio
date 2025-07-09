@@ -67,7 +67,7 @@ if (iconName !== undefined) {
     !isRaster
   ) {
     throw new Error(
-      `Icon name "${iconName}" (from "${name}") does not appear in 'rasterNames'!\n${rasterNames}`,
+      `Icon name "${iconName}" (from "${name}") does not appear in 'rasterNames'!\n${JSON.stringify(rasterNames, null, 2)}`,
       {
         cause: rasterNames,
       }
@@ -83,7 +83,7 @@ if (
   !isRaster
 ) {
   throw new Error(
-    `Icon name "${iconName}" (from "${name}") does not appear in 'rasterNames'!\n${rasterNames}`,
+    `Icon name "${iconName}" (from "${name}") does not appear in 'rasterNames'!\n${JSON.stringify(rasterNames, null, 2)}`,
     {
       cause: rasterNames,
     }
