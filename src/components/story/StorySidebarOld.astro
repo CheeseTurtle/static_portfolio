@@ -15,7 +15,7 @@ const imageLoaders = import.meta.glob<{ default: ImageMetadata }>(
 );
 
 const contentInstances = import.meta.glob<MDXInstance<SidebarSectionFrontmatter>>(
-  "./src/pages/story/sidebar/*.mdx", {eager: true}
+  "/src/pages/story/sidebar/*.mdx", {eager: true}
 );
 
 // TODO: Match sections with imageLoaders and/or content elements (slot, or load from .md(x)?)

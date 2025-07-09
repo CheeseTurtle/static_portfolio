@@ -13,7 +13,7 @@ export default function loadSections() {
   const allSectionsRecord = import.meta.glob<
     | MarkdownInstance<StorySectionFrontmatter>
     | MDXInstance<StorySectionFrontmatter>
-  >("./src/pages/story/sections/*.{md,mdx}", { eager: true });
+  >("/src/pages/story/sections/*.{md,mdx}", { eager: true });
   const allSections = Object.values(allSectionsRecord);
   // console.log("HELLO");
   function parseDate(x: string): Date {

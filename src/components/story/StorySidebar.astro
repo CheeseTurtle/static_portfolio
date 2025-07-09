@@ -25,7 +25,7 @@ const imageLoaders = import.meta.glob<{ default: ImageMetadata }>(
 const contentLoaders = import.meta.glob<
   | MDXInstance<SidebarSectionFrontmatter>
   | MDXInstance<SidebarSectionFrontmatter>
->("./src/pages/story/sidebar/*.{md,mdx}", { eager: false });
+>("/src/pages/story/sidebar/*.{md,mdx}", { eager: false });
 
 // TODO: Match sections with imageLoaders and/or content elements (slot, or load from .md(x)?)
 
@@ -74,10 +74,10 @@ function getImageLoader(fn: string) {
 }
 
 function getMarkdownLoader(fn: string) {
-  // const globResult = import.meta.glob<ContentInstance>("./src/pages/story/sidebar/" + fn);
+  // const globResult = import.meta.glob<ContentInstance>("/src/pages/story/sidebar/" + fn);
   // for (const key in globResult) return globResult[key];
   if (fn in contentLoaders) return contentLoaders[fn];
-  const prepath = "./src/pages/story/sidebar/" + fn;
+  const prepath = "/src/pages/story/sidebar/" + fn;
   if (prepath in contentLoaders) return contentLoaders[prepath];
   let fpath = prepath + ".md";
   if (fpath in contentLoaders) return contentLoaders[fpath];
