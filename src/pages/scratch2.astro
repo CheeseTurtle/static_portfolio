@@ -2,10 +2,11 @@
 import ScriptElem from "../../dev/components/ScriptElem.tsx";
 import Layout from "../layouts/Layout.astro";
 import Lorem from "../../dev/components/Lorem.astro";
+import scratchCSS from "../styles/scratch2.css"
 ---
 
 <Layout storyPage="true">
-  <link rel="stylesheet" href="/src/styles/scratch2.css" slot="style" />
+  <link rel="stylesheet" href={scratchCSS} slot="style" />
 
   <div id="wrapper">
     <div id="sections">

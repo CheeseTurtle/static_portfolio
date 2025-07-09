@@ -1,5 +1,7 @@
 ---
-// import "../styles/global.css";
+import "../styles/global.css";
+import storyCSS from "../styles/story.css";
+
 import Header from "../components/layout/Header.astro";
 import Footer from "../components/layout/Footer.astro";
 import SpeedInsights from "@vercel/speed-insights/astro";
@@ -83,10 +85,10 @@ console.log(Astro.slots);
 
     <!-- Styles -->
     <slot name="style" />
-    <link rel="stylesheet" href="/src/styles/global.css" type="text/css" />
+    <!-- <link rel="stylesheet" href="/src/styles/global.css" type="text/css" /> -->
     {
       storyPage && (
-        <link rel="stylesheet" href="/src/styles/story.css" type="text/css" />
+        <link rel="stylesheet" href={storyCSS} type="text/css" />
       )
     }
 
