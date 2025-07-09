@@ -68,16 +68,9 @@ jobs:
       - name: Install dependencies
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
         working-directory: ${{ env.BUILD_PATH }}
-      - name: Check Node version
-        run: node -v
-      - name: Check npm version
-        run: npm -v
-      - name: Check astro version
-        run: node_modules/.bin/astro --version
-      - name: Check if astro is globally installed
-        run: command -v astro || echo "astro not globally available"
-      - name: Check Astro binary location
-        run: ls -l node_modules/.bin/astro
+      - name: List icons directory
+        run: ls -l src/icons
+        working-directory: ${{ env.BUILD_PATH }}
       - name: Build with Astro
         run: |
           ${{ steps.detect-package-manager.outputs.runner }} astro build \
