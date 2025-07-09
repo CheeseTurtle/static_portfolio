@@ -56,7 +56,7 @@ let [setName, iconName] = (name as string).split(":");
 
 const isRaster = iconName in rasterNames;
 
-if(iconName) {
+if(iconName !== undefined) {
   // throw new Error(`iconName is falsy ("${name}", "${setName}", "${iconName}")`);
 
   if((iconName.endsWith(".jpg")||iconName.endsWith(".jpeg")||iconName.endsWith(".png")||iconName.endsWith(".gif")) && !isRaster) {
