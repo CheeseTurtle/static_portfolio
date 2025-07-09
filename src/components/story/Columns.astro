@@ -1,10 +1,10 @@
 ---
-// import {Image} from "astro:assets";
+import {Image} from "astro:assets";
 import type { AstroComponentInstance } from "astro/runtime/server/index.js";
 import type { ComponentSlotValue } from "astro/runtime/server/render/slot.js";
 
 // import {isImageMetadata} from "./util/typeCheck";
-// import getCreateInfo from "./util/loadImageMetadata";
+import getCreateInfo from "./util/loadImageMetadata";
 
 type ColumnsProps = {
   image?: string;
@@ -22,15 +22,15 @@ const { default: default_, image: imageSlot } = Astro.slots as ColumnsSlots;
 const hasDefault = Astro.slots.has("default");
 
 
-// const createInfo = getCreateInfo(image, imageSlot);
+const createInfo = await getCreateInfo(image, imageSlot);
 
 
 ---
 
 <div class="two-column-split">
-  <!-- {<div class={"column image " + (right && right!=='false' ? "right" : "left")}>
-    {(createInfo.imageElem ? imageElem : <Image src={createInfo.imageMetadata} alt="(TODO)"></Image>)}
-  </div>} -->
+  {<div class={"column image " + (right && right!=='false' ? "right" : "left")}>
+    {(createInfo.imageElem ? createInfo.imageElem : <Image src={createInfo.imageMetadata} alt="(TODO)"></Image>)}
+  </div>}
 
   {
     hasDefault && (
