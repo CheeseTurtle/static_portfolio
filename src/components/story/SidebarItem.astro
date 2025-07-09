@@ -2,7 +2,7 @@
 import type { AstroComponentInstance } from "astro/runtime/server/index.js";
 import type { MDXInstance, MarkdownInstance } from "astro";
 import type { SectionContentInstance } from "./types";
-import Image from "astro/components/Image.astro";
+import {Image} from "astro:assets";
 
 const { sectionId, markerId, instance, image, elem } = Astro.props as {
   sectionId: string;
@@ -12,29 +12,54 @@ const { sectionId, markerId, instance, image, elem } = Astro.props as {
   elem?: Element | AstroComponentInstance;
 };
 
-let content: Element | AstroComponentInstance;
+// let content: Element | AstroComponentInstance;
 
-let itemType: string;
+// let itemType: string;
+let metadata: ImageMetadata | undefined = undefined;
 
-if (elem != undefined) {
-  content = elem;
-  itemType = "element";
-} else if (instance != undefined) {
-  content = <instance.Content />;
-  itemType = "markdown";
+if (elem == undefined && instance == undefined) {
 } else if (image === undefined) {
   throw "Sidebar item cannot be empty";
 } else if (typeof image === "string") {
-  const metadata: ImageMetadata = await import(/* @vite-ignore */ image);
-  content = <Image src={metadata} alt="(TODO)"></Image>;
-  itemType = "image";
+  metadata = await import(/* @vite-ignore */ image);
+  // content = <Image src={metadata} alt="(TODO)"></Image>;
+  // itemType = "image";
 } else {
   // ImageMetadata
-  content = <Image src={image} alt="(TODO)"></Image>;
-  itemType = "image";
+  // content = <Image src={image} alt="(TODO)"></Image>;
+  metadata = image;
+  // itemType = "image";
 }
+
 ---
 
-<div class={`sidebar-item sidebar-${itemType}`} data-section-id={sectionId} data-marker-id={markerId}>
-  {content}
-</div>
+{
+  (() => {
+    let content: Element | AstroComponentInstance;
+
+    let itemType: string;
+
+    if (metadata !== undefined) {
+      content = <Image src={metadata} alt="(TODO)" />;
+      itemType = "image";
+    } else if (elem != undefined) {
+      content = elem;
+      itemType = "element";
+    } else if (instance != undefined) {
+      content = <instance.Content />;
+      itemType = "markdown";
+    } else if (image === undefined) {
+      throw "Sidebar item cannot be empty";
+    } else {
+      throw "Unknown sidebar item type";
+    }
+    return (
+      <div
+        class={`sidebar-item sidebar-${itemType}`}
+        data-section-id={sectionId}
+        data-marker-id={markerId}>
+        {content}
+      </div>
+    );
+  })()
+}

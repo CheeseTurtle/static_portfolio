@@ -22,19 +22,18 @@ import type { MarkdownInstance } from "astro";
 import { Component, Fragment, toChildArray, type ComponentChildren, type RenderableProps } from "preact";
 
 
-export class Columns extends Component {
-    render(props?: RenderableProps<any>,
-            state?: Readonly<any>,
-            context?: any) {
+// export class Columns extends Component {
+//     render(props?: RenderableProps<any>,
+//             state?: Readonly<any>,
+//             context?: any) {
         
-        if(props.turtle) {
+//         if(props.turtle) {
             
-        }
+//         }
         
-
-        return <Fragment></Fragment>
-    }
-}
+//         return <Fragment></Fragment>
+//     }
+// }
 
 // export default function StoryAnimator({sections, children}: Props) {
 //     useEffect(() => {

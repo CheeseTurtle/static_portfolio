@@ -2,10 +2,11 @@
 // import type { MarkdownInstance } from "astro";
 // import StorySection from "./StorySection.astro";
 import type { MDXInstance } from "astro";
-import SidebarSection from "./SidebarSection.astro";
-import Image from "astro/components/Image.astro";
-import type { Component } from "preact";
+// import SidebarSection from "./SidebarSection.astro";
+import {Image} from "astro:assets";
+// import type { Component } from "preact";
 import type { AstroComponentInstance } from "astro/runtime/server/index.js";
+import type { SidebarSectionFrontmatter, StorySectionFrontmatter } from "./util/types/types";
 
 const { specs } = Astro.props as { specs: StorySectionFrontmatter[] };
 

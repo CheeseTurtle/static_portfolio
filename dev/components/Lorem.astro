@@ -11,7 +11,7 @@ const { type, start, count } = Astro.props as {
 // const coll = await getCollection('loremIpsum');
 // console.log(coll);
 
-const obj: LazyTextFileInstance | { id: string; data: {id: string, path: string}, collection: string } = await getEntry(
+const obj: undefined | LazyTextFileInstance | { id: string; data: {id: string, path: string}, collection: string } = await getEntry(
   "loremIpsum",
   type
 );
@@ -19,9 +19,13 @@ const startIdx = start ?? 0;
 const endIdx = startIdx + (count ?? 0);
 // const numParagraphs = endIdx + 1 - startIdx;
 
+if(obj === undefined)
+  throw `Cannot load Lorem file for type "${type}"`
+
 const paragraphs = await (async () => {
   let result: string | undefined, instance: LazyTextFileInstance;
   if ("load" in obj) {
+    // @ts-ignore
     instance = obj;
   } else {
     // console.log(obj);

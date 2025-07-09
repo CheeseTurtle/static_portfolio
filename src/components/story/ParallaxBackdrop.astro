@@ -1,6 +1,7 @@
 ---
 // import Picture from "astro/components/Picture.astro";
 import ParallaxWindow from "./ParallaxWindow.astro";
+import type { ImageWindow, ImageWindowArgs, StorySectionFrontmatter } from "./util/types/types";
 
 // const { imageWindows } = Astro.props as { imageWindows: ImageWindowArgs[] };
 const { specs } = Astro.props as { specs: StorySectionFrontmatter[] };
@@ -17,7 +18,7 @@ const imageLoaders = import.meta.glob<{ default: ImageMetadata }>(
 
 const imageWindows: ImageWindowArgs[] = specs.flatMap((s) =>
   s.imageWindows
-    ? s.imageWindows.map((w, i, arr) => {
+    ? s.imageWindows.map((w: ImageWindow, i: number, arr: Array<ImageWindow>) => {
         return { sectionId: s.id, ...w } as ImageWindowArgs;
       }, s)
     : []

@@ -2,6 +2,7 @@ import type { MDXInstance } from "astro";
 import { Component, Fragment, type Attributes, type ComponentChildren, type Context, type Ref, type RenderableProps, type VNode } from "preact";
 import { useContext, useDebugValue, useEffect, useErrorBoundary, useId, useMemo } from "preact/hooks";
 import type {Node as VisitedNode} from "unist";
+import type { StorySectionFrontmatter } from "./util/types/types";
 
 interface PropsBase {
     // sectionId: string;
@@ -53,6 +54,8 @@ export default function ContentMarker(props: ContentMarkerProps, state?: Readonl
             
     //     // };
     // }, []);
+
+    
 
 
     function makeSpan(): VNode<HTMLSpanElement> {

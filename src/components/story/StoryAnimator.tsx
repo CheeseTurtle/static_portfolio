@@ -5,12 +5,12 @@
 // import ParallaxBackdrop from "../components/story/ParallaxBackdrop.astro";
 // import ParallaxWindow from "../components/story/ParallaxWindow.astro";
 
-import type Story from "./Story.astro";
-import type StorySection from "./StorySection.astro";
-import type SidebarSection from "./SidebarSection.astro";
-import type FloatingNav from "./FloatingNav.astro";
-import type ParallaxBackdrop from "./ParallaxBackdrop.astro";
-import type ParallaxWindow from "./ParallaxWindow.astro";
+// import type Story from "./Story.astro";
+// import type StorySection from "./StorySection.astro";
+// import type SidebarSection from "./SidebarSection.astro";
+// import type FloatingNav from "./FloatingNav.astro";
+// import type ParallaxBackdrop from "./ParallaxBackdrop.astro";
+// import type ParallaxWindow from "./ParallaxWindow.astro";
 
 import { gsap } from "gsap";
 import { GSDevTools } from "gsap/GSDevTools";
@@ -20,8 +20,8 @@ import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 // import { useEffect } from "preact/hooks";
 import { useCallback, useContext, useDebugValue, useEffect, useErrorBoundary, useId, useLayoutEffect, useMemo, useState } from "preact/hooks";
 
-import type { MarkdownInstance, MDXInstance } from "astro";
-import type {Node as VisitedNode} from "unist";
+// import type { MarkdownInstance, MDXInstance } from "astro";
+// import type {Node as VisitedNode} from "unist";
 import type { SectionContentInstance } from "./types";
 import type {ContentMarkerData, FullContentMarkerDataEntry, ContentMarkerDataEntry} from "./ContentMarker";
 
@@ -49,7 +49,7 @@ type Props = {
 
 
 export default function StoryAnimator({sections, markers}: Props) {
-    useEffect(() => {
+    useLayoutEffect(() => {
         // console.log("STORY ANIMATOR COMPONENT", sections);
         
         const header = document.querySelector('header')!;
