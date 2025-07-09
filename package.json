@@ -17,7 +17,7 @@
     "@tailwindcss/vite": "^4.1.8",
     "@vercel/speed-insights": "^1.2.0",
     "alpinejs": "^3.14.9",
-    "astro": "^5.10.2",
+      
     "astro-icon": "^1.1.5",
     "estree-util-visit": "^2.0.0",
     "gray-matter": "^4.0.3",

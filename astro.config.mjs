@@ -5,7 +5,6 @@ import preact from "@astrojs/preact";
 import sitemap from "@astrojs/sitemap"
 import icon from "astro-icon";
 import mdx from "@astrojs/mdx";
-import astro from "@astrojs/vite-plugin-astro";
 
 // https://astro.build/config
 export default defineConfig({
@@ -30,45 +29,16 @@ export default defineConfig({
         !page.includes("/story/sidebar"),
     }),
   ],
-  devToolbar: {
-    enabled: false,
-  },
-  server: {
-    watch: {
-      usePolling: true
-    }
-  },
+  // devToolbar: {
+  //   enabled: false,
+  // },
+  // server: {
+  //   watch: {
+  //     usePolling: true
+  //   }
+  // },
   vite: {
-    plugins: [/** @type {PluginOption} */ tailwindcss(), astro()],
-    // esbuild: {
-    //   target: "es2018"
-    // },
-    preview: {
-      open: false,
-      strictPort: true,
-    },
-    // build: {
-    //   // commonjsOptions: {
-    //   // },
-    //   // minify: false,
-    //   // watch: {
-    //   //   chokidar: {
-    //   //   },
-    //   //   // clearScreen: false,
-    //   //   exclude: [
-    //   //     "node_modules/**",
-    //   //     ".github/**",
-    //   //     ".vscode/**",
-    //   //     ".astro/**",
-    //   //   ],
-    //   //   include: [
-    //   //   ],
-    //   //   buildDelay: 500,
-    //   // }
-    // },
-    // optimizeDeps: {
-
-    // }
+    plugins: [tailwindcss()],
   },
   markdown: {
     shikiConfig: {
