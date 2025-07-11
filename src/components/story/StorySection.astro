@@ -21,16 +21,19 @@ const { frontmatter, ...data } =
 
 // const headings = data.getHeadings()
 
-
 // TODO: Prepare for animation/pinning choreography
 // TODO: Adjust if needed for nav headings
 // TODO: Figure out slots for custom Timeline
-
 ---
 
-<section class="story-section markdown" id={frontmatter.id} data-section-id={frontmatter.id}>
-  <h2>{frontmatter.title}</h2>
-  <data.Content></data.Content>
-  <slot />
+<section
+  class="story-section markdown"
+  id={frontmatter.id}
+  data-section-id={frontmatter.id}>
+  <div class='story-section-content'>
+    <h2>{frontmatter.title}</h2>
+    <data.Content />
+    <slot />
+  </div>
   <slot name="script" />
 </section>

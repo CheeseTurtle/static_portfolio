@@ -1,26 +1,60 @@
 ---
-import type { ImageWindowArgs } from "./util/types/types";
+import { Image } from "astro:assets";
+import type { ParallaxWindowArgs } from "./util/types/types";
+import type { DefaultObjectPromise } from "./util/types/types";
+import type { Loader } from "./util/types/types";
+import {isImageLoader} from "./util/typeCheck";
+import { getEntry } from "astro:content";
 
 const {
-  sectionId,
-  image,
-  x,
-  y,
-  windowWidth = "initial",
-  windowHeight,
-  imageWidth = "auto",
-  imageHeight,
-} = Astro.props as ImageWindowArgs;
+  sectionId, image
+  // sectionId,
+  // image,
+  // x,
+  // y,
+  // windowWidth = "initial",
+  // windowHeight,
+  // imageWidth = "auto",
+  // imageHeight,
+} = Astro.props as ParallaxWindowArgs; //ImageWindowArgs;
 
 // Parse windowWidth, windowHeight, imageWidth, imageHeight?
 // Set element id
 
 
+// image === null ? "" : typeof image === 'function' ? image() : image
+
+// const test: Loader<DefaultObjectPromise<ImageMetadata>> = () => new Promise((resolve, reject)=>{
+//   const data = {src: "", format: "jpg", height: 200, width: 200} as ImageMetadata;
+//   return {default: data};
+// });
+
+// const imageLoader = ((typeof image === 'string')
+//   ? await (async () => {
+//     const g = await getEntry('backdropImages', image);
+//     if(!g) throw `No backdrop images found matching "${image}"`;
+//     const entry = g?.data;
+//     return entry as Loader<DefaultObjectPromise<ImageMetadata>>;
+//   })()
+//   : image
+// );
+
+if(typeof image === 'string') {
+  throw "Not yet implemented";
+}
+
+
+// console.log('imageLoader:', image, sectionId);
 
 ---
 
 <div class="parallax-image-wrapper" data-section-id={sectionId}>
-  <img class="parallax-image" src={image} />
+  {
+    (image === null ?
+      <div class="parallax-image-null parallax-backdrop-item"></div>
+      : (<Image class="parallax-image parallax-backdrop-item" src={image()} alt={`Backdrop image for section "${sectionId}"`}/>)
+    )
+  }
 </div>
 
 <!--

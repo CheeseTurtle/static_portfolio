@@ -1,11 +1,139 @@
 {
   "version": "0.2.0",
+  // "compounds": [
+  //   {
+  //     "name": "Firefox Astro",
+  //     "configurations": [
+  //       {
+  //         "name": ""
+  //       }
+
+  //     ]
+  //   }
+  // ],
+  // "inputs": [
+  //   {
+  //     "id": ""
+  //     "type": "pickString",
+  //   },
+  // ],
   "configurations": [
     {
       "command": "./node_modules/.bin/astro dev",
       "name": "Development server",
       "request": "launch",
       "type": "node-terminal"
+    },
+    {
+      "name": "Firefox Launch Astro",
+      "type": "firefox",
+      "firefoxExecutable": "C:\\Program Files\\Firefox Developer Edition\\firefox.exe",
+      "firefoxArgs": [
+        "-P VSCode Dev",
+        // "--remote-debugging-port 6000",
+        "--start-debugger-server 6000"
+      ],
+      "request": "launch",
+      "suggestPathMappingWizard": true,
+      "pathMappings": [
+        {
+          "url": "http://localhost:4321/",
+          "path": "${webRoot}/"
+        }
+      ],
+      "webRoot": "${workspaceFolder}",
+      // "url": "https://localhost:4321/scratch",
+      "port": 6000,
+      // "tabFilter": "*",
+      "showConsoleCallLocation": true,
+      "liftAccessorsFromPrototypes": 0,
+      "internalConsoleOptions": "openOnFirstSessionStart",
+      "popupAutohideButton": false,
+      // "presentation": {
+      //   "hidden": false,
+      //   "group": "",
+      //   "order": 1
+      // },
+      "suppressMultipleSessionWarning": true,
+      // "preLaunchTask": "npm: astro"
+    },
+    {
+      "name": "Firefox Attach Astro",
+      "type": "firefox",
+      "firefoxExecutable": "C:\\Program Files\\Firefox Developer Edition\\firefox.exe",
+      "request": "attach",
+      "reloadOnAttach": true,
+      "reloadOnChange": {
+        "watch": "${workspaceFolder}/**/*.js",
+        "ignore": "**/node_modules/**"
+      },
+      "clearConsoleOnReload": false,
+      "host": "localhost",
+      "port": 6000,
+      "webRoot": "${workspaceFolder}",
+      "pathMappings": [
+        {
+          "url": "http://localhost:4321/",
+          "path": "${webRoot}/"
+        }
+      ],
+      // "internalConsoleOptions": "openOnFirstSessionStart",
+      // "enableCRAWorkaround": true,
+      // "liftAccessorsFromPrototypes": 0,
+      // "popupAutohideButton": false,
+      // "showConsoleCallLocation": true,
+      // "suggestPathMappingWizard": true,
+      // "suppressMultipleSessionWarning": true,
+      // "presentation": {
+      //   "hidden": false,
+      //   "group": "",
+      //   "order": 1
+      // },
+    },
+    {
+      "name": "Firefox Attach Scratch",
+      "type": "firefox",
+      "firefoxExecutable": "C:\\Program Files\\Firefox Developer Edition\\firefox.exe",
+      "request": "attach",
+      "reloadOnAttach": true,
+      "reloadOnChange": {
+        "watch": "${workspaceFolder}/**/*.js",
+        "ignore": "**/node_modules/**"
+      },
+      "clearConsoleOnReload": false,
+      "host": "localhost",
+      "port": 6000,
+      "webRoot": "${workspaceFolder}",
+      "pathMappings": [
+        {
+          "url": "http://localhost:4321/",
+          "path": "${webRoot}/"
+        }
+      ],
+      "url": "http://localhost:4321/scratch"
+    },
+    {
+      "name": "Firefox Launch Scratch",
+      "type": "firefox",
+      "firefoxExecutable": "C:\\Program Files\\Firefox Developer Edition\\firefox.exe",
+      "firefoxArgs": ["-P VSCode Dev", "--start-debugger-server 6000"], // "--remote-debugging-port 6000", 
+      "request": "launch",
+      "reloadOnAttach": true,
+      // "debugServer": 4711,
+      "reloadOnChange": {
+        "watch": "${workspaceFolder}/**/*.js",
+        "ignore": "**/node_modules/**"
+      },
+      "clearConsoleOnReload": false,
+      "port": 6000,
+      "webRoot": "${workspaceFolder}",
+      "pathMappings": [
+        {
+          "url": "http://localhost:4321/",
+          "path": "${webRoot}/"
+        }
+      ],
+      "url": "http://localhost:4321/scratch"
     }
   ]
 }

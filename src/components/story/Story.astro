@@ -1,5 +1,5 @@
 ---
-// import "../../styles/story.css";
+import "../../styles/story.css";
 
 import StorySection from "./StorySection.astro";
 import SidebarSection from "./SidebarSection.astro";
@@ -149,17 +149,19 @@ const contentMarkerData = await (async (sections) => {
   }
   return results;
 })(allSections.filter(isMdxInstance));
+
+
 ---
 
 <Fragment>
-  <!-- <ParallaxBackdrop specs={allFrontmatter} /> -->
-
+  
   <!-- This container has a FIXED HEIGHT -->
-  <div class="story overflow-y-auto h-screen">
+  <ParallaxBackdrop specs={allFrontmatter} />
+  <div class="story overflow-y-auto h-screen"> <!-- scroller -->
     <!-- (BEGIN FIXED HEIGHT CONTAINER CONTENTS) -->
-
+    
     <div class="story-scroll-content overflow-y-visible overflow-x-hidden">
-      <div class="header-space h-[15vh]"></div>
+      <div class="header-space h-[15vh]"></div> <!-- header-buffer -->
 
       <!-- <div class="story-expand"> -->
 
@@ -168,20 +170,20 @@ const contentMarkerData = await (async (sections) => {
       </div>
 
       <!-- This part will be pinned when the content goes full-screen / immersive? -->
-      <div class="story-main overflow-y-visible">
+      <div class="story-main overflow-y-visible"> <!-- wrapper -->
 
         <StorySidebar specs={allFrontmatter} markerData={contentMarkerData} />
 
-        <div id="story-sections" class="story-sections overflow-y-visible">
+        <div id="story-sections" class="story-sections overflow-y-visible"> <!-- right -->
           {allSections.map((section) => <StorySection {...section} />)}
           <div class="story-sections-end"></div>
         </div>
       </div>
 
       <!-- </div> -->
-
+      <div class="footer-buffer"></div>
       <Footer />
-    </div>
+    </div> <!-- end of story-scroll-content -->
 
     <!-- FloatingNav is fixed and does not affect layout -->
     <FloatingNav sections={allSections} />
@@ -192,6 +194,6 @@ const contentMarkerData = await (async (sections) => {
   <StoryAnimator
     sections={allSections}
     markers={contentMarkerData}
-    client:only
+    client:load
   />
 </Fragment>

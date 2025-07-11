@@ -12,7 +12,7 @@ import type {
   ComponentClass,
   ComponentConstructor,
   ComponentFactory} from "preact";
-import type { ContentInstance } from "./types/types";
+import type { ContentInstance, DefaultObjectPromise, Loader } from "./types/types";
 
 
 
@@ -40,9 +40,14 @@ export function isContentInstance(x: any): x is ContentInstance<any> {
 
 // TODO: Escape filename?
 // const regexp = RegExp("(?<=^|/)" + image + "(?:.(?<ext>jpe?g|png|gif))?$");
-// function isImageLoader(x: ImageMetadata | ImageLoader): x is ImageLoader {
-//   return typeof x === "function";
-// }
+export function isImageLoader(
+  x:
+    | ImageMetadata
+    | Loader<ImageMetadata | DefaultObjectPromise<ImageMetadata>>
+    | string
+): x is Loader<ImageMetadata | DefaultObjectPromise<ImageMetadata>> {
+  return typeof x === "function";
+}
 // async function wrapResult(x: ImageMetadata|ImageLoader): Promise<ImageMetadata|ImageLoader> {
 //   return x;
 //   // if(!isImageLoader(x)) return x;
@@ -58,4 +63,6 @@ export function isMdxInstance(
   // console.log("Is MDX Instance?", x);
   return !("rawContent" in x);
 }
+
+
 

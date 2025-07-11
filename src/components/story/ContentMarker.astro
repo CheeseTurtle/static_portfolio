@@ -12,6 +12,6 @@ const props: ContentMarkerProps = Astro.props;
 
 ---
 
-<PreactContentMarker {...props} client:only>
+<PreactContentMarker {...props} client:load>
     <slot/>
 </PreactContentMarker>

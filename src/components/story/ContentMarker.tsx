@@ -4,6 +4,8 @@ import { useContext, useDebugValue, useEffect, useErrorBoundary, useId, useMemo 
 import type {Node as VisitedNode} from "unist";
 import type { StorySectionFrontmatter } from "./util/types/types";
 
+import { v4 as uuidv4 } from "uuid";
+
 interface PropsBase {
     // sectionId: string;
     children?: ComponentChildren;
@@ -43,19 +45,7 @@ export type FullContentMarkerDataEntry = [string,FullContentMarkerData];
 
 export default function ContentMarker(props: ContentMarkerProps, state?: Readonly<any>) {
     if(props === undefined) { throw "ContentMarker has no props!" }
-    const id = useId();
-    // useEffect(() => {
-    //     const id = useId();        
-    //     // const mySpanElem = get_span_elem();
-    //     mySpanElem.id = id;
-
-    //     // // Cleanup
-    //     // return () => {
-            
-    //     // };
-    // }, []);
-
-    
+    const id = uuidv4();
 
 
     function makeSpan(): VNode<HTMLSpanElement> {
@@ -71,5 +61,13 @@ export default function ContentMarker(props: ContentMarkerProps, state?: Readonl
     }
 
     const spanElem = makeSpan();
+
+    // useEffect(()=>{
+    //     // console.log(spanElem, spanElem.props);
+    //     // @ts-ignore
+    //     spanElem.props['data-marker-id'] = id;
+    //     console.log(self, spanElem);
+    // }, [spanElem, id]);
+
     return spanElem;
 }

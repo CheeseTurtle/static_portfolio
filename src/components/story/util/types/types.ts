@@ -121,3 +121,9 @@ export type DefaultLoader<T> = () => DefaultObject<T>;
 export type AsyncLoader<T> = ()=>Promise<T>;
 export type AsyncDefaultLoader<T> = ()=>DefaultObjectPromise<T>;
 export type LoaderPromise<T> = Promise<Loader<T>>;
+
+
+export interface ParallaxWindowArgs {
+  sectionId: string;
+  image: null|Loader<DefaultObjectPromise<ImageMetadata>>
+}

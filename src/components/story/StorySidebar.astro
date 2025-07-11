@@ -148,37 +148,39 @@ const sidebarItemSpecs = (
 
 ---
 
-<div class="story-sidebar">
-  {
-    sidebarItemSpecs.map((spec: SidebarSectionSpecArg | null) => {
-      // console.log("Spec:", spec);
-      if (spec === null) return console.log("Spec is null");
-      if (!(spec.contentElem || spec.contentInstance || spec.imageLoader))
-        throw "Unexpectedly empty sidebar section spec";
-      const typeClass = spec.contentElem
-        ? "elem"
-        : spec.contentInstance
-          ? "markdown markdown"
-          : "image";
-      return (
-        <div
-          data-marker-id={spec.markerId}
-          class={`story-sidebar-item story-sidebar-${typeClass}`}
-          data-section-id={spec.sectionId}>
-          {((): AstroComponentInstance | Element => {
-            if (spec.contentElem !== undefined) return spec.contentElem;
-            if (spec.contentInstance !== undefined) {
-              return <spec.contentInstance.Content />;
-            }
-            return (
-              <Image
-                src={(spec as SidebarSectionSpec3).imageLoader()}
-                alt="Turtles"
-              />
-            );
-          })()}
-        </div>
-      );
-    })
-  }
+<div class="story-sidebar-wrapper"> <!-- left-wrapper -->
+  <div class="story-sidebar"> <!-- left -->
+    {
+      sidebarItemSpecs.map((spec: SidebarSectionSpecArg | null) => {
+        // console.log("Spec:", spec);
+        if (spec === null) return console.log("Spec is null");
+        if (!(spec.contentElem || spec.contentInstance || spec.imageLoader))
+          throw "Unexpectedly empty sidebar section spec";
+        const typeClass = spec.contentElem
+          ? "elem"
+          : spec.contentInstance
+            ? "markdown markdown"
+            : "image";
+        return (
+          <div
+            data-marker-id={spec.markerId}
+            class={`story-sidebar-item story-sidebar-${typeClass}`}
+            data-section-id={spec.sectionId}>
+            {((): AstroComponentInstance | Element => {
+              if (spec.contentElem !== undefined) return spec.contentElem;
+              if (spec.contentInstance !== undefined) {
+                return <spec.contentInstance.Content />;
+              }
+              return (
+                <Image
+                  src={(spec as SidebarSectionSpec3).imageLoader()}
+                  alt="Turtles"
+                />
+              );
+            })()}
+          </div>
+        );
+      })
+    }
+  </div>
 </div>

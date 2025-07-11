@@ -1,39 +1,69 @@
 ---
 // import Picture from "astro/components/Picture.astro";
 import ParallaxWindow from "./ParallaxWindow.astro";
-import type { ImageWindow, ImageWindowArgs, StorySectionFrontmatter } from "./util/types/types";
+import type { StorySectionFrontmatter } from "./util/types/types";
+// import type { ImageWindow, ImageWindowArgs, StorySectionFrontmatter } from "./util/types/types";
 
 // const { imageWindows } = Astro.props as { imageWindows: ImageWindowArgs[] };
 const { specs } = Astro.props as { specs: StorySectionFrontmatter[] };
 
 const imageLoaders = import.meta.glob<{ default: ImageMetadata }>(
-  "/public/images/story/backdrop/*.{jpeg,jpg,png,gif}"
+  "/public/images/story/backdrop/*.{jpeg,jpg,png,gif,svg}"
 );
 
-
+Object.entries(imageLoaders).forEach(([path, loader]) => {
+  const nameWithExtension = /(?<=^|\/)[^/]+$/.exec(path)?.at(0);
+  if (nameWithExtension) {
+    imageLoaders[nameWithExtension] = loader;
+    const nameWithoutExtension = /^[^.]+(?=\.)/.exec(nameWithExtension)?.at(0);
+    if (nameWithoutExtension) imageLoaders[nameWithoutExtension] = loader;
+    // const nameWithoutExtension2 = /(?=\..+)$/.exec(nameWithExtension)?.at(0);
+    // if(nameWithoutExtension2 && nameWithoutExtension2 !== nameWithoutExtension)
+    //   imageLoaders[nameWithoutExtension2] = loader;
+  }
+});
 
 // Extract image windows
 
 // TODO: Match images to loaders
 
-const imageWindows: ImageWindowArgs[] = specs.flatMap((s) =>
-  s.imageWindows
-    ? s.imageWindows.map((w: ImageWindow, i: number, arr: Array<ImageWindow>) => {
-        return { sectionId: s.id, ...w } as ImageWindowArgs;
-      }, s)
-    : []
+// const imageWindows: ImageWindowArgs[] = specs.flatMap((s) =>
+//   s.imageWindows
+//     ? s.imageWindows.map((w: ImageWindow, i: number, arr: Array<ImageWindow>) => {
+//         return { sectionId: s.id, ...w } as ImageWindowArgs;
+//       }, s)
+//     : []
+// );
+
+// console.log(specs, imageLoaders);
+const backdropImages: [
+  string,
+  null | (() => Promise<{ default: ImageMetadata }>),
+][] = specs.map(
+  (s): [string, null | (() => Promise<{ default: ImageMetadata }>)] => {
+    if (s.backdropImage) {
+      if (s.backdropImage in imageLoaders) {
+        return [s.id, imageLoaders[s.backdropImage]];
+      }
+    }
+    return [s.id, null];
+  }
 );
+
+// console.log('backdropImages:', backdropImages);
 
 // TODO: Set up grid dimensions based on...?
 ---
 
-<div class="parallax-backdrop">
-  <!-- grid -->
-  {
-    // TODO: Scroll pinning etc?
-    // Set element id inside PW
-    imageWindows.map((spec) => {
-      <ParallaxWindow {...spec} />;
-    })
-  }
+<div class="parallax-backdrop-wrapper">
+  <div class="parallax-backdrop">
+    <!-- grid -->
+    {
+      // TODO: Scroll pinning etc?
+      // Set element id inside PW
+      backdropImages.map(([id, loader]) => (
+        <ParallaxWindow sectionId={id} image={loader} />
+      ))
+    }
+  </div>
 </div>

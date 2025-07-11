@@ -77,5 +77,8 @@
 			"**/dist": true,
 			"**/node_modules": true
 		},
+		"dimmer.enabled": false,
+		"firefox.profile": "VSCode Dev",
+		"firefox.keepProfileChanges": true,
 	},
 }
