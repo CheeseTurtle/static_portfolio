@@ -10,9 +10,10 @@
         "@/*": [
           "./src/*"
         ],
-        "react": ["npm:@preact/compat"],
-        "react-dom": ["npm:@preact/compat"],
-        "react/jsx-runtime": ["npm:@preact/jsx-runtime"],
+        "react": ["./node_modules/preact/compat/"],
+        "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
+        "react-dom": ["./node_modules/preact/compat/"],
+        "react-dom/*": ["./node_modules/preact/compat/*"]
       },
       "types": ["node", "astro/client"], // 'astro/client' is key for .astro module types
       "target": "es2022",
@@ -29,6 +30,9 @@
       "checkJs": true,
       "diagnostics": true,
       "strict": true,
+      "allowImportingTsExtensions": true,
+      "allowSyntheticDefaultImports": true,
+      "extendedDiagnostics": true,
     //   "diagnostics": true,
     //   "strict": true,
     //   // "target": "es2022",
@@ -71,14 +75,18 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.d.ts",
-    "src/**/*.js",
-    "src/**/*.jsx",
+    // "src/**/*.js",
+    // "src/**/*.jsx",
     "eslint.config.js",
     "astro.config.mjs",
   ],
   "exclude": [
     "dist",
-    "node_modules"
+    "node_modules",
+    "**/node_modules",
+    "node_modules/**/*",
+    "dist/**/*",
+    "**/dist",
   ],
   "compilerOptions": {
     "baseUrl": ".",
@@ -86,10 +94,12 @@
       "@/*": [
         "./src/*"
       ],
-      "react": ["npm:@preact/compat"],
-      "react-dom": ["npm:@preact/compat"],
-      "react-dom/test-utils": ["npm:@preact/test-utils"],
-      "react/jsx-runtime": ["npm:@preact/jsx-runtime"],
+      // "preact/*": ["npm:@react/*"],
+      // "preact/hooks": ["npm:@react/hooks"],
+      "react": ["./node_modules/preact/compat/"],
+      "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
+      "react-dom": ["./node_modules/preact/compat/"],
+      "react-dom/*": ["./node_modules/preact/compat/*"]
     },
     "types": ["node", "astro/client"], // 'astro/client' is key for .astro module types
     "target": "es2022",
@@ -107,6 +117,9 @@
     // "allowJs": true,
     "diagnostics": true,
     "strict": true,
+    "allowImportingTsExtensions": true,
+    "allowSyntheticDefaultImports": true,
+    "extendedDiagnostics": true,
     // "alwaysStrict": true,
     // "declarationDir": ".decl",
     // "declaration": true,

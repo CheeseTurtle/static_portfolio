@@ -1,4 +1,5 @@
-import type { AstroComponentInstance } from "astro/dist/runtime/server";
+// import type { AstroComponentInstance } from "astro/dist/runtime/server";
+import type { AstroComponentInstance } from "astro/runtime/server/index.js";
 import { isImageMetadata } from "./typeCheck";
 
 type ImageGetterResult = { default: ImageMetadata };

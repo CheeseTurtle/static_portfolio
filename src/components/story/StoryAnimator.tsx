@@ -5,7 +5,7 @@ import { ScrollSmoother } from "gsap/ScrollSmoother";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { useLayoutEffect } from "preact/hooks";
 import type { SectionContentInstance } from "./types";
-import type {FullContentMarkerDataEntry} from "./ContentMarker";
+import type {FullContentMarkerDataEntry} from "./ContentMarkerPreact";
 import parseDate from "./util/parseDate";
 // import type {Node as VisitedNode} from "unist";
 
@@ -45,6 +45,7 @@ type Props = {
 
 
 export default function StoryAnimator({sections, markers}: Props) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     useLayoutEffect(() => {
         console.log(markers);
         // console.log("STORY ANIMATOR COMPONENT", sections);

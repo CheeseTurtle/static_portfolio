@@ -2,14 +2,17 @@
 import { defineConfig } from 'astro/config';
 import tailwindcss from "@tailwindcss/vite";
 import preact from "@astrojs/preact";
+// import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap"
 import icon from "astro-icon";
 import mdx from "@astrojs/mdx";
-import preactVite from "@preact/preset-vite";
+// import preactVite from "@preact/preset-vite";
+// import reactVite from "@vitejs/plugin-react";
 
 // https://astro.build/config
 // eslint-disable-next-line @typescript-eslint/no-unsafe-call
 export default defineConfig({
+  tsconfig: "./tsconfig.json",
   // prefetch: true,
   site: "https://cheeseturtle.github.io/static_profile/",
   // experimental: {
@@ -43,15 +46,17 @@ export default defineConfig({
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    plugins: [preactVite(), tailwindcss()],
+    plugins: [tailwindcss()],
     resolve: {
       alias: {
-        "react": "preact/compat",
+        // "preact": "react",
+        // "preact/hooks": "react/hooks",
+        "react": "@preact/compat",
         'react-dom/test-utils': 'preact/test-utils',
-        'react-dom': 'preact/compat',
+        'react-dom': '@preact/compat',
         'react/jsx-runtime': 'preact/jsx-runtime',
       }
-    }
+    },
   },
   markdown: {
     shikiConfig: {

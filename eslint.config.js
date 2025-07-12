@@ -6,7 +6,7 @@ import json from "@eslint/json";
 import markdown from "@eslint/markdown";
 import css from "@eslint/css";
 import pluginAstro from "eslint-plugin-astro";
-// import pluginAstroParser from '@typescript-eslint/parser';
+import pluginAstroParser from '@typescript-eslint/parser';
 // import pluginAstroParser from 'astro-eslint-parser';
 import eslint from "@eslint/js";
 
@@ -15,10 +15,10 @@ import { defineConfig } from "eslint/config";
 
 export default defineConfig([
   eslint.configs.recommended,
-  // @ts-expect-error Incompatibility
-  tseslint.configs.eslintRecommended,
-  // @ts-expect-error Incompatibility
-  tseslint.configs.recommendedTypeChecked,
+  // // @ts-expect-error Incompatibility
+  // tseslint.configs.eslintRecommended,
+  // // @ts-expect-error Incompatibility
+  // tseslint.configs.recommendedTypeChecked,
   // // @ts-expect-error Incompatibility
   // tseslint.configs.stylisticTypeChecked,
   {
@@ -116,23 +116,30 @@ export default defineConfig([
   //     parser: "@typescript-eslint/parser",
   //   },
   // },
-  ...pluginAstro.configs["flat/recommended"],
+  pluginAstro.configs["flat/recommended"],
   {
     files: ["**/*.astro"],
-    // plugins: {
-    //   astro: pluginAstro
-    // },
-    // parser: "astro-eslint-parser",
-    // languageOptions: {
-    //   parserOptions: {
-
-    //     extraFileExtensions: [".astro"],
-    //   },
-    //   parser: pluginAstroParser
-    // },
-    rules: {
-      // you can add any Astro-specific rule overrides here
- 
+    plugins: {
+      astro: pluginAstro
     },
+    // parser: pluginAstroParser, //"astro-eslint-parser",
+    languageOptions: {
+      parser: pluginAstroParser,
+      parserOptions: {
+        parser: "@typescript/eslint-parser",
+        extraFileExtensions: [".astro"],
+        project: "./tsconfig.json",
+        tsconfigRootDir: __dirname,
+        ecmaVersion: "latest",
+        ecmaFeatures: {
+          jsx: true
+        },
+        sourceType: 'module',
+      },
+    },
+    // rules: {
+    //   // you can add any Astro-specific rule overrides here
+ 
+    // },
   },
 ]);
