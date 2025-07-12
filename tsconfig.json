@@ -4,7 +4,31 @@
     "compiler": "typescript",
     "scopeDir": "First of: `tsconfig.json` \"rootDir\" if specified, directory containing `tsconfig.json`, or cwd if no `tsconfig.json` is loaded.",
     "typeCheck": true,
-    // "compilerOptions": {
+    "compilerOptions": {
+      "baseUrl": ".",
+      "paths": {
+        "@/*": [
+          "./src/*"
+        ],
+        "react": ["npm:@preact/compat"],
+        "react-dom": ["npm:@preact/compat"],
+        "react/jsx-runtime": ["npm:@preact/jsx-runtime"],
+      },
+      "types": ["node", "astro/client"], // 'astro/client' is key for .astro module types
+      "target": "es2022",
+      "module": "esnext",
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "moduleResolution": "bundler",
+      "typeRoots": [
+        "./node_modules/@types",
+        "./src/components/story/util/types",
+      ],
+      "jsx": "react-jsx",
+      "jsxImportSource": "preact",
+      "checkJs": true,
+      "diagnostics": true,
+      "strict": true,
     //   "diagnostics": true,
     //   "strict": true,
     //   // "target": "es2022",
@@ -31,7 +55,7 @@
     //   // // "types": [],
     //   // "typeRoots": ["src/components/story/util/types"]
     //   // // "watch": true
-    // },
+    },
   },
   // "typeAcquisition": {
   //   "enable": true,
@@ -62,6 +86,10 @@
       "@/*": [
         "./src/*"
       ],
+      "react": ["npm:@preact/compat"],
+      "react-dom": ["npm:@preact/compat"],
+      "react-dom/test-utils": ["npm:@preact/test-utils"],
+      "react/jsx-runtime": ["npm:@preact/jsx-runtime"],
     },
     "types": ["node", "astro/client"], // 'astro/client' is key for .astro module types
     "target": "es2022",

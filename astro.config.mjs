@@ -5,8 +5,10 @@ import preact from "@astrojs/preact";
 import sitemap from "@astrojs/sitemap"
 import icon from "astro-icon";
 import mdx from "@astrojs/mdx";
+import preactVite from "@preact/preset-vite";
 
 // https://astro.build/config
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 export default defineConfig({
   // prefetch: true,
   site: "https://cheeseturtle.github.io/static_profile/",
@@ -38,7 +40,18 @@ export default defineConfig({
   //   }
   // },
   vite: {
-    plugins: [tailwindcss()],
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    plugins: [preactVite(), tailwindcss()],
+    resolve: {
+      alias: {
+        "react": "preact/compat",
+        'react-dom/test-utils': 'preact/test-utils',
+        'react-dom': 'preact/compat',
+        'react/jsx-runtime': 'preact/jsx-runtime',
+      }
+    }
   },
   markdown: {
     shikiConfig: {
