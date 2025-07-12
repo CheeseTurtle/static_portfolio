@@ -1,7 +1,7 @@
 ---
 import {Image} from "astro:assets";
-import type { AstroComponentInstance } from "astro/runtime/server/index.js";
-import type { ComponentSlotValue } from "astro/runtime/server/render/slot.js";
+import type { AstroComponentInstance } from "astro/dist/runtime/server";
+import type { ComponentSlotValue } from "astro/dist/runtime/server/render/slot";
 
 // import {isImageMetadata} from "./util/typeCheck";
 import getCreateInfo from "./util/loadImageMetadata";
@@ -18,7 +18,7 @@ interface ColumnsSlots {
 
 const { image, right = false } = Astro.props as ColumnsProps;
 
-const { default: default_, image: imageSlot } = Astro.slots as ColumnsSlots;
+const { default: _default_, image: imageSlot } = Astro.slots as ColumnsSlots;
 const hasDefault = Astro.slots.has("default");
 
 

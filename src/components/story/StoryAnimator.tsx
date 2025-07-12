@@ -3,14 +3,11 @@ import { GSDevTools } from "gsap/GSDevTools";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
-// import { useEffect } from "preact/hooks";
-import { useCallback, useContext, useDebugValue, useEffect, useErrorBoundary, useId, useLayoutEffect, useMemo, useState } from "preact/hooks";
-
-// import type { MarkdownInstance, MDXInstance } from "astro";
-// import type {Node as VisitedNode} from "unist";
+import { useLayoutEffect } from "preact/hooks";
 import type { SectionContentInstance } from "./types";
-import type {ContentMarkerData, FullContentMarkerDataEntry, ContentMarkerDataEntry} from "./ContentMarker";
+import type {FullContentMarkerDataEntry} from "./ContentMarker";
 import parseDate from "./util/parseDate";
+// import type {Node as VisitedNode} from "unist";
 
 
 // console.log("STORY ANIMATOR SCRIPT");
@@ -36,8 +33,6 @@ type Milestone = {
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin, ScrollSmoother, GSDevTools);
 
-
-
 type Props = {
     sections: SectionContentInstance[];
     markers: FullContentMarkerDataEntry[]
@@ -51,19 +46,22 @@ type Props = {
 
 export default function StoryAnimator({sections, markers}: Props) {
     useLayoutEffect(() => {
+        console.log(markers);
         // console.log("STORY ANIMATOR COMPONENT", sections);
         const header = document.querySelector('header')!;
         const headerSpace = document.querySelector('.header-space')!;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const footer = document.querySelector('footer')!;
         const storyElem = document.querySelector('.story')!;
         const storyTitle = document.querySelector('.story-title')!;
         const storyMain = document.querySelector('.story-main')!;
         const storyEnd = document.querySelector('.story-sections-end')!;
         const storySidebar = document.querySelector('.story-sidebar')!;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const backdropElem = document.querySelector('.parallax-backdrop')!;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const backdropWrapper = document.querySelector('.parallax-backdrop-wrapper')!;
-
-
+        
         // storyElem.classList.add('immersive');
 
         const sectionElems: StorySectionElement[] = gsap.utils.toArray('.story-section');
@@ -76,7 +74,7 @@ export default function StoryAnimator({sections, markers}: Props) {
         const scroller = storyElem;
 
         let milestoneIndex = 0;
-        let markerIndex = 0;
+        // let markerIndex = 0;
         const milestones: Milestone[] = sections.flatMap((section)=>{
             const thisId = section.frontmatter.id;
             const [date, dateStr] = parseDate(section.frontmatter.date);
@@ -158,11 +156,11 @@ export default function StoryAnimator({sections, markers}: Props) {
             // const width = storyElem.clientHeight;
             // const height = storyElem.clientWidth * 0.2;
 
-            const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+            // const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
             // svgRoot.setAttribute("font-size", 1.5 * rootFontSize);
 
             const crect = svgRoot.getBoundingClientRect();
-            const brect = svgRoot.getBBox({clipped: true, markers: false, fill: true, stroke: true});
+            // const brect = svgRoot.getBBox({clipped: true, markers: false, fill: true, stroke: true});
             const vw = window.innerWidth * 0.01;
             const fiveVW = 5.0*vw;
             const fifteenVW = 15.0*vw;
@@ -210,7 +208,7 @@ export default function StoryAnimator({sections, markers}: Props) {
         });
 
 
-        const backdrops = Object.fromEntries(document.querySelectorAll('.parallax-image-wrapper').values().map(el=>{
+        const backdrops: Record<string,HTMLDivElement> = Object.fromEntries([...(document.querySelectorAll('.parallax-image-wrapper').values())].map(el=>{
             const wrapperElem: HTMLDivElement = el.attributes[0].ownerElement! as HTMLDivElement;
             const sectionId: string = wrapperElem.getAttribute('data-section-id')!;
             const sectionElem = storySections[sectionId];
@@ -223,6 +221,7 @@ export default function StoryAnimator({sections, markers}: Props) {
             };
             return [sectionId, wrapperElem];
         }));
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const backdropElems = Object.values(backdrops);
 
         // console.log(backdropElem, backdrops);
@@ -303,7 +302,7 @@ export default function StoryAnimator({sections, markers}: Props) {
 
         let first_ = true;
         let lastContent: ContentMarkerContentElement|null = null;
-        function getCurrentSection(self: ScrollTrigger, first=first_) {
+        function getCurrentSection(_self: ScrollTrigger, first=first_) {
             first_ = false;
             let newContent: ContentMarkerContentElement|null = null; 
             const currScroll = scroller.scrollTop; // scrollY;
@@ -419,7 +418,7 @@ export default function StoryAnimator({sections, markers}: Props) {
             }
 
             function onEnter(back: boolean = false) {
-                const oldSection = lastSection;
+                // const oldSection = lastSection;
                 setCurrentSection(elem);
                 requestBackdrop(backdropWrapper, back);
             }
@@ -513,7 +512,7 @@ export default function StoryAnimator({sections, markers}: Props) {
             });
             link.classList.add("active");
         }
-        links.forEach(((a, i, _)=>{
+        links.forEach(((a)=>{
             const href = a.getAttribute("href")!;
             // if(href === null) throw "Anchor without href";
             const elem = document.querySelector(href)!;
@@ -552,16 +551,16 @@ export default function StoryAnimator({sections, markers}: Props) {
             lastDirection: 0,
             thresholdLocation: headerSpace.scrollTop + 0.5*headerSpace.scrollHeight
         };
-        const hideHeader = gsap.to(header, {
-            paused: true,
-            yPercent: -100,
-            autoAlpha: 0
-        });
-        const showHeader = gsap.to(header, {
-            paused: true,
-            yPercent: 0,
-            autoAlpha: 1
-        });
+        // const hideHeader = gsap.to(header, {
+        //     paused: true,
+        //     yPercent: -100,
+        //     autoAlpha: 0
+        // });
+        // const showHeader = gsap.to(header, {
+        //     paused: true,
+        //     yPercent: 0,
+        //     autoAlpha: 1
+        // });
 
         
         const headerTimeline = gsap.timeline();
@@ -571,13 +570,14 @@ export default function StoryAnimator({sections, markers}: Props) {
         );
     
         // Modify header
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const headerST = ScrollTrigger.create({
             id: "header",
             onUpdate: ((self: ScrollTrigger) => {
                 // console.log(self.direction, self.getVelocity(), self.progress, self.scroll());
                 if(self.direction != headerHideState.lastDirection) {
                     // let activate: GSAPTween, deactivate: GSAPTween;
-                    let shouldReverse = Boolean(self.direction & 0b10);
+                    const shouldReverse = Boolean(self.direction & 0b10);
                     if(headerTimeline.reversed() != shouldReverse) {
                         headerTimeline.reversed(shouldReverse);
                     }

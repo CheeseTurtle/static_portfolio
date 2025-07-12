@@ -1,7 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Story from "../components/story/Story.astro";
-
+import StoryDrawer from "../components/story/StoryDrawer";
 ---
 
 <Layout pageTitle="Turtle" description="Turtles turtles" storyPage="true">
@@ -10,6 +10,8 @@ import Story from "../components/story/Story.astro";
     </div>
      -->
     <Story></Story>
+
+    <StoryDrawer client:load></StoryDrawer>
 
     <!-- <img height="auto" width="auto"/> -->
 

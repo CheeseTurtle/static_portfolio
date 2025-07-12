@@ -1,17 +1,5 @@
 import type { ImageMetadata, MDXInstance, MarkdownInstance } from "astro";
-import type { AstroComponentInstance,ComponentSlots as ComponentSlots_, ServerIslandComponent } from "astro/runtime/server/index.js";
-import type { AstroComponentMetadata, AstroComponentDirectives } from "astro";
-import type { Component, ComponentChildren, ComponentChild, ComponentProps, ComponentType, AnyComponent } from "preact";
-import type { ComponentSlotValue, ComponentSlots } from "astro/runtime/server/render/slot.js";
 // import type { DevToolbarHighlight } from "astro/runtime/client/dev-toolbar/ui-library/highlight.js";
-import type {
-  Context,
-  ContextType,
-  FunctionComponent,
-  FunctionalComponent,
-  ComponentClass,
-  ComponentConstructor,
-  ComponentFactory} from "preact";
 import type { ContentInstance, DefaultObjectPromise, Loader } from "./types/types";
 
 

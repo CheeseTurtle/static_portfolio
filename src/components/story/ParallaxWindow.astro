@@ -1,10 +1,10 @@
 ---
 import { Image } from "astro:assets";
 import type { ParallaxWindowArgs } from "./util/types/types";
-import type { DefaultObjectPromise } from "./util/types/types";
-import type { Loader } from "./util/types/types";
-import {isImageLoader} from "./util/typeCheck";
-import { getEntry } from "astro:content";
+// import type { DefaultObjectPromise } from "./util/types/types";
+// import type { Loader } from "./util/types/types";
+// import {isImageLoader} from "./util/typeCheck";
+// import { getEntry } from "astro:content";
 
 const {
   sectionId, image
@@ -40,7 +40,7 @@ const {
 // );
 
 if(typeof image === 'string') {
-  throw "Not yet implemented";
+  throw new Error("Image specification as string is not yet implemented");
 }
 
 

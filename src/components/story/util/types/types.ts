@@ -1,4 +1,4 @@
-import type { MarkdownInstance, MDXInstance, AstroSlotAttributes } from "astro";
+import type { MarkdownInstance, MDXInstance } from "astro";
 
 export interface ImageWindow {
   /**
@@ -85,6 +85,7 @@ export interface StorySectionFrontmatter {
    *
    * @type {?(string|Element)}
    */
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   sideContent?: string | Element | "true";
 
   /**

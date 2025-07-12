@@ -1,5 +1,5 @@
 ---
-import type { MarkdownHeading, MarkdownInstance, MarkdownLayoutProps } from "astro"
+import type { MarkdownHeading, MarkdownInstance } from "astro"
 import type { StorySectionFrontmatter } from "./util/types/types";
 
 
@@ -26,7 +26,7 @@ const headings: MarkdownHeadingInfo[] = sections.flatMap(({frontmatter, ...secti
         text: frontmatter.title,
         sectionId: frontmatter.id,
     });
-    let slugs = new Array(5).fill('');
+    const slugs: string[] = new Array<string>(5).fill('');
     let lastDepth = 0;
     for(const h of headings) {
         h.depth -= 2;
@@ -38,7 +38,7 @@ const headings: MarkdownHeadingInfo[] = sections.flatMap(({frontmatter, ...secti
         }
         if(h.depth)
             h.slug = slugs.slice(0,h.depth+1).filter(x=>x.length).join('#')
-
+        lastDepth = h.depth;
         // h.slug = '#' + h.slug;
     }
     return headings;

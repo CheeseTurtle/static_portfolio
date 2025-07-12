@@ -4,45 +4,81 @@
     "compiler": "typescript",
     "scopeDir": "First of: `tsconfig.json` \"rootDir\" if specified, directory containing `tsconfig.json`, or cwd if no `tsconfig.json` is loaded.",
     "typeCheck": true,
-    "compilerOptions": {
-      "diagnostics": true,
-      // "inlineSourceMap": false,
-      // "inlineSources": false,
-      // "sourceMap": true,
-      // "declarationMap": true,
-      // "watchFile": "useFsEvents",
-      // "watchDirectory": "useFsEvents",
-      // // "types": [],
-      // "typeRoots": ["src/components/story/util/types"]
-      // // "watch": true
-    },
+    // "compilerOptions": {
+    //   "diagnostics": true,
+    //   "strict": true,
+    //   // "target": "es2022",
+    //   // "module": "esnext",
+    //   "moduleResolution": "bundler",
+    //   "jsx": "react-jsx",
+    //   "jsxImportSource": "preact",
+    //   "esModuleInterop": true,
+    //   "skipLibCheck": true,
+    //   "baseUrl": ".",
+    //   "paths": {
+    //     "@/*": [
+    //       "./src/*"
+    //     ],
+    //   },
+    //   "types": ["node", "astro/client"], // 'astro/client' is key for .astro module types
+    //   // "alwaysStrict": true,
+    //   // "inlineSourceMap": false,
+    //   // "inlineSources": false,
+    //   // "sourceMap": true,
+    //   // "declarationMap": true,
+    //   // "watchFile": "useFsEvents",
+    //   // "watchDirectory": "useFsEvents",
+    //   // // "types": [],
+    //   // "typeRoots": ["src/components/story/util/types"]
+    //   // // "watch": true
+    // },
   },
   // "typeAcquisition": {
   //   "enable": true,
   //   "exclude": []
   // },
-  // "mdx": {
-  //   "checkMdx": true,
-  //   // "plugins": []
-  // },
+  "mdx": {
+    "checkMdx": true,
+    // "plugins": []
+  },
   "include": [
     ".astro/types.d.ts",
-    "dev/**/*",
-    "src/**/*"
+    "dev",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.d.ts",
+    "src/**/*.js",
+    "src/**/*.jsx",
+    "eslint.config.js",
+    "astro.config.mjs",
   ],
   "exclude": [
     "dist",
     "node_modules"
   ],
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+    },
+    "types": ["node", "astro/client"], // 'astro/client' is key for .astro module types
+    "target": "es2022",
+    "module": "esnext",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
     "typeRoots": [
-      "src/components/story/util/types"
+      "./node_modules/@types",
+      "./src/components/story/util/types",
     ],
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
     "checkJs": true,
     // "allowJs": true,
     "diagnostics": true,
+    "strict": true,
     // "alwaysStrict": true,
     // "declarationDir": ".decl",
     // "declaration": true,

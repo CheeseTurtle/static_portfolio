@@ -4,7 +4,7 @@
 import type { MarkdownInstance, MDXInstance } from "astro";
 // import SidebarSection from "./SidebarSection.astro";
 import {Image} from "astro:assets";
-import type { AstroComponentInstance } from "astro/runtime/server/index.js";
+import type { AstroComponentInstance } from "astro/dist/runtime/server";
 // import { isRenderInstance } from "astro/runtime/server/render/common.js";
 
 import { isContentInstance, isImageMetadata } from "./util/typeCheck";
@@ -12,7 +12,7 @@ import { isContentInstance, isImageMetadata } from "./util/typeCheck";
 import type { FullContentMarkerDataEntry } from "./ContentMarker";
 import type { StorySectionFrontmatter, SidebarSectionFrontmatter, AsyncDefaultLoader, ContentInstance } from "./util/types/types.ts";
 
-const { specs, markerData } = Astro.props as {
+const { specs: _specs, markerData } = Astro.props as {
   specs: StorySectionFrontmatter[];
   markerData: Array<FullContentMarkerDataEntry>;
 };
@@ -24,7 +24,7 @@ const imageLoaders = import.meta.glob<{ default: ImageMetadata }>(
 
 const contentLoaders = import.meta.glob<
   | MDXInstance<SidebarSectionFrontmatter>
-  | MDXInstance<SidebarSectionFrontmatter>
+  | MarkdownInstance<SidebarSectionFrontmatter>
 >("/src/pages/story/sidebar/*.{md,mdx}", { eager: false });
 
 // TODO: Match sections with imageLoaders and/or content elements (slot, or load from .md(x)?)
@@ -50,10 +50,10 @@ type SidebarSectionSpec3 = {
   imageLoader: ImageLoader;
 };
 
-type SidebarSectionSpec =
-  | SidebarSectionSpec1
-  | SidebarSectionSpec2
-  | SidebarSectionSpec3;
+// type SidebarSectionSpec =
+//   | SidebarSectionSpec1
+//   | SidebarSectionSpec2
+//   | SidebarSectionSpec3;
 
 type SidebarSectionSpecArg = {
   sectionId: string;
@@ -97,17 +97,18 @@ const sidebarItemSpecs = (
       if (typeof fn === "string") {
         const isMarkdown = arr[1][3];
         try {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           result = await import(/* @vite-ignore */ fn);
           if (!(isContentInstance(result) || isImageMetadata(result))) {
-            throw `Loaded file ${fn} and got something other than an .MD(X) or image`;
+            throw new Error(`Loaded file ${fn} and got something other than an .MD(X) or image`);
           }
-        } catch (e) {
+        } catch {
           // console.log('Logging error: ', e);
           if (isMarkdown) {
             // (arr[2].endsWith(".md") || arr[2].endsWith(".mdx")) {
             const loader = getMarkdownLoader(fn);
             if (loader === undefined) {
-              throw "Cannot find markdown or MDX file " + fn;
+              throw new Error("Cannot find markdown or MDX file " + fn);
             } else {
               result = await loader();
             }
@@ -130,7 +131,7 @@ const sidebarItemSpecs = (
             imageLoader: result,
           } as SidebarSectionSpec3;
         } else {
-          throw `Unsupported sidebar item type: ${result}`;
+          throw new Error(`Unsupported sidebar item type: ${result}`);
         }
       } else {
         // Element
@@ -155,7 +156,7 @@ const sidebarItemSpecs = (
         // console.log("Spec:", spec);
         if (spec === null) return console.log("Spec is null");
         if (!(spec.contentElem || spec.contentInstance || spec.imageLoader))
-          throw "Unexpectedly empty sidebar section spec";
+          throw new Error("Unexpectedly empty sidebar section spec");
         const typeClass = spec.contentElem
           ? "elem"
           : spec.contentInstance

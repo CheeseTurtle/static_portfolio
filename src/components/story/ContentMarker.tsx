@@ -1,6 +1,5 @@
 import type { MDXInstance } from "astro";
-import { Component, Fragment, type Attributes, type ComponentChildren, type Context, type Ref, type RenderableProps, type VNode } from "preact";
-import { useContext, useDebugValue, useEffect, useErrorBoundary, useId, useMemo } from "preact/hooks";
+import { type ComponentChildren, type VNode } from "preact";
 import type {Node as VisitedNode} from "unist";
 import type { StorySectionFrontmatter } from "./util/types/types";
 
@@ -43,8 +42,8 @@ export type ContentMarkerDataEntry = [string,ContentMarkerData];
 export type FullContentMarkerData = [MDXInstance<StorySectionFrontmatter>,VisitedNode, string|Element, boolean];
 export type FullContentMarkerDataEntry = [string,FullContentMarkerData];
 
-export default function ContentMarker(props: ContentMarkerProps, state?: Readonly<any>) {
-    if(props === undefined) { throw "ContentMarker has no props!" }
+export default function ContentMarker(props: ContentMarkerProps) { //, state?: Readonly<any>) {
+    if(props === undefined) { throw new Error("ContentMarker has no props!") }
     const id = uuidv4();
 
 
@@ -56,7 +55,7 @@ export default function ContentMarker(props: ContentMarkerProps, state?: Readonl
         } else if(isMarkdownMarker(props)) {
             return <span class='content-marker' data-content-file={props.contentFile} data-marker-id={id}></span>;
         } else {
-            throw "Empty ContentMarker without `imageName` or `contentFile`"
+            throw new Error("Empty ContentMarker without `imageName` or `contentFile`");
         }
     }
 

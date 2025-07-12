@@ -2,10 +2,10 @@
 import "../../styles/story.css";
 
 import StorySection from "./StorySection.astro";
-import SidebarSection from "./SidebarSection.astro";
+// import SidebarSection from "./SidebarSection.astro";
 import FloatingNav from "./FloatingNav.astro";
 import ParallaxBackdrop from "./ParallaxBackdrop.astro";
-import ParallaxWindow from "./ParallaxWindow.astro";
+// import ParallaxWindow from "./ParallaxWindow.astro";
 import StoryAnimator from "./StoryAnimator";
 
 // import { compile } from "@mdx-js/mdx";
@@ -21,12 +21,12 @@ import type { MdxJsxAttribute } from "mdast-util-mdx-jsx";
 
 // import type {Node as VisitedNode} from "unist";
 
-import type { MarkdownInstance, MDXInstance } from "astro";
+import type { MDXInstance } from "astro";
 
 import StorySidebar from "./StorySidebar.astro";
 
 import type {
-  ContentMarkerData,
+  // ContentMarkerData,
   FullContentMarkerDataEntry,
   ContentMarkerDataEntry,
 } from "./ContentMarker";
@@ -38,6 +38,7 @@ import loadSections from "./util/loadSections";
 import type { StorySectionFrontmatter } from "./util/types/types.ts";
 
 import { isMdxInstance } from "./util/typeCheck";
+import type { Processor } from "unified";
 
 const allSections = loadSections();
 
@@ -49,12 +50,26 @@ async function getMdxSource(filePath: string) {
   return fileContents;
 }
 
+type UnifiedNode = ReturnType<ReturnType<ReturnType<Processor['use']>['use']>['parse']>;
+
+import type { MdxJsxFlowElement } from "mdast-util-mdx";
+function isMdxJsxFlowElement(node: UnifiedNode): node is MdxJsxFlowElement {
+  return node.type === 'mdxJsxFlowElement';
+}
 async function extractContentMarkers(mdxSource: string) {
-  const tree = unified().use(remarkParse).use(remarkMdx).parse(mdxSource);
-  const found: Array<ContentMarkerDataEntry> = [];
+  const tree = await new Promise<UnifiedNode>((resolve,reject)=>{
+    try {
+      resolve(unified().use(remarkParse).use(remarkMdx).parse(mdxSource));
+    } catch(e) {
+      if(e instanceof Error)
+        reject(e);
+      reject(new Error(JSON.stringify(e, undefined, 2)));
+    }
+  });
+  const found: ContentMarkerDataEntry[] = [];
   visit(tree, (node) => {
     if (
-      node.type === "mdxJsxFlowElement" && // || node.type === 'mdxJsxTextElement')
+      isMdxJsxFlowElement(node) && // || node.type === 'mdxJsxTextElement')
       node.name === "ContentMarker"
     ) {
       // const idAttr = node.attributes.find(attr=>attr.type==='mdxJsxAttribute' && attr.name==='markerId');

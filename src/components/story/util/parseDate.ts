@@ -1,4 +1,4 @@
-export default   function parseDate(
+export default function parseDate(
   x: string,
   stringWithTime: boolean = false
 ): [Date, string] {
@@ -8,10 +8,11 @@ export default   function parseDate(
     );
   // console.assert(m !== null && m.groups, `Invalid date string: ${x}`);
   if (!m || !m.groups || m.groups.year === undefined) {
-    throw `Invalid date string: ${x}`;
+    throw new Error(`Invalid date string: ${x}`);
   } // TODO
   let month = m.groups.month,
     day = m.groups.day,
+    // eslint-disable-next-line prefer-const
     year = m.groups.year;
   if (m.groups.month === undefined) {
     month = m.groups.day = "01";
@@ -34,6 +35,7 @@ export default   function parseDate(
   let dateStrReturn = m.groups.day === undefined ? `${year}-${month}` : dateStr;
   let timeStr = "";
   if (m.groups.hour !== undefined) {
+    // eslint-disable-next-line prefer-const
     let minuteStr = m.groups.minute === undefined ? "00" : m.groups.minute;
     let hourString = m.groups.hour;
     if (!(hourString.length & 0b10)) hourString = "0" + hourString;

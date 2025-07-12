@@ -1,6 +1,4 @@
-import type Image from "astro:assets";
-import type { AstroComponentInstance } from "astro/runtime/server/index.js";
-import type { ComponentSlotValue } from "astro/runtime/server/render/slot.js";
+import type { AstroComponentInstance } from "astro/dist/runtime/server";
 import { isImageMetadata } from "./typeCheck";
 
 type ImageGetterResult = { default: ImageMetadata };
@@ -24,7 +22,7 @@ export default async function getCreateInfo(image: string|undefined, imageSlot: 
     undefined;
     if (image !== undefined) {
     const regexp = /(?<=^|\/)(?<fn>[^/]+?)(?:\.(?<ext>jpe?g|png|gif))?$/;
-    function loadImageMetadata(reason: any) {
+    function loadImageMetadata(_reason: any) {
         const loaders = import.meta.glob<() => { default: ImageMetadata }>(
         "/public/images/story/inline/*.{jpg,jpeg,png,gif}"
         );
@@ -51,9 +49,10 @@ export default async function getCreateInfo(image: string|undefined, imageSlot: 
         //   imageMetadata = result;
     } else {
         // console.log("typeof result:", typeof result, Object.keys(result));
-        throw `No image given, or invalid type (${typeof result}): ${result}`;
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        throw new Error(`No image given, or invalid type (${typeof result}): ${result}`);
     }
-    if (!imageMetadata) throw "Could not find image";
+    if (!imageMetadata) throw new Error("Could not find image");
     // imageElem = Image({
     //   src: imageMetadata,
     //   alt: "(TODO)",
@@ -64,7 +63,7 @@ export default async function getCreateInfo(image: string|undefined, imageSlot: 
     imageElem = imageSlot;
     createInfo = { imageElem } as CreateInfo1;
     } else {
-    throw "No image specified for columns";
+    throw new Error("No image specified for columns");
     }
     return createInfo;      
 }
