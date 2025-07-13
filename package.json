@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.0",
-    "@astrojs/preact": "^4.1.0",
+    "@astrojs/react": "^4.3.0",
     "@astrojs/rss": "^4.0.12",
     "@astrojs/sitemap": "^3.4.1",
     "@mdx-js/mdx": "^3.1.0",
@@ -34,7 +34,6 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@tailwindcss/vite": "^4.1.11",
-    "@vercel/speed-insights": "^1.2.0",
     "alpinejs": "^3.14.9",
     "astro": "^5.11.0",
     "astro-icon": "^1.1.5",
@@ -46,10 +45,9 @@
     "gsap": "^3.13.0",
     "lucide-react": "^0.525.0",
     "next-themes": "^0.4.6",
-    "preact": "^10.26.9",
     "prismjs": "^1.30.0",
-    "react": "npm:@preact/compat",
-    "react-dom": "npm:@preact/compat",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "react-resizable-panels": "^3.0.3",
     "remark-mdx": "^3.1.0",
     "remark-parse": "^11.0.0",
@@ -98,8 +96,5 @@
       "postcss-import": {}
     }
   },
-  "overrides": {
-    "react": "npm:@preact/compat",
-    "react-dom": "npm:@preact/compat"
-  }
+  "overrides": {}
 }

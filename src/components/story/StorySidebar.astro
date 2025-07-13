@@ -9,7 +9,7 @@ import type { AstroComponentInstance } from "astro/dist/runtime/server";
 
 import { isContentInstance, isImageMetadata } from "./util/typeCheck";
 
-import type { FullContentMarkerDataEntry } from "./ContentMarker";
+import type { FullContentMarkerDataEntry } from "./ContentMarkerPreact";
 import type { StorySectionFrontmatter, SidebarSectionFrontmatter, AsyncDefaultLoader, ContentInstance } from "./util/types/types.ts";
 
 const { specs: _specs, markerData } = Astro.props as {

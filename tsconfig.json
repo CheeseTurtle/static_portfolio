@@ -10,10 +10,12 @@
         "@/*": [
           "./src/*"
         ],
-        "react": ["./node_modules/preact/compat/"],
-        "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
-        "react-dom": ["./node_modules/preact/compat/"],
-        "react-dom/*": ["./node_modules/preact/compat/*"]
+        "preact/hooks": ["react"],
+        "preact": ["react"],
+        // "react": ["./node_modules/preact/compat/"],
+        // "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
+        // "react-dom": ["./node_modules/preact/compat/"],
+        // "react-dom/*": ["./node_modules/preact/compat/*"]
       },
       "types": ["node", "astro/client"], // 'astro/client' is key for .astro module types
       "target": "es2022",
@@ -26,7 +28,7 @@
         "./src/components/story/util/types",
       ],
       "jsx": "react-jsx",
-      "jsxImportSource": "preact",
+      "jsxImportSource": "react",
       "checkJs": true,
       "diagnostics": true,
       "strict": true,
@@ -94,12 +96,12 @@
       "@/*": [
         "./src/*"
       ],
-      // "preact/*": ["npm:@react/*"],
-      // "preact/hooks": ["npm:@react/hooks"],
-      "react": ["./node_modules/preact/compat/"],
-      "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
-      "react-dom": ["./node_modules/preact/compat/"],
-      "react-dom/*": ["./node_modules/preact/compat/*"]
+      "preact/hooks": ["npm:@react/hooks"],
+      "preact/*": ["npm:@react/*"],
+      // "react": ["./node_modules/preact/compat/"],
+      // "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
+      // "react-dom": ["./node_modules/preact/compat/"],
+      // "react-dom/*": ["./node_modules/preact/compat/*"]
     },
     "types": ["node", "astro/client"], // 'astro/client' is key for .astro module types
     "target": "es2022",
@@ -112,7 +114,7 @@
       "./src/components/story/util/types",
     ],
     "jsx": "react-jsx",
-    "jsxImportSource": "preact",
+    "jsxImportSource": "react",
     "checkJs": true,
     // "allowJs": true,
     "diagnostics": true,

@@ -1,8 +1,8 @@
 // // @ts-check
 import { defineConfig } from 'astro/config';
 import tailwindcss from "@tailwindcss/vite";
-import preact from "@astrojs/preact";
-// import react from "@astrojs/react";
+// import preact from "@astrojs/preact";
+import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap"
 import icon from "astro-icon";
 import mdx from "@astrojs/mdx";
@@ -23,7 +23,7 @@ export default defineConfig({
   //   contentIntellisense: true,
   // },
   integrations: [
-    preact(),
+    react(),
     icon(),
     mdx(),
     sitemap({
@@ -49,12 +49,12 @@ export default defineConfig({
     plugins: [tailwindcss()],
     resolve: {
       alias: {
-        // "preact": "react",
-        // "preact/hooks": "react/hooks",
-        "react": "@preact/compat",
-        'react-dom/test-utils': 'preact/test-utils',
-        'react-dom': '@preact/compat',
-        'react/jsx-runtime': 'preact/jsx-runtime',
+        "preact": "react",
+        "preact/hooks": "react",
+        // "react": "@preact/compat",
+        // 'react-dom/test-utils': 'preact/test-utils',
+        // 'react-dom': '@preact/compat',
+        // 'react/jsx-runtime': 'preact/jsx-runtime',
       }
     },
   },

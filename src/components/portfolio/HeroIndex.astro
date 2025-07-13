@@ -5,13 +5,12 @@ import Tools from "../portfolio/Tools.astro";
 // import { Icon } from "astro-icon/components";
 import Icon from "../ui/Icon.astro";
 import Hobbies from "../portfolio/Hobbies.astro";
-import { AstroError } from "astro/errors";
 import { getCollection} from "astro:content";
 
 const [staticData] = await getCollection('staticData');
 
 if (!staticData) {
-  throw new AstroError("JSON data not found");
+  throw new Error("JSON data not found");
 }
 ---
 

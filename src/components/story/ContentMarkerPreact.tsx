@@ -49,11 +49,11 @@ export default function ContentMarker(props: ContentMarkerProps) { //, state?: R
 
     function makeSpan(): VNode<HTMLSpanElement> {
         if(props.children !== undefined) {
-            return <span class='content-marker' data-content-markup={props.children} data-marker-id={id}></span>;
+            return <span className='content-marker' data-content-markup={props.children} data-marker-id={id}></span>;
         } else if(isImageMarker(props)) {
-            return <span class='content-marker' data-content-image={props.imageName} data-marker-id={id}></span>;
+            return <span className='content-marker' data-content-image={props.imageName} data-marker-id={id}></span>;
         } else if(isMarkdownMarker(props)) {
-            return <span class='content-marker' data-content-file={props.contentFile} data-marker-id={id}></span>;
+            return <span className='content-marker' data-content-file={props.contentFile} data-marker-id={id}></span>;
         } else {
             throw new Error("Empty ContentMarker without `imageName` or `contentFile`");
         }

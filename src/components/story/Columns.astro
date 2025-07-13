@@ -29,7 +29,7 @@ const createInfo = await getCreateInfo(image, imageSlot);
 
 <div class="two-column-split">
   {<div class={"column image " + (right && right!=='false' ? "right" : "left")}>
-    {(createInfo.imageElem ? createInfo.imageElem : <Image src={createInfo.imageMetadata} alt="(TODO)"></Image>)}
+    {(createInfo.imageElem ? createInfo.imageElem : <Image src={createInfo.imageMetadata!} alt="(TODO)"></Image>)}
   </div>}
 
   {
