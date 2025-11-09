@@ -1,0 +1,10 @@
+---
+
+import StoryTimelineComponent from "./client/StoryTimeline";
+import type {StoryTimelineProps} from "./client/StoryTimeline";
+
+const props = Astro.props as StoryTimelineProps;
+---
+
+
+<StoryTimelineComponent {...props} client:load></StoryTimelineComponent>

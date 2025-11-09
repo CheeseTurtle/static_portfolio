@@ -1,33 +1,10 @@
 import type { MDXInstance } from "astro";
-import { type ComponentChildren, type VNode } from "preact";
-import type {Node as VisitedNode} from "unist";
-import type { StorySectionFrontmatter } from "./util/types/types";
+import type { ReactNode } from "react";
+
+import type { VNode, ContentMarkerProps, ImageMarkerProps, MarkdownMarkerProps } from "./util/types/types";
 
 import { v4 as uuidv4 } from "uuid";
 
-interface PropsBase {
-    // sectionId: string;
-    children?: ComponentChildren;
-}
-interface ImageMarkerProps extends PropsBase {
-    imageName?: string;
-};
-interface MarkdownMarkerProps extends PropsBase {
-    contentFile?: string;
-}
-
-interface ElemMarkerProps extends PropsBase {
-    children: ComponentChildren;
-}
-
-export type ContentMarkerProps = MarkdownMarkerProps|ImageMarkerProps|ElemMarkerProps;
-
-
-// export default function ContentMarker(props: Props) {
-//     useEffect(()=>{
-
-//     });
-// }
 
 function isImageMarker(p: ContentMarkerProps): p is ImageMarkerProps {
     return 'imageName' in p && typeof(p.imageName) === 'string';
@@ -36,11 +13,7 @@ function isMarkdownMarker(p: ContentMarkerProps): p is MarkdownMarkerProps {
     return 'contentFile' in p && typeof(p.contentFile) === 'string';
 }
 
-export type ContentMarkerData = [VisitedNode, string|Element, boolean];
-export type ContentMarkerDataEntry = [string,ContentMarkerData];
 
-export type FullContentMarkerData = [MDXInstance<StorySectionFrontmatter>,VisitedNode, string|Element, boolean];
-export type FullContentMarkerDataEntry = [string,FullContentMarkerData];
 
 export default function ContentMarker(props: ContentMarkerProps) { //, state?: Readonly<any>) {
     if(props === undefined) { throw new Error("ContentMarker has no props!") }

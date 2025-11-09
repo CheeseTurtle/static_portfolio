@@ -19,7 +19,15 @@ export default function StoryDrawer() {
     return <Drawer>
         <DrawerTrigger>Open</DrawerTrigger>
         <DrawerContent>
-            <DrawerHeader><DrawerTitle>Turtles</DrawerTitle></DrawerHeader>
+            <DrawerHeader>
+                <DrawerTitle>Turtles</DrawerTitle>
+                <DrawerDescription>Turtles</DrawerDescription>
+                </DrawerHeader>
+            <DrawerFooter>
+                <DrawerClose asChild>
+                    <Button variant='outline'>Close</Button>
+                </DrawerClose>
+            </DrawerFooter>
         </DrawerContent>
     </Drawer>
 }   

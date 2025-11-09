@@ -1,0 +1,246 @@
+---
+
+import ProjectGrid from "./grid/ProjectGrid";
+import ProjectDialog from "./overlay/dialog";
+
+import ProjectBrowserInner from "./ProjectBrowserInner.astro";
+import { getImagePath } from "../story/util/loadImages";
+
+
+// import {render} from 'astro:content';
+
+import { getCollection, render } from "astro:content";
+
+import type {ProjectData, ProjectEntry, ProjectFrontmatter, ProjectDataWithFactory} from "./types";
+import { MDXInstance } from "astro";
+
+import { compile } from "@mdx-js/mdx";
+import * as runtime from 'react/jsx-runtime';
+import { runSync, run } from '@mdx-js/mdx';
+
+// import {importFromString} from 'react/jsx-runtime';
+import { AstroComponentInstance, renderToString } from "astro/dist/runtime/server";
+import { renderComponentToString } from "astro/dist/runtime/server/render";
+import { ReactElement } from "react";
+import type { AstroComponentFactory } from "astro/dist/runtime/server/render/astro";
+
+// import { unified } from "unified";
+// import remarkParse from "remark-parse";
+// import remarkMdx from "remark-mdx";
+// import { visit } from "unist-util-visit";
+// import type { MdxJsxAttribute } from "mdast-util-mdx-jsx";
+
+// import {type ImageLoaders, makeImageGlobPattern} from "../story/util/loadImages";
+
+// import {processProjectItems} from './grid/items/processItem';
+
+// import { experimental_AstroContainer as AstroContainer } from "astro:container";
+// import { getContainerRenderer as mdxRenderer } from "@astrojs/mdx";
+// import { loadRenderers } from "astro:container";
+
+// const renderers = await loadRenderers([mdxRenderer()]);
+// const container = await AstroContainer.create({renderers});
+
+// container.renderToString()
+
+const prepath = [
+    "/public/images/story/sidebar/",
+    "/public/images/story/backdrop/",
+    "/public/images/story/inline/",
+    "/public/images/",
+    "/public/images/projects/",
+    "/public/images/posts/"
+]
+// const globPat = makeImageGlobPattern(prepath);
+
+const imageRecords = import.meta.glob(
+    ["/public/images/story/sidebar/*.{jpeg,jpg,png,gif,webp}",
+    "/public/images/story/backdrop/*.{jpeg,jpg,png,gif,webp}",
+    "/public/images/story/inline/*.{jpeg,jpg,png,gif,webp}",
+    "/public/images/*.{jpeg,jpg,png,gif,webp}",
+    "/public/images/projects/*.{jpeg,jpg,png,gif,webp}",
+    "/public/images/posts/*.{jpeg,jpg,png,gif,webp}"], {eager: false, exhaustive: true});
+const imagePaths = new Set<string>(Object.keys((imageRecords)));
+const projectMetadata = await getCollection("projects");
+const contentRecord = import.meta.glob<MDXInstance<ProjectFrontmatter>>(
+    '/src/content/projects/*.mdx',
+    {eager: false, exhaustive: true});
+
+
+
+// function createLoaderWithFallback(loader: () => Promise<MDXInstance<ProjectFrontmatter>>, mdxSource: string | undefined) {
+//     const fallbackElem: Promise<AstroComponentInstance | undefined> = (async ()=> {
+//         if(!mdxSource) return;
+//         try {
+//             const compiled = await compile(mdxSource, { outputFormat: 'function-body' });
+//             const awaitResult = await importFromString(String(compiled));
+//             console.log('awaitResult:', awaitResult);
+//             const { default: MDXContent } = awaitResult;
+//             return undefined;
+//             // return <MDXContent components={{ h1: (props) => <h1 className="text-3xl" {...props}/>}}></MDXContent>;
+//         } catch(e) {
+//             console.warn(e);
+//         }
+//     })();
+//     return async () => {
+//         try {
+//             const p = loader()
+//             const Content = (await p).Content;
+//             // return <Content></Content>;
+//         } catch(e) {
+//             const elem = (fallbackElem && (await fallbackElem));
+//             if(!elem) throw e;
+//             console.warn(e);
+//             return elem;
+//         }
+//     }
+// }
+
+
+
+// type ContentRecord = Record<string, ReactElement<any>>;
+
+
+
+function mdxToReactComponent(mdxSource: string) {
+    const compiled = compile(mdxSource, { outputFormat: 'function-body' });
+    // return runSync(String(compiled), runtime).default as React.FC;
+    return run(String(compiled), runtime).then((result)=>result?.default) as Promise<React.FC>;
+};
+
+async function processProjectItems(imagePaths: Set<string>, prepath: string | string[], entries: ProjectEntry[]): Promise<ProjectDataWithFactory[]> {
+    return await Promise.all(
+        entries.map(async (entry)=>await processProjectItem(imagePaths, prepath, entry))
+    )
+}
+
+async function processProjectItem(imagePaths: Set<string>, prepath: string | string[], entry: ProjectEntry): Promise<ProjectDataWithFactory> {
+    let entryPath: string = entry.filePath;
+    
+    const contentLoader = ((entryPath in contentRecord) || (!entryPath.startsWith('/') && ((entryPath='/'+entryPath) in contentRecord))) ? contentRecord[entryPath] : undefined;    
+    
+    const contentPromise = contentLoader?.();
+    const contentInstance = await contentPromise;
+    // const contentElem = contentInstance ? <contentInstance.Content/> : null;
+    // const factory = (
+    //     contentInstance ? contentInstance.Content : 
+    const rp = (undefined === contentInstance) ? (entry as ProjectEntry).render() : null;
+
+    // const contentHtml = contentElem && await renderComponentToString(contentElem, 'turtle');
+
+    // const rp = (entry as ProjectEntry).render();
+    // const rp = render(entry as ProjectEntry);
+
+
+    const fullPaths: string[] = entry.data.images?.map((fn: string): string | undefined => {
+        const result = getImagePath(imagePaths, prepath, fn);
+        if(!result) {
+            console.warn('Could not expand path:', fn);
+        }
+        return result;
+    }).filter((x: string | undefined)=>undefined !== x);
+
+
+    const rr = rp ? await rp : null;
+
+    const Factory: AstroComponentFactory = contentInstance?.Content || rr!.Content;
+
+    // console.log(rr);
+    
+    // // console.log('Pre-render body:', p.body)
+    // const rr = await rp;
+    // // console.log('Render result:', rp, rr);
+    // const factory: AstroComponentFactory = rr.Content;
+
+    // const contentElem = <rr.Content/>;
+
+
+    const strippedBody = entry.body?.trim();
+    const contentMdx = strippedBody && strippedBody.length > 0 ? strippedBody : undefined;
+    // const contentElem = mdxToReactComponent(contentMdx);
+
+    // const contentHtml = await renderComponentToString(Factory, {});
+    
+    // console.log(contentHtml);
+    
+    return {
+        id: entry.id,
+        category: entry.data.category,
+        title: entry.data.title,
+        year: entry.data.year,
+        description: entry.data.description,
+        summary: entry.data.summary,
+        tags: entry.data.tags,
+        contentMdx: contentMdx,
+        images: fullPaths,
+        factory: Factory,
+        // contentElem: contentElem,
+        // contentHtml: contentHtml
+  };
+} 
+
+
+
+
+// console.log('imagePaths:', imagePaths);
+
+// Prepare data for ProjectGrid 
+
+// projects.map(async (p: ProjectData): Promise<ProjectData> => console.log('p:', p));
+
+const items: ProjectDataWithFactory[] = await processProjectItems(imagePaths, prepath, projectMetadata);
+
+// const items: ProjectData[] = await Promise.all(
+//   projects.map(async (p: ProjectEntry): Promise<ProjectData> => ({
+//     id: p.id,
+//     title: p.data.title,
+//     year: p.data.year,
+//     description: p.data.description,
+//     summary: p.data.summary,
+//     tags: p.data.tags,
+//     contentHtml: (await p.render()).html,
+//   }))
+// );
+
+
+const factories: Record<string, AstroComponentFactory> = {};
+
+const projects = items.map((data: ProjectDataWithFactory): ProjectData => {
+    const factory = data.factory;
+    factories[data.id] = factory;
+    // data.factory = undefined;
+    return data as ProjectData;
+});
+
+// console.log('Factories:', factories);
+
+
+
+---
+
+<ProjectBrowserInner projects={projects}>
+    {
+        Object.entries(factories).map(([id, Factory]) => (
+            // <><Factory data-project-id={id}></Factory></>
+            <article data-project-id={id}><Factory></Factory></article>
+            // <div><Factory data-project-id={id}></Factory></div>
+        ))
+    }
+    <!-- { (() => {
+        const elems = Object.entries(factories).map(([id, Factory]) => (
+            // <><Factory data-project-id={id}></Factory></>
+            <Factory data-project-id={id}></Factory>
+            <div><Factory data-project-id={id}></Factory></div>
+        ));
+        console.log('Elems:', elems);
+        return elems;
+    })()} -->
+    <!-- {
+        Object.values(factories).map(
+            f => <f/>
+        )
+    } -->
+</ProjectBrowserInner>
+
+<!-- <ProjectGrid projects={items} client:load/>
+<ProjectDialog client:only></ProjectDialog> -->

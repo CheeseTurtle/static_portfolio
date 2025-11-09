@@ -25,17 +25,12 @@ import type { MDXInstance } from "astro";
 
 import StorySidebar from "./StorySidebar.astro";
 
-import type {
-  // ContentMarkerData,
-  FullContentMarkerDataEntry,
-  ContentMarkerDataEntry,
-} from "./ContentMarkerPreact";
 
 import { v4 as uuidv4 } from "uuid";
 import Footer from "../layout/Footer.astro";
 import loadSections from "./util/loadSections";
 
-import type { StorySectionFrontmatter } from "./util/types/types.ts";
+import type { FullContentMarkerDataEntry, ContentMarkerDataEntry, StorySectionFrontmatter } from "./util/types/types.ts";
 
 import { isMdxInstance } from "./util/typeCheck";
 import type { Processor } from "unified";

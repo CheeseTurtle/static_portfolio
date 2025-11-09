@@ -16,7 +16,8 @@ type CarouselProps = {
   opts?: CarouselOptions
   plugins?: CarouselPlugin
   orientation?: "horizontal" | "vertical"
-  setApi?: (api: CarouselApi) => void
+  setApi?: (api: CarouselApi) => void,
+  onCarouselSelect?: (api: CarouselApi | undefined) => void,
 }
 
 type CarouselContextProps = {
@@ -47,6 +48,7 @@ function Carousel({
   plugins,
   className,
   children,
+  onCarouselSelect: onSelect_,
   ...props
 }: React.ComponentProps<"div"> & CarouselProps) {
   const [carouselRef, api] = useEmblaCarousel(
@@ -61,9 +63,10 @@ function Carousel({
 
   const onSelect = React.useCallback((api: CarouselApi) => {
     if (!api) return
-    setCanScrollPrev(api.canScrollPrev())
-    setCanScrollNext(api.canScrollNext())
-  }, [])
+    setCanScrollPrev(api.canScrollPrev());
+    setCanScrollNext(api.canScrollNext());
+    onSelect_?.(api);
+  }, [onSelect_])
 
   const scrollPrev = React.useCallback(() => {
     api?.scrollPrev()
@@ -136,7 +139,7 @@ function CarouselContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       ref={carouselRef}
-      className="overflow-hidden"
+      // className="overflow-hidden"
       data-slot="carousel-content"
     >
       <div

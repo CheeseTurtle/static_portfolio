@@ -123,9 +123,39 @@ const imageLoaderSchema = z.function(
 // });
 
 
+
+const projectCollection = defineCollection({
+  type: "content",
+  schema: z.object({
+    title: z.string(),
+    year: z.number(),
+
+    description: z.string().optional(),
+    summary: z.string().optional(),
+    
+    category: z.string(),
+    audience: z.string().optional(),
+    tags: z.object({
+      languages: z.array(z.string()).optional(),
+      skills: z.array(z.string()).optional(),
+      topics: z.array(z.string()).optional(),
+    }),
+    images: z.array(z.string()).optional(),
+  }),
+})
+
+
+
+
+
 export const collections = {
   staticData: jsonDataCollection,
   loremIpsum: loremIpsumCollection,
+  projects: projectCollection,
   // backdropImages: backdropImageCollection, 
   // storySections: storySectionCollection
 };
+
+
+
+

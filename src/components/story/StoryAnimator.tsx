@@ -6,29 +6,13 @@ import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 // import { useLayoutEffect } from "preact/hooks"; 
 import { useLayoutEffect } from "react";
 import type { SectionContentInstance } from "./types";
-import type {FullContentMarkerDataEntry} from "./ContentMarkerPreact";
+import type {FullContentMarkerDataEntry, ContentMarkerContentElement,ContentMarkerElement,StorySectionElement,Milestone} from "./util/types/types";
 import parseDate from "./util/parseDate";
+
 // import type {Node as VisitedNode} from "unist";
 
 
 // console.log("STORY ANIMATOR SCRIPT");
-
-type ContentMarkerContentElement = (Element&{enter:()=>any, leave:()=>any});
-type ContentMarkerElement = (HTMLSpanElement & {content: null|ContentMarkerContentElement, sectionElem: HTMLElement});
-
-type StorySectionElement = (HTMLElement & {backdrop: {item: HTMLDivElement, img?: HTMLImageElement, wrapper: HTMLDivElement}});
-
-// type MilestoneElement = (HTMLElement & {date: Date, dateString: string});
-
-type Milestone = {
-    index: number,
-    sectionId: string
-    date?: Date,
-    dateString?: string,
-    elem: HTMLElement,
-    alignElem?: HTMLHeadingElement,
-    isMarker: boolean,
-};
 
 
 

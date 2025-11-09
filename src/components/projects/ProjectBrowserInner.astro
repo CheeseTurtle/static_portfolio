@@ -1,0 +1,21 @@
+---
+
+// import ProjectGrid from "./grid/ProjectGrid";
+// import ProjectDialog from "./overlay/dialog";
+
+import ProjectBrowserReact from "./ProjectBrowserReact";
+import { ProjectData } from "./types";
+
+
+const props = Astro.props as {projects: ProjectData[]};
+
+const rp = Astro.slots.has('default') && Astro.slots.render('default');
+const html = rp ? await rp : undefined;
+
+// console.log(html);
+---
+
+<ProjectBrowserReact projects={props.projects} contentString={html} client:only><slot/></ProjectBrowserReact>
+
+<!-- <ProjectGrid projects={items} client:load/>
+<ProjectDialog client:only></ProjectDialog> -->

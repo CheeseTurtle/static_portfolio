@@ -1,0 +1,73 @@
+import { useEffect, useImperativeHandle, useRef, useState } from "react";
+import { SkillBadge, ConceptBadge, LangBadge, TopicBadge, type BadgeType, getBadgeConstructor } from "./badgeTypes";
+type BadgeRowProps = React.ComponentProps<"div"> & {badgeType: BadgeType, badgeItems: string[]}
+
+export const BadgeRow = ({badgeType, badgeItems, ...props}: BadgeRowProps) => {
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState(badgeItems.length);
+
+  // Measure which badges fit
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleResize = () => {
+      const containerWidth = container.offsetWidth;
+      let totalWidth = 0;
+      let count = 0;
+      const children = Array.from(container.children) as HTMLElement[];
+
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i];
+        totalWidth += child.offsetWidth + 4; // 4px gap
+        if (totalWidth > containerWidth) break;
+        count++;
+      }
+
+      setVisibleCount(count);
+    };
+
+    handleResize();
+    const ro = new ResizeObserver(handleResize);
+    ro.observe(container);
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [badgeItems]);
+
+  const visibleBadges = badgeItems.slice(0, visibleCount);
+  const hiddenCount = badgeItems.length - visibleCount;
+
+  const BadgeConstructor = getBadgeConstructor(badgeType);
+
+
+  return (
+    <div ref={containerRef} className="flex gap-1 overflow-hidden" data-slot='badge-row' data-badge-type={badgeType} {...props}>
+    {/* {{visibleBadges.map((label, idx) => (
+    <div
+        key={idx}
+        className="bg-gray-200 text-gray-800 px-2 py-1 rounded text-sm"
+    >
+        {label}
+    </div>
+    ))}} */}
+    {
+        visibleBadges.map((label, idx) => (
+            <BadgeConstructor key={`${label}${idx}`}>{label}</BadgeConstructor>
+        ))
+    }
+    {
+        hiddenCount > 0 && (
+            <div className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-sm">
+            {visibleBadges.length > 0 ? `+${hiddenCount}` : `${hiddenCount} items`}
+            {/* +{hiddenCount} */}
+            </div>
+        )
+    }
+    </div>
+  );
+};
