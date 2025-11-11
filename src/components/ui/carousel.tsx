@@ -7,10 +7,22 @@ import { ArrowLeft, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
+import { useDotButton } from "./carousel-dot-button";
+
+import {gsap} from 'gsap';
+
+import type {EmblaCarouselType, EmblaEventType, EmblaOptionsType} from "embla-carousel";
+
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
 type CarouselOptions = UseCarouselParameters[0]
 type CarouselPlugin = UseCarouselParameters[1]
+
+
+const TWEEN_FACTOR_BASE = 0.84
+
+const numberWithinRange = (number: number, min: number, max: number): number =>
+  Math.min(Math.max(number, min), max);
 
 type CarouselProps = {
   opts?: CarouselOptions
@@ -51,22 +63,28 @@ function Carousel({
   onCarouselSelect: onSelect_,
   ...props
 }: React.ComponentProps<"div"> & CarouselProps) {
-  const [carouselRef, api] = useEmblaCarousel(
+const [carouselRef, api] = useEmblaCarousel(
     {
       ...opts,
-      axis: orientation === "horizontal" ? "x" : "y",
+      axis: (orientation === "horizontal") ? "x" : "y",
     },
     plugins
   )
+  const tweenFactor = React.useRef(0);
   const [canScrollPrev, setCanScrollPrev] = React.useState(false)
   const [canScrollNext, setCanScrollNext] = React.useState(false)
 
-  const onSelect = React.useCallback((api: CarouselApi) => {
+  const onSelectInInit = React.useCallback((api?: CarouselApi) => {
     if (!api) return
     setCanScrollPrev(api.canScrollPrev());
     setCanScrollNext(api.canScrollNext());
+    // onSelect_?.(api);
+  }, [setCanScrollNext, setCanScrollPrev]);
+  const onSelect = React.useCallback((api: CarouselApi) => {
+    onSelectInInit(api);
     onSelect_?.(api);
-  }, [onSelect_])
+  }, [onSelectInInit, onSelect_]);
+
 
   const scrollPrev = React.useCallback(() => {
     api?.scrollPrev()
@@ -89,6 +107,108 @@ function Carousel({
     [scrollPrev, scrollNext]
   )
 
+
+  const setTweenFactor = React.useCallback((emblaApi: EmblaCarouselType) => {
+    tweenFactor.current = TWEEN_FACTOR_BASE * emblaApi.scrollSnapList().length
+  }, [])
+
+
+
+  // const tweenOpacity = React.useCallback((api: EmblaCarouselType) => {
+  //   const engine = api.internalEngine()
+  //   const scrollProgress = api.scrollProgress()
+  //   // const slidesInView = api.slidesInView(true) // includes partially visible
+  //   const slidesInView = api.slidesInView() // includes partially visible
+  //   const nodes = api.slideNodes()
+
+  //   // const prevSnap = api.previousScrollSnap();
+  //   const hereSnap = api.selectedScrollSnap();
+
+  //   const snapList = engine.scrollSnapList;
+    
+  //   const hereProg = snapList[hereSnap];
+  //   // const prevProg = snapList[prevSnap];
+
+  //   // const direction = (hereSnap > prevSnap) ? 1 : -1
+  //   // const direction = hereProg > scrollProgress ? -1 : 1;  
+  //   // console.log(hereSnap, prevSnap);
+
+
+  //   // console.log('Slides in view:', slidesInView);
+  //   // console.log('scrollProgress:', scrollProgress, engine.scrollTarget.byIndex(2, -1));
+  //   // console.log('nodes:', nodes, nodes);
+  //   // console.log('scrollSnaps:', engine.scrollSnaps, engine.scrollSnapList);
+  //   // console.log('api scrollSnapList:', api.scrollSnapList())
+  //   // console.log('indices:', engine.slideIndexes, engine.slideRegistry, engine.slideFocus)
+
+  //   // Only tween visible slides (usually 3)
+  //   slidesInView.forEach((index) => {
+  //     const snap = engine.scrollSnaps[index] ?? 0
+  //     let diff = snap - scrollProgress
+
+  //     if (engine.options.loop) {
+  //       for (const lp of engine.slideLooper.loopPoints) {
+  //         if (lp.index === index && lp.target() !== 0) {
+  //           const sign = Math.sign(lp.target())
+  //           diff = sign === -1
+  //             ? snap - (1 + scrollProgress)
+  //             : snap + (1 - scrollProgress)
+  //         }
+  //       }
+  //     }
+
+  //     const fadeValue = 1 - Math.abs(diff * tweenFactor.current)
+  //     const opacity = Math.min(Math.max(fadeValue, 0.2), 1) // min 0.2 for dimming effect
+
+  //     gsap.to(nodes[index], {
+  //       opacity,
+  //       duration: 0.25,
+  //       ease: 'power2.out',
+  //       overwrite: 'auto',
+  //     })
+  //   })
+  // }, []);
+
+  const tweenOpacity = React.useCallback(
+    (emblaApi: EmblaCarouselType, eventName?: EmblaEventType) => {
+      const engine = emblaApi.internalEngine()
+      const scrollProgress = emblaApi.scrollProgress()
+      const slidesInView = emblaApi.slidesInView()
+      const isScrollEvent = eventName === 'scroll'
+
+      emblaApi.scrollSnapList().forEach((scrollSnap, snapIndex) => {
+        let diffToTarget = scrollSnap - scrollProgress
+        const slidesInSnap = engine.slideRegistry[snapIndex]
+
+        slidesInSnap.forEach((slideIndex) => {
+          if (isScrollEvent && !slidesInView.includes(slideIndex)) return
+
+          if (engine.options.loop) {
+            engine.slideLooper.loopPoints.forEach((loopItem) => {
+              const target = loopItem.target()
+
+              if (slideIndex === loopItem.index && target !== 0) {
+                const sign = Math.sign(target)
+
+                if (sign === -1) {
+                  diffToTarget = scrollSnap - (1 + scrollProgress)
+                }
+                if (sign === 1) {
+                  diffToTarget = scrollSnap + (1 - scrollProgress)
+                }
+              }
+            })
+          }
+
+          const tweenValue = 1 - Math.abs(diffToTarget * tweenFactor.current)
+          const opacity = numberWithinRange(tweenValue, 0, 1).toString()
+          emblaApi.slideNodes()[slideIndex].style.opacity = opacity
+        })
+      })
+    },
+    []
+  )
+
   React.useEffect(() => {
     if (!api || !setApi) return
     setApi(api)
@@ -96,14 +216,45 @@ function Carousel({
 
   React.useEffect(() => {
     if (!api) return
-    onSelect(api)
-    api.on("reInit", onSelect)
+    onSelectInInit(api)
+    api.on("reInit", onSelectInInit)
+    // api.on("select", onSelect)
+
+    return () => {
+      api?.off('reInit', onSelectInInit)
+      // api?.off("select", onSelect)
+    }
+  }, [api, onSelectInInit]);
+
+    React.useEffect(() => {
+    if (!api) return
+    // onSelect(api);
     api.on("select", onSelect)
 
     return () => {
       api?.off("select", onSelect)
     }
   }, [api, onSelect])
+
+
+   React.useEffect(() => {
+    if (!api) return;
+
+    setTweenFactor(api);
+    tweenOpacity(api);
+    api
+      .on('reInit', setTweenFactor)
+      .on('scroll', tweenOpacity)
+      .on('reInit', tweenOpacity)
+      .on('slideFocus', tweenOpacity);
+
+    return () => { api
+      .off('reInit', setTweenFactor)
+      .off('scroll', tweenOpacity)
+      .off('reInit', tweenOpacity)
+      .off('slideFocus', tweenOpacity);
+    }
+  }, [api, tweenOpacity, setTweenFactor]);
 
   return (
     <CarouselContext.Provider
@@ -232,6 +383,56 @@ function CarouselNext({
   )
 }
 
+
+
+
+type CarouselDotButtonPropType = {selected: boolean} & React.ComponentPropsWithRef<'button'>;
+
+// export const DotButton: React.FC<PropType> = (props) => {
+function CarouselDotButton (props: CarouselDotButtonPropType) {
+  const { children, selected, className, ...restProps } = props
+
+  return (
+    <button type="button" {...restProps} data-selected={selected} className={cn(
+        "appearance-none bg-transparent touch-manipulation inline-flex cursor-pointer border-0 p-0 m-0",
+        "w-[2.6rem] h-[2.6rem] flex items-center justify-center rounded-full",
+        "tap-highlight-transparent", // you’ll need to define this yourself (see note below)
+        "after:content-[''] after:flex after:items-center after:justify-center after:rounded-full",
+        "after:w-[1.4rem] after:h-[1.4rem]",
+        "after:shadow-[inset_0_0_0_0.2rem_rgb(234_234_234)]",
+        "data-[selected=true]:after:shadow-[inset_0_0_0_0.2rem_var(--color-mint-50)]",
+        (selected ? 'bg-accent-foreground' : ''),
+        className
+    )}>
+      {children}
+    </button>
+  )
+}
+
+
+function CarouselDots() {
+
+  const {api} = useCarousel();
+  
+  const { selectedIndex, slideIndices, onDotButtonClick } = useDotButton(api);
+
+  return <div data-role='carousel-dot-buttons' className="flex flex-wrap justify-end items-center mr-[calc((2.6rem-1.4rem)/(-2))]">
+    {slideIndices.map(index=>
+      <CarouselDotButton
+        key={index}
+        onClick={() => onDotButtonClick(index)}
+        selected={index === selectedIndex}
+        // className={(index==selectedIndex) ? 'shadow-inset shadow-accent-foreground' : ''}
+        // className='box-shadow-[inset_0_0_0_0.2rem_var(--text-body)]'
+        // className={'embla__dot'.concat(
+        //   index === selectedIndex ? ' embla__dot--selected' : ''
+        // )}
+        />
+    )}
+
+  </div>
+}
+
 export {
   type CarouselApi,
   Carousel,
@@ -239,4 +440,5 @@ export {
   CarouselItem,
   CarouselPrevious,
   CarouselNext,
+  CarouselDots
 }

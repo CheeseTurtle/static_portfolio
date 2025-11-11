@@ -3,6 +3,7 @@ import { defineCollection, z } from 'astro:content';
 import LazyTextFileInstance from '../utils/textloader';
 import type { Loader, DefaultObjectPromise } from '../components/story/util/types/types';
 import type { ImageInputFormat } from 'astro';
+import { glob } from 'astro/loaders';
 // import { imageMetadata } from 'astro/assets/utils';
 
 
@@ -128,7 +129,7 @@ const projectCollection = defineCollection({
   type: "content",
   schema: z.object({
     title: z.string(),
-    year: z.number(),
+    date: z.union([z.string(), z.number(), z.date()]),
 
     description: z.string().optional(),
     summary: z.string().optional(),

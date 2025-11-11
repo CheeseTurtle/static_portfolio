@@ -1,16 +1,23 @@
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, type ReactNode } from "react";
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, type Dispatch, type ReactNode } from "react";
 import type { TagType } from "../FilterForm";
 import type { FilterSpec } from "../FilterSheet";
 import TagButton from "../common/TagButton";
 import TagButtons from "../common/TagButtons";
+import type { FilterAction, FilterRangeInfo, FilterState } from "../common/filterTypes";
+import type { ProjectInfo } from "../../types";
 
 
 
 type TagFilterSectionProps = {
+    projects: ProjectInfo[],
     tagType: TagType,
-    filterSpec: FilterSpec,
-    availableTags: Set<string>,
-    setSelectedTags: (tags: string[] | undefined) => void
+    state: FilterState,
+    dispatch: Dispatch<FilterAction>,
+    // filterSpec: FilterSpec,
+    // availableTags: Set<string>,
+    rangeInfo: FilterRangeInfo,
+    registerReset: (resetFn: ()=>void) => ()=>void,
+    // setSelectedTags: (tags: string[] | undefined) => void
 };
 
 
@@ -63,7 +70,10 @@ const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProp
     const sectionTitle = plural.slice(0,1).toUpperCase() + plural.slice(1);
     
     const colorClassName = getSectionColors(props.tagType);
+
+    const availableTags = useMemo(() => props.rangeInfo[props.tagType], [props.rangeInfo, props.tagType]);
     
+    const selectedTags = useMemo(()=>props.state.tags[props.tagType], [props.state.tags[props.tagType], props.tagType]);
 
     // const toggleFilterStatus = useCallback((tagText: string, pressed?: boolean) => {
     //     const newTags: string[] | undefined = (() => {
@@ -102,9 +112,13 @@ const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProp
 
     // useImperativeHandle(ref, () => handleRef.current, []);
 
+    const toggleTag = useCallback((tagText: string) => {
+        props.dispatch({type: 'TOGGLE_TAG', payload: {tagType: props.tagType, tagText}})
+    }, [props.tagType, props.dispatch])
+
     return <div data-role='tag-filter-section' data-tag-type={props.tagType}>    
         <h3>{sectionTitle}</h3>
-        <TagButtons tagType={props.tagType} availableTags={props.availableTags} colorClassName={colorClassName} setSelectedTags={props.setSelectedTags}></TagButtons>
+        <TagButtons projects={props.projects} tagType={props.tagType} availableTags={availableTags} colorClassName={colorClassName} toggleTag={toggleTag} selectedTags={selectedTags} registerReset={props.registerReset}></TagButtons>
     </div>
 });
 

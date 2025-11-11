@@ -9,31 +9,23 @@ import {
     SheetTrigger
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { useState, type Dispatch, type SetStateAction } from "react";
-import type { ProjectData } from "../types";
+import { useCallback, useEffectEvent, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import type { ProjectData, ProjectInfo } from "../types";
 import FilterForm from "./FilterForm";
+import type { FilterRangeInfo } from "./common/filterTypes";
+import { useFilter } from "./common/filterContext";
 
 
 export type FilterSheetProps = {
     open: boolean,
     setOpen: Dispatch<SetStateAction<boolean>>,
-    allProjects: ProjectData[],
-    // visibleProjects: ProjectData[],
-    // setVisibleProjects: Dispatch<SetStateAction<ProjectData[]>>,
-    filterSpec: FilterSpec,
-    setFilterSpec: Dispatch<SetStateAction<FilterSpec>>,
-};
-
-export type FilterRangeInfo = {
-    lang: Set<string>,
-    topic: Set<string>,
-    // concept: string[],
-    skill: Set<string>,
-    minYear: number,
-    maxYear: number,
-    categories: Set<string>,
-    // audiences: string[],
-    count: number
+    rangeInfo: FilterRangeInfo,
+    projects: ProjectInfo[],
+    // allProjects: ProjectData[],
+    // // visibleProjects: ProjectData[],
+    // // setVisibleProjects: Dispatch<SetStateAction<ProjectData[]>>,
+    // filterSpec: FilterSpec,
+    // setFilterSpec: Dispatch<SetStateAction<FilterSpec>>,
 };
 
 export type FilterSpec = {
@@ -47,53 +39,45 @@ export type FilterSpec = {
 
 
 
-function collectFilterInfo(allProjects: ProjectData[]): FilterRangeInfo {
-    const langs: Set<string> = new Set(), topics: Set<string> = new Set(), concepts: Set<string> = new Set(), skills: Set<string> = new Set();
-    const categories: Set<string> = new Set();  //, audiences: Set<string> = new Set();
-    let minYear: number | undefined;
-    let maxYear: number | undefined;
-    let count: number = 0;
-
-    allProjects?.forEach((p) => {
-        categories.add(p.category);
-        // if(p.audience) audiences.add(p.audience);
-        if(minYear === undefined || minYear > p.year) minYear = p.year;
-        if(maxYear === undefined || maxYear < p.year) maxYear = p.year;
-        p.tags.languages?.forEach((x)=>langs.add(x));
-        p.tags.skills?.forEach((x)=>skills.add(x));
-        p.tags.topics?.forEach((x)=>topics.add(x));
-        count++;
-    });
-
-    if(minYear === undefined || maxYear === undefined)
-        throw 'No projects, or no projects with years';
-
-    return {
-        lang: langs, topic: topics, skill: skills, minYear, maxYear, categories, count
-    }
-}
-
 
 export default function FilterSheet(props: FilterSheetProps) {
+    
+    const {state, dispatch} = useFilter();
 
-    const filterInfo: FilterRangeInfo = collectFilterInfo(props.allProjects);
+    // This is the shared reset function all TagButtons can call
+    const resetAll = useEffectEvent(() => {
+        // We'll notify children via a callback they register
+        registeredResets.current.forEach((fn) => fn());
+    });
 
-    return <Sheet>
+    // Keep a registry of reset callbacks for each TagButtons
+    const registeredResets = useRef<Set<() => void>>(new Set());
+
+    const registerReset = useCallback((resetFn: () => void) => {
+        registeredResets.current.add(resetFn);
+        return () => {registeredResets.current.delete(resetFn);} // cleanup
+    }, []);
+
+    return <Sheet onOpenChange={
+        (open) => {
+            if(!open) resetAll();
+        }
+    }>
         <SheetTrigger>Open</SheetTrigger>
-        <SheetContent side='right'>
+        <SheetContent side='top'>
             <SheetHeader>
                 <SheetTitle>Turtles</SheetTitle>
                 <SheetDescription>Turtles</SheetDescription>
             </SheetHeader>
 
-            <FilterForm filterRangeInfo={filterInfo} {...props}></FilterForm>
+            <FilterForm state={state} dispatch={dispatch} registerReset={registerReset} {...props}></FilterForm>
 
-            <SheetFooter>
+            {/* <SheetFooter>
                 <Button type="submit">Save changes</Button>
                 <SheetClose asChild>
                     <Button variant="outline">Close</Button>
                 </SheetClose>
-            </SheetFooter>
+            </SheetFooter> */}
         </SheetContent>
     </Sheet>
 }   

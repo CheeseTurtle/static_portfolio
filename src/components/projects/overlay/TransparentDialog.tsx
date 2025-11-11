@@ -54,6 +54,8 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  // console.log('PROPS:', props, className);
+
   return (
     <>
     {/* // <DialogPortal data-slot="dialog-portal"> */}
@@ -61,13 +63,23 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "bg-transparent data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed z-50 grid w-full duration-200 p-0",
+          "bg-transparent data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed z-50 grid w-full duration-200 p-0 pointer-events-none",
         //   "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
           className
         )}
         {...props}
+        //   onInteractOutside={(e) => {
+        //     const target = e.target as HTMLElement;
+        //     let closest;
+        //     console.log('Checking closest...');
+        //     if (closest = target.closest('[data-carousel-control]')) {
+        //       console.log('Closest:', closest);
+        //       e.preventDefault(); // tell Radix not to close
+        // }}}
       >
+        {/* <div className="w-full h-full inset-0 container border-none bg-transparent p-0 m-0 z-75"> */}
         {children}
+        {/* </div> */}
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"

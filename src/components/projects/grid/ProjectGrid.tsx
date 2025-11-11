@@ -1,20 +1,20 @@
 // src/components/ProjectGrid.tsx
 import { useMemo, type Dispatch, type SetStateAction } from "react";
 import ProjectItem, { type ProjectItemInfo } from "./items/ProjectItem";
-import type { ProjectData } from "./../types";
+import type { ProjectInfo } from "./../types";
 import { useWindowSize } from "../../../hooks/useWindowSize";
 
 interface ProjectGridProps {
-  projects: ProjectData[];
+  projects: ProjectInfo[];
   activeProjectId: string | undefined;
 
-  activeProject: ProjectData | null;
+  activeProject: ProjectInfo | null;
 
   activeProjectIndex: number | null;
     openedProjectId: string | null;
     setOpenedProjectId: Dispatch<SetStateAction<string | null>>;
 
-  setActiveProjectItem:  ((item: string | ProjectData | null) => void); // Dispatch<SetStateAction<ProjectItemInfo | null>> |
+  setActiveProjectItem:  ((item: string | ProjectInfo | null) => void); // Dispatch<SetStateAction<ProjectItemInfo | null>> |
   // setHoveredProjectItem: Dispatch<SetStateAction<ProjectItemInfo | null>>,
   
   carouselOpen: boolean;
@@ -37,8 +37,8 @@ export default function ProjectGrid({ activeProject, projects, activeProjectId, 
   }, [width]);
 
   // Split projects row-wise into columns
-  const cols: ProjectData[][] = useMemo(() => {
-    const arr: ProjectData[][] = Array.from({ length: columns }, () => []);
+  const cols: ProjectInfo[][] = useMemo(() => {
+    const arr: ProjectInfo[][] = Array.from({ length: columns }, () => []);
     projects.forEach((p, i) => {
       arr[i % columns].push(p);
     });

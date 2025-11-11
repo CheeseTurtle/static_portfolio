@@ -11,7 +11,7 @@ import { getImagePath } from "../story/util/loadImages";
 
 import { getCollection, render } from "astro:content";
 
-import type {ProjectData, ProjectEntry, ProjectFrontmatter, ProjectDataWithFactory} from "./types";
+import type {ProjectData, ProjectInfo, ProjectEntry, ProjectFrontmatter, ProjectDataWithFactory, TagKey} from "./types";
 import { MDXInstance } from "astro";
 
 import { compile } from "@mdx-js/mdx";
@@ -23,6 +23,7 @@ import { AstroComponentInstance, renderToString } from "astro/dist/runtime/serve
 import { renderComponentToString } from "astro/dist/runtime/server/render";
 import { ReactElement } from "react";
 import type { AstroComponentFactory } from "astro/dist/runtime/server/render/astro";
+import parseDate from "../story/util/parseDate";
 
 // import { unified } from "unified";
 // import remarkParse from "remark-parse";
@@ -66,7 +67,8 @@ const contentRecord = import.meta.glob<MDXInstance<ProjectFrontmatter>>(
     '/src/content/projects/*.mdx',
     {eager: false, exhaustive: true});
 
-
+// console.log('contentRecord:', contentRecord);
+// console.log('projectMetadata:', projectMetadata);
 
 // function createLoaderWithFallback(loader: () => Promise<MDXInstance<ProjectFrontmatter>>, mdxSource: string | undefined) {
 //     const fallbackElem: Promise<AstroComponentInstance | undefined> = (async ()=> {
@@ -102,19 +104,21 @@ const contentRecord = import.meta.glob<MDXInstance<ProjectFrontmatter>>(
 
 
 
-function mdxToReactComponent(mdxSource: string) {
-    const compiled = compile(mdxSource, { outputFormat: 'function-body' });
-    // return runSync(String(compiled), runtime).default as React.FC;
-    return run(String(compiled), runtime).then((result)=>result?.default) as Promise<React.FC>;
-};
+// function mdxToReactComponent(mdxSource: string) {
+//     const compiled = compile(mdxSource, { outputFormat: 'function-body' });
+//     // return runSync(String(compiled), runtime).default as React.FC;
+//     return run(String(compiled), runtime).then((result)=>result?.default) as Promise<React.FC>;
+// };
 
 async function processProjectItems(imagePaths: Set<string>, prepath: string | string[], entries: ProjectEntry[]): Promise<ProjectDataWithFactory[]> {
+    // console.log('Entries:', [...entries.values()])
     return await Promise.all(
         entries.map(async (entry)=>await processProjectItem(imagePaths, prepath, entry))
     )
 }
 
 async function processProjectItem(imagePaths: Set<string>, prepath: string | string[], entry: ProjectEntry): Promise<ProjectDataWithFactory> {
+    // console.log('Processing entry:', entry);
     let entryPath: string = entry.filePath;
     
     const contentLoader = ((entryPath in contentRecord) || (!entryPath.startsWith('/') && ((entryPath='/'+entryPath) in contentRecord))) ? contentRecord[entryPath] : undefined;    
@@ -167,7 +171,7 @@ async function processProjectItem(imagePaths: Set<string>, prepath: string | str
         id: entry.id,
         category: entry.data.category,
         title: entry.data.title,
-        year: entry.data.year,
+        date: entry.data.date,
         description: entry.data.description,
         summary: entry.data.summary,
         tags: entry.data.tags,
@@ -202,14 +206,46 @@ const items: ProjectDataWithFactory[] = await processProjectItems(imagePaths, pr
 //   }))
 // );
 
+function parseDateValue(value: Date | string | number): [Date, string | undefined] {
+    switch(typeof value) {
+        case 'string':
+            return parseDate(value);
+        case 'number':
+            return [new Date(value, 0), undefined];
+        case 'object':
+            return [value, undefined];
+        default:
+            throw TypeError(`Expected Date, string, or number; got ${typeof value}: ${value}`);
+    }
+}
+
 
 const factories: Record<string, AstroComponentFactory> = {};
-
-const projects = items.map((data: ProjectDataWithFactory): ProjectData => {
+// console.log('Projects:', items)
+const projects: ProjectInfo[] = items.map((data: ProjectDataWithFactory): ProjectInfo => {
     const factory = data.factory;
     factories[data.id] = factory;
     // data.factory = undefined;
-    return data as ProjectData;
+    // console.log(data);
+    const [date, dateStr] = parseDateValue(data.date);
+    return {
+        id: data.id,
+        category: data.category,
+        description: data.description,
+        summary: data.summary,
+        title: data.title,
+        date: date,
+        dateStr: dateStr,
+        audience: data.audience,
+        contentElem: data.contentElem,
+        contentHtml: data.contentHtml,
+        contentMdx: data.contentMdx,
+        images: data.images,
+
+        tags: Object.fromEntries(
+            Object.entries(data.tags as Record<TagKey, string[]>).map(([tagType, tagArr]) => [tagType, new Set<string>(tagArr)])
+        ) as Record<TagKey, Set<string>>
+    };
 });
 
 // console.log('Factories:', factories);

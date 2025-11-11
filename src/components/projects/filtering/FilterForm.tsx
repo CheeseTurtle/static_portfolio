@@ -1,16 +1,20 @@
-import { forwardRef, useMemo } from "react";
-import type { FilterRangeInfo, FilterSheetProps, FilterSpec } from "./FilterSheet";
-import { Accordion, AccordionContent, AccordionHeader, AccordionItem, AccordionTrigger } from "@radix-ui/react-accordion";
+import { forwardRef, useMemo, type Dispatch } from "react";
+import type { FilterSheetProps } from "./FilterSheet";
+// import { Accordion, AccordionContent, AccordionHeader, AccordionItem, AccordionTrigger } from "@radix-ui/react-accordion";
 import TagFilterSection from "./sections/TagFilterSection";
 import {Slider} from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
+import type { FilterAction, FilterRangeInfo, FilterState } from "./common/filterTypes";
+import type { ProjectData, ProjectInfo } from "../types";
 
 type SliderProps = React.ComponentProps<typeof Slider>;
 
 
 type FilterFormProps = {
-    filterSpec: FilterSpec,
-    filterRangeInfo: FilterRangeInfo,
+    projects: ProjectInfo[],
+    state: FilterState,
+    dispatch: Dispatch<FilterAction>,
+    registerReset: (resetFn: ()=>void) => ()=>void,
 } & FilterSheetProps;
 
 export interface FilterFormHandle {};
@@ -22,16 +26,8 @@ const TAGTYPES: TagType[] = ['lang', 'skill', 'topic'];
 const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, ref) => {
 
     // Year slider
-    const slider = <Slider min={props.filterRangeInfo.minYear} max={props.filterRangeInfo.maxYear} defaultValue={[props.filterRangeInfo.minYear, props.filterRangeInfo.maxYear]}
-        onValueChange={(value: number[]) => {
-            props.setFilterSpec((oldSpec) => {
-                const newSpec: FilterSpec = Object.fromEntries(Object.entries(oldSpec));
-                newSpec['minYear'] = value[0];
-                newSpec['maxYear'] = value[1];
-                // console.log('New spec:', value, newSpec);
-                return newSpec;
-            });
-        }}
+    const slider = <Slider min={props.rangeInfo.minYear} max={props.rangeInfo.maxYear} defaultValue={[props.rangeInfo.minYear, props.rangeInfo.maxYear]}
+        onValueChange={(value: [number, number]) => props.dispatch({type: 'SET_YEAR', payload: value})}
         // vocab=""
         color='green'
         // minStepsBetweenThumbs={1}
@@ -43,16 +39,7 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, ref) =>
 
     const tagSections = useMemo( ()=>
         TAGTYPES.map((tt =>
-            <TagFilterSection key={tt} filterSpec={props.filterSpec} tagType={tt} availableTags={props.filterRangeInfo[tt]} setSelectedTags={(tags: string[] | undefined) => {
-                // props.setFilterSpec((oldSpec) => ({[tt]: (tags && tags.length > 0 ? tags : undefined), ...oldSpec}));
-                let newSpec: FilterSpec | undefined;
-                props.setFilterSpec((oldSpec) => {
-                    newSpec = Object.fromEntries(Object.entries(oldSpec));
-                    newSpec[tt] = (tags && tags.length > 0 ? tags : undefined);
-                    return newSpec;
-                });
-                console.log('Set filter spec:', tags, newSpec);
-            }}></TagFilterSection>
+            <TagFilterSection projects={props.projects} state={props.state} dispatch={props.dispatch} key={tt} tagType={tt} rangeInfo={props.rangeInfo} registerReset={props.registerReset}></TagFilterSection>
         ))
         // <Accordion type='multiple'>
         //     <AccordionHeader>
@@ -70,7 +57,7 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, ref) =>
         //         }
         //     </AccordionContent>
         // </Accordion>
-    , [props.filterSpec, props.filterRangeInfo]);
+    , [props.state, props.rangeInfo, props.dispatch]);
 
     return <>
         {slider}

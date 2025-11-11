@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Dispatch, type ReactElement, type RefAttributes, type SetStateAction } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { ProjectData } from "../../types";
+import type { ProjectInfo } from "../../types";
 import { BadgeRows } from "./badges/BadgeRows";
 import { convertToBadgeType, type BadgeType } from "./badges/badgeTypes";
 import ExpandedPart from "./expansion/ExpandedPart";
@@ -19,7 +19,7 @@ export interface ProjectItemHandle {
 };
 
 type ProjectItemProps = {
-    project: ProjectData,
+    project: ProjectInfo,
     activeProjectIndex: number | null,
 
     openedProjectId: string | null;
@@ -27,14 +27,14 @@ type ProjectItemProps = {
     // onProjectOpen: Dispatch<SetStateAction<ProjectItemInfo | null>> | ((info: ProjectItemInfo | null) => void),
     activeProjectId: string | undefined,
     // onProjectHover: Dispatch<SetStateAction<ProjectItemInfo | null>>,
-      setActiveProjectItem:  ((item: string | ProjectData | null) => void), // Dispatch<SetStateAction<ProjectItemInfo | null>> |
+      setActiveProjectItem:  ((item: string | ProjectInfo | null) => void), // Dispatch<SetStateAction<ProjectItemInfo | null>> |
       // setHoveredProjectItem: Dispatch<SetStateAction<ProjectItemInfo | null>>,
     
       carouselOpen: boolean,
     
       setCarouselOpen: Dispatch<SetStateAction<boolean>>,
 
-      activeProject: ProjectData | null,
+      activeProject: ProjectInfo | null,
 
       // onClick: () => void;
 };
@@ -42,62 +42,52 @@ type ProjectItemProps = {
 export type ProjectItemElement = ReactElement<ProjectItemProps & RefAttributes<ProjectItemHandle>>;
 export type ProjectItemInfo = {
     elem: HTMLDivElement,
-    data: ProjectData
+    data: ProjectInfo
 };
 
 const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({ openedProjectId, setOpenedProjectId, activeProject, activeProjectIndex, activeProjectId, setActiveProjectItem, project, carouselOpen, setCarouselOpen }: ProjectItemProps, ref) => {
-    // console.log('projectData:', project);
-  const { id, images, title, year, summary, description, tags, contentHtml } = project;
+    // console.log('projectInfo:', project);
+  const { id, images, title, date, summary, description, tags, contentHtml } = project;
   // const [expanded, setExpanded] = useState(false);
 
+  const year = useMemo(()=>(date.explicitDate?.year ?? date.getFullYear()), [date]);
   const selfRef = useRef<HTMLDivElement>(null);
   const extraRef = useRef<HTMLDivElement>(null);
 
-  const newEntries = Object.entries(tags || {}).map(([k, vs]) => {
+  const newEntries = useMemo(() => Object.entries(tags || {}).map(([k, vs]) => {
     const newKey = convertToBadgeType(k);
     return [newKey, vs];
-  });
-  const badgeRows = (newEntries.length > 0 ? Object.fromEntries(newEntries) : {}) as Record<BadgeType, string[]>;
+  }), [tags]);
+  const badgeRows = useMemo(()=>(newEntries.length > 0 ? Object.fromEntries(newEntries) : {}) as Record<BadgeType, Set<string>>, [newEntries]);
 
-  // const [opened, setOpened] = useState<boolean>(false);
-
-  
-  
   const expanded = useMemo(() => {
     // console.log(id, activeProjectId, id == activeProjectId);
     return (id == activeProjectId);
-  }, [id, activeProjectId, activeProject, activeProjectIndex, openedProjectId]);
+  }, [id, activeProjectId]);
   
-  // const expanded = useCallback(() => {
-    //     console.log('Evaluating `expanded`:', id, activeProjectId, id == activeProjectId, id === activeProjectId);
-    //     return id == activeProjectId
-    //   }, [activeProjectId]);
-    
-    // const expanded = id == activeProjectId;
-    
-    // const expandedAndOpened = useCallback(() => (openedProjectId == id) && expanded, [carouselOpen, expanded]);
-
   const onClick = useCallback(() => {
       // // const self = handleRef.current;
       // // if(!self) return;
       // console.log('ONCLICK -- id:', id, activeProject, activeProjectIndex, openedProjectId);
       // console.log('onClick expanded:', expanded);
-      if(id == activeProjectId) {
+      if(id === activeProjectId) {
         // // if(carouselOpen) return;
         // console.log('Setting carouselOpen');
         // // setOpened(true);
-        // // if(!carouselOpen) 
         // console.log(`Setting activeProjectId to ${id} -- prev:`, activeProjectId);
-        setActiveProjectItem(id);
-        setOpenedProjectId(id);
+        // setActiveProjectItem(id);
+        console.log('Setting carousel open');
+        // setOpenedProjectId(id);
+        // // if(!carouselOpen) 
         setCarouselOpen(true);
+        // console.log('Setting opened project id:', id);
       } else {
         // // console.log('Setted activeProjectId to:', activeProjectId)
         // // setCarouselOpen(false);
-        // console.log(`Setting activeProjectId to ${id} -- prev:`, activeProjectId);
+        console.log(`Setting activeProjectId to ${id} -- prev:`, activeProjectId);
         setActiveProjectItem(id);
       }
-    }, [id, activeProjectId]);
+    }, [id, activeProjectId, setCarouselOpen, setActiveProjectItem]);
 
   // const handleRef = useRef<ProjectItemHandle>({
   //   // setExpanded: (value: boolean) => {
@@ -115,7 +105,7 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({ openedPro
 
   //   onClick,
   // });
-  useImperativeHandle(ref, () => ({onClick}), [project, id]);  // [activeProject, activeProjectId, setActiveProjectItem, setCarouselOpen]);
+  useImperativeHandle(ref, () => ({onClick}), [id, activeProjectId]);  // [activeProject, activeProjectId, setActiveProjectItem, setCarouselOpen]);
 
   useEffect(() => {
       const el = extraRef.current;
@@ -137,7 +127,6 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({ openedPro
             onComplete: () => { 
                 gsap.set(el, { height: "auto" });
                 // console.log('el after expand:', el)
-        
             },
           }
         );

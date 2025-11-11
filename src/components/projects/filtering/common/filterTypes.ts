@@ -1,0 +1,196 @@
+import type React from "react";
+import type { ProjectInfo } from "../../types";
+import type { Dispatch, SetStateAction } from "react";
+
+export type TagType = ('lang' | 'topic' | 'skill');  // | 'concept');
+export const TAGTYPES: TagType[] = ['lang', 'skill', 'topic'];
+
+export function getProjectKeyFromTagType(tt: TagType): 'languages' | 'skills' | 'topics' {
+    switch(tt) {
+        case 'lang':
+            return 'languages';
+        case 'skill':
+            return 'skills';
+        case 'topic':
+            return 'topics';
+        default:
+            throw TypeError();
+    }
+}
+
+// type YearRange = [number, number] | [undefined, number] | [number, undefined]
+
+
+export type FilterState = {
+  year: [number | undefined, number | undefined] | undefined; // min and max
+  categories: Set<string>; // selected categories
+  tags: Record<TagType, Set<string>>; // selected tags by type
+  openProjectId?: string | null
+};
+
+export enum FilterField {
+    MIN_YEAR = 1,
+    MAX_YEAR = 2,
+    ALL_YEAR = 3,
+
+    CATEGORY = 4,
+    TAG = 8   
+}
+
+type ResetPayload = {
+    mask?: FilterField,
+    tagTypes?: TagType[] | TagType
+}
+
+export type FilterAction =
+  | { type: 'SET_YEAR'; payload: [number, number] }
+  | { type: 'TOGGLE_CATEGORY'; payload: string }
+  | { type: 'TOGGLE_TAG'; payload: { tagType: TagType; tagText: string } }
+  | { type: 'RESET'; payload?: ResetPayload }
+  | { type: 'OPEN_PROJECT'; payload: { id?: string | undefined, changeCarouselState?: boolean }}
+  | { type: 'INIT_FROM_URL'; payload: { category?: string[], lang?: string[], skill?: string[], topic?: string[], year?: [number | undefined, number | undefined], project?: string | null } };
+
+
+
+
+
+export type FilterRangeInfo = {
+    lang: Set<string>,
+    topic: Set<string>,
+    // concept: string[],
+    skill: Set<string>,
+    minYear: number,
+    maxYear: number,
+    categories: Set<string>,
+    // audiences: string[],
+    count: number // number of project items
+};
+
+
+
+
+export function collectFilterRangeInfo(allProjects: ProjectInfo[]): FilterRangeInfo {
+    const langs: Set<string> = new Set(), topics: Set<string> = new Set(), concepts: Set<string> = new Set(), skills: Set<string> = new Set();
+    const categories: Set<string> = new Set();  //, audiences: Set<string> = new Set();
+    let minYear: number | undefined;
+    let maxYear: number | undefined;
+    let count: number = 0;
+
+    allProjects?.forEach((p) => {
+        categories.add(p.category);
+        // if(p.audience) audiences.add(p.audience);
+        const year = p.date.getFullYear()
+        if(minYear === undefined || minYear > year) minYear = year;
+        if(maxYear === undefined || maxYear < year) maxYear = year;
+        p.tags.languages?.forEach((x)=>langs.add(x));
+        p.tags.skills?.forEach((x)=>skills.add(x));
+        p.tags.topics?.forEach((x)=>topics.add(x));
+        count++;
+    });
+
+    if(minYear === undefined || maxYear === undefined)
+        throw 'No projects, or no projects with years';
+
+    return {
+        lang: langs, topic: topics, skill: skills, minYear, maxYear, categories, count
+    }
+}
+
+
+
+export type FilterReducer = React.Reducer<FilterState, FilterAction>;
+
+export function createFilterReducer(rangeInfo: FilterRangeInfo): FilterReducer {
+    return function filterReducer(state: FilterState, action: FilterAction): FilterState {
+        console.log('Reducer:', action.type, action.payload);
+        switch (action.type) {
+            case 'SET_YEAR':
+                const minYear = (action.payload[0] > rangeInfo.minYear) ? action.payload[0] : undefined;
+                const maxYear = (action.payload[1] < rangeInfo.maxYear) ? action.payload[1] : undefined;
+                // console.log('payload:', action.payload, [minYear, maxYear]);
+                    
+                return { ...state, year: (minYear === undefined && maxYear === undefined) ? undefined : [minYear, maxYear] };
+
+            case 'TOGGLE_CATEGORY': {
+                const categories = new Set(state.categories);
+                if (categories.has(action.payload)) categories.delete(action.payload);
+                else categories.add(action.payload);
+                return { ...state, categories };
+            }
+
+            case 'TOGGLE_TAG': {
+                const tags = { ...state.tags, [action.payload.tagType]: new Set(state.tags[action.payload.tagType]) };
+                const tagSet = tags[action.payload.tagType];
+                if (tagSet.has(action.payload.tagText)) tagSet.delete(action.payload.tagText);
+                else tagSet.add(action.payload.tagText);
+                return { ...state, tags };
+            }
+
+            case 'RESET': {
+                if(action.payload && action.payload.mask !== undefined) {
+                    const year: [number | undefined, number | undefined] | undefined = (
+                        (action.payload.mask & FilterField.ALL_YEAR && state.year !== undefined)
+                        ?
+                        [
+                            (action.payload.mask & FilterField.MIN_YEAR ? rangeInfo.minYear : state.year[0]),
+                            (action.payload.mask & FilterField.MAX_YEAR ? rangeInfo.maxYear : state.year[1])
+                         ]  // as [number, number] | [number, undefined] | [undefined, number]
+                        :
+                        state.year
+                    );
+                    const categories = (action.payload.mask & FilterField.CATEGORY) ? new Set<string>() : state.categories;
+                    
+                    const tagTypes = action.payload.tagTypes;
+                    const tags = (
+                        (action.payload.mask & FilterField.TAG)
+                        ?
+                        (
+                            (tagTypes === undefined) 
+                            ?
+                            TAGTYPES.reduce((acc, t) => ({ ...acc, [t]: new Set() }), {})
+                            :
+                            (
+                                Array.isArray(tagTypes)
+                                ?
+                                TAGTYPES.reduce((acc, t) => ({ ...acc, [t]: (tagTypes.includes(t) ? new Set<string>() : state.tags[t]) }), {})
+                                :
+                                TAGTYPES.reduce((acc, t) => ({ ...acc, [t]: (t === tagTypes ? new Set() : state.tags[t]) }), {})
+                            )
+                        )
+                        :
+                        state.tags
+                    );
+                    return {year, categories, tags: (<Record<TagType, Set<string>>>tags)};
+                }
+                return { year: undefined, categories: new Set<string>(), tags: <Record<TagType, Set<string>>>TAGTYPES.reduce((acc, t) => ({ ...acc, [t]: new Set() }), {}) };
+            }
+
+
+            case 'INIT_FROM_URL': {
+                const newState = action.payload;
+                return {
+                    categories: new Set<string>(newState.category),
+                    year: newState.year,
+                    openProjectId: newState.project ?? null,
+                    tags: {
+                        lang: new Set<string>(newState.lang),
+                        skill: new Set<string>(newState.skill),
+                        topic: new Set<string>(newState.topic)
+                    }
+                };
+            }
+
+            // case 'OPEN_PROJECT': {
+            //     const {id, changeCarouselState} = action.payload;
+                
+            // }
+
+            default:
+                // state.openProjectId = undefined;
+                return state;
+        }
+    }
+}
+
+
+

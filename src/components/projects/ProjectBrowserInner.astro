@@ -4,10 +4,10 @@
 // import ProjectDialog from "./overlay/dialog";
 
 import ProjectBrowserReact from "./ProjectBrowserReact";
-import { ProjectData } from "./types";
+import { ProjectInfo } from "./types";
 
 
-const props = Astro.props as {projects: ProjectData[]};
+const props = Astro.props as {projects: ProjectInfo[]};
 
 const rp = Astro.slots.has('default') && Astro.slots.render('default');
 const html = rp ? await rp : undefined;

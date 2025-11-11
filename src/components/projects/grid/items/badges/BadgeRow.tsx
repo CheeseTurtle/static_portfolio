@@ -1,11 +1,14 @@
-import { useEffect, useImperativeHandle, useRef, useState } from "react";
+import { useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { SkillBadge, ConceptBadge, LangBadge, TopicBadge, type BadgeType, getBadgeConstructor } from "./badgeTypes";
-type BadgeRowProps = React.ComponentProps<"div"> & {badgeType: BadgeType, badgeItems: string[]}
+type BadgeRowProps = React.ComponentProps<"div"> & {badgeType: BadgeType, badgeItems: Set<string>}
 
 export const BadgeRow = ({badgeType, badgeItems, ...props}: BadgeRowProps) => {
+  const BadgeConstructor = useMemo(()=>getBadgeConstructor(badgeType), [badgeType]);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const [visibleCount, setVisibleCount] = useState(badgeItems.length);
+  const [visibleCount, setVisibleCount] = useState(badgeItems.size);
+
+  const badgeArray = useMemo(() => Array.from(badgeItems), [badgeItems]);
 
   // Measure which badges fit
   useEffect(() => {
@@ -37,12 +40,11 @@ export const BadgeRow = ({badgeType, badgeItems, ...props}: BadgeRowProps) => {
       ro.disconnect();
       window.removeEventListener("resize", handleResize);
     };
-  }, [badgeItems]);
+  }, [badgeArray]);
 
-  const visibleBadges = badgeItems.slice(0, visibleCount);
-  const hiddenCount = badgeItems.length - visibleCount;
+  const visibleBadges = useMemo(()=> badgeArray.slice(0, visibleCount), [badgeArray, visibleCount]);
+  const hiddenCount = useMemo(() => badgeArray.length - visibleCount, [badgeArray, visibleCount]);
 
-  const BadgeConstructor = getBadgeConstructor(badgeType);
 
 
   return (
