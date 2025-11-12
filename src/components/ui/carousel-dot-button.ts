@@ -16,18 +16,12 @@ export const useDotButton = (
   emblaApi: EmblaCarouselType | undefined,
   onButtonClick?: (emblaApi: EmblaCarouselType) => void
 ): UseDotButtonType => {
-  // const [_ref, emblaApi] = useEmblaCarousel();
-  // if(!emblaApi) return;
-
   const [selectedIndex, setSelectedIndex] = useState<number>(0)
-  // const [scrollSnaps, setScrollSnaps] = useState<number[]>([])
-  // const [scrollSnapList, setScrollSnapList] = useState<number[]>([])
   const [slideIndices, setSlideIndices] = useState<number[]>([])
   const [slideNodes, setSlideNodes] = useState<HTMLElement[]>([])
 
   const onDotButtonClick = useCallback(
     (index: number) => {
-      // console.log('onDotButtonClick', emblaApi, index);
       if (!emblaApi) return;
       emblaApi.scrollTo(index);
       if (onButtonClick) onButtonClick(emblaApi);
@@ -36,10 +30,7 @@ export const useDotButton = (
   )
 
   const onInit = useCallback((emblaApi: EmblaCarouselType) => {
-    // setScrollSnaps(emblaApi.scrollSnapList())
     const engine = emblaApi.internalEngine();
-    // setScrollSnaps(engine.scrollSnaps);
-    // setScrollSnapList(engine.scrollSnapList);
     setSlideIndices(engine.slideIndexes);
     setSlideNodes(emblaApi.slideNodes());
   }, [emblaApi, setSlideIndices, setSlideNodes]);

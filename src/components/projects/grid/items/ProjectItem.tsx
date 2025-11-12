@@ -66,8 +66,6 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({ openedPro
   }, [id, activeProjectId]);
   
   const onClick = useCallback(() => {
-      // // const self = handleRef.current;
-      // // if(!self) return;
       // console.log('ONCLICK -- id:', id, activeProject, activeProjectIndex, openedProjectId);
       // console.log('onClick expanded:', expanded);
       if(id === activeProjectId) {
@@ -76,11 +74,11 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({ openedPro
         // // setOpened(true);
         // console.log(`Setting activeProjectId to ${id} -- prev:`, activeProjectId);
         // setActiveProjectItem(id);
+        console.log('Setting opened project id:', id);
+        setOpenedProjectId(id);
         console.log('Setting carousel open');
-        // setOpenedProjectId(id);
         // // if(!carouselOpen) 
         setCarouselOpen(true);
-        // console.log('Setting opened project id:', id);
       } else {
         // // console.log('Setted activeProjectId to:', activeProjectId)
         // // setCarouselOpen(false);
@@ -89,22 +87,6 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({ openedPro
       }
     }, [id, activeProjectId, setCarouselOpen, setActiveProjectItem]);
 
-  // const handleRef = useRef<ProjectItemHandle>({
-  //   // setExpanded: (value: boolean) => {
-  //   //   if(value) {
-  //   //     if(!expanded()) setActiveProjectItem(id);
-  //   //   } else if(expanded()) {
-  //   //     setActiveProjectItem(null);
-  //   //   }
-  //   // },
-  //   // toggleExpanded: () => {
-  //   //     // setExpanded(prev => !prev);
-  //   //     setActiveProjectItem(expanded() ? null : id);
-  //   // },
-  //   // isExpanded: () => expanded(),
-
-  //   onClick,
-  // });
   useImperativeHandle(ref, () => ({onClick}), [id, activeProjectId]);  // [activeProject, activeProjectId, setActiveProjectItem, setCarouselOpen]);
 
   useEffect(() => {
@@ -147,36 +129,6 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({ openedPro
     }, [id, expanded]);
 
 
-    // function onClick(value: boolean) {
-    //     // const v = ref;
-    //     const el = selfRef.current;
-    //     if(!el) return;
-    //     if(value) {
-    //         const info: ProjectItemInfo = {
-    //             data: project,
-    //             elem: el,
-    //         }
-    //         if(expanded) {
-    //             onProjectOpen(info);
-    //         } else {
-    //             // setExpanded(value);
-    //             onProjectHover(info);
-    //         }
-    //     } else {
-    //         setExpanded(value);
-    //     }
-    // }
-
-
-//   useEffect(() => {
-//     if(!extraRef.current) return;
-//     if(expanded) {
-//         gsap.to(extraRef.current, {height: 'auto', opacity: 1, duration: 0.3});
-//     } else {
-//         gsap.to(extraRef.current, {height: 0, opacity: 0, duration: 0.3});
-//     }
-//   }, [expanded]);
-
   return (
     <Card ref={selfRef}
       onClick={() => onClick()}
@@ -197,11 +149,6 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({ openedPro
       {/* Content */}
       <CardContent
         className='space-y-2'
-        // className={`
-        //   transition-all duration-300 ease-in-out
-        //   ${expanded ? "max-h-[1000px]" : "max-h-32"}
-        //   space-y-2
-        // `}
       >
         {/* Description */}
         <p className="text-sm text-muted-foreground">{description}</p>
@@ -218,12 +165,6 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({ openedPro
                 </ExpandedPart>
             )
         }
-        {/* {expanded && contentHtml && (
-          <div
-            className="text-sm text-foreground/80 pt-2 border-t border-border"
-            dangerouslySetInnerHTML={{ __html: contentHtml }}
-          />
-        )} */}
       </CardContent>
     </Card>
   );

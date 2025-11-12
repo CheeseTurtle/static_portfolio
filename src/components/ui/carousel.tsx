@@ -63,9 +63,12 @@ function Carousel({
   onCarouselSelect: onSelect_,
   ...props
 }: React.ComponentProps<"div"> & CarouselProps) {
+  // const containerRef = React.useRef<HTMLDivElement | null>(null);
 const [carouselRef, api] = useEmblaCarousel(
     {
       ...opts,
+      container: '#embla-container',
+      // container: containerRef,
       axis: (orientation === "horizontal") ? "x" : "y",
     },
     plugins
@@ -111,63 +114,6 @@ const [carouselRef, api] = useEmblaCarousel(
   const setTweenFactor = React.useCallback((emblaApi: EmblaCarouselType) => {
     tweenFactor.current = TWEEN_FACTOR_BASE * emblaApi.scrollSnapList().length
   }, [])
-
-
-
-  // const tweenOpacity = React.useCallback((api: EmblaCarouselType) => {
-  //   const engine = api.internalEngine()
-  //   const scrollProgress = api.scrollProgress()
-  //   // const slidesInView = api.slidesInView(true) // includes partially visible
-  //   const slidesInView = api.slidesInView() // includes partially visible
-  //   const nodes = api.slideNodes()
-
-  //   // const prevSnap = api.previousScrollSnap();
-  //   const hereSnap = api.selectedScrollSnap();
-
-  //   const snapList = engine.scrollSnapList;
-    
-  //   const hereProg = snapList[hereSnap];
-  //   // const prevProg = snapList[prevSnap];
-
-  //   // const direction = (hereSnap > prevSnap) ? 1 : -1
-  //   // const direction = hereProg > scrollProgress ? -1 : 1;  
-  //   // console.log(hereSnap, prevSnap);
-
-
-  //   // console.log('Slides in view:', slidesInView);
-  //   // console.log('scrollProgress:', scrollProgress, engine.scrollTarget.byIndex(2, -1));
-  //   // console.log('nodes:', nodes, nodes);
-  //   // console.log('scrollSnaps:', engine.scrollSnaps, engine.scrollSnapList);
-  //   // console.log('api scrollSnapList:', api.scrollSnapList())
-  //   // console.log('indices:', engine.slideIndexes, engine.slideRegistry, engine.slideFocus)
-
-  //   // Only tween visible slides (usually 3)
-  //   slidesInView.forEach((index) => {
-  //     const snap = engine.scrollSnaps[index] ?? 0
-  //     let diff = snap - scrollProgress
-
-  //     if (engine.options.loop) {
-  //       for (const lp of engine.slideLooper.loopPoints) {
-  //         if (lp.index === index && lp.target() !== 0) {
-  //           const sign = Math.sign(lp.target())
-  //           diff = sign === -1
-  //             ? snap - (1 + scrollProgress)
-  //             : snap + (1 - scrollProgress)
-  //         }
-  //       }
-  //     }
-
-  //     const fadeValue = 1 - Math.abs(diff * tweenFactor.current)
-  //     const opacity = Math.min(Math.max(fadeValue, 0.2), 1) // min 0.2 for dimming effect
-
-  //     gsap.to(nodes[index], {
-  //       opacity,
-  //       duration: 0.25,
-  //       ease: 'power2.out',
-  //       overwrite: 'auto',
-  //     })
-  //   })
-  // }, []);
 
   const tweenOpacity = React.useCallback(
     (emblaApi: EmblaCarouselType, eventName?: EmblaEventType) => {
@@ -289,18 +235,21 @@ function CarouselContent({ className, ...props }: React.ComponentProps<"div">) {
 
   return (
     <div
-      ref={carouselRef}
-      // className="overflow-hidden"
-      data-slot="carousel-content"
+    // className="overflow-hidden"
+    data-slot="carousel-content"
+    ref={carouselRef}
+    {...props}
+    //  <div
+    //   ref={carouselRef}
+    //   id="embla-container"
+    className={cn(
+      "flex",
+      orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col",
+      className
+    )}
+    // {/* {...props} */}
+    // {/* /> */}
     >
-      <div
-        className={cn(
-          "flex",
-          orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col",
-          className
-        )}
-        {...props}
-      />
     </div>
   )
 }
@@ -422,11 +371,6 @@ function CarouselDots() {
         key={index}
         onClick={() => onDotButtonClick(index)}
         selected={index === selectedIndex}
-        // className={(index==selectedIndex) ? 'shadow-inset shadow-accent-foreground' : ''}
-        // className='box-shadow-[inset_0_0_0_0.2rem_var(--text-body)]'
-        // className={'embla__dot'.concat(
-        //   index === selectedIndex ? ' embla__dot--selected' : ''
-        // )}
         />
     )}
 

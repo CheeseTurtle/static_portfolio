@@ -67,7 +67,6 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
     const [storedOpenedId, setStoredOpenedId] = useState<string|null>(null);
 
     const visibleProjects = useMemo(()=>projects.filter((p)=>{
-        // console.log('Project:', p);
         const stateYear = state.year;
         if((stateYear !== undefined) && ((stateYear[0] !== undefined && stateYear[0] > p.date.getFullYear()) || (stateYear[1] !== undefined && stateYear[1] < p.date.getFullYear()))) return false;
         if(state.categories.size > 0 && !state.categories.has(p.category)) return false;
@@ -78,7 +77,6 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
                 if(!p.tags[tagKey].has(tagText)) return false;
             }
         }
-        // console.log('Project passes:', p);
         return true;
     }), [projects, state]);
 
@@ -89,16 +87,6 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
         return activeProject?.id
     }, [activeProject]);
 
-
-    
-    const handleActiveIdChange = useEffectEvent((id: string | undefined | null) => {
-        console.log('Active ID changed:', id, carouselOpen);
-        if(carouselOpen) { setOpenedProjectId(id ?? null); }
-    });
-
-    useEffect(()=>{
-        handleActiveIdChange(activeProjectId);
-    }, [activeProjectId, handleActiveIdChange]);
 
     const handleSheetOpenChange = useEffectEvent((sheetOpen: boolean) => {
         if(sheetOpen === storedFilterSheetOpen) return;
@@ -125,6 +113,17 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
     }, [filterSheetOpen]);
 
 
+        
+    const handleActiveIdChange = useEffectEvent((id: string | undefined | null) => {
+        console.log('Active ID changed:', id, carouselOpen);
+        if(carouselOpen) { setOpenedProjectId(id ?? null); }
+    });
+
+    useEffect(()=>{
+        handleActiveIdChange(activeProjectId);
+    }, [activeProjectId, handleActiveIdChange]);
+
+
 
     const handleCarouselOpenChange   = useEffectEvent((carouselOpen: boolean) => {
         const activeId = activeProjectId;
@@ -138,17 +137,13 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
             console.log('Clearing opened project ID:', openedProjectId, storedOpenedId);
             setOpenedProjectId(null);
         }
-    }); //, [activeProjectIndex, activeProjectId, openedProjectId, storedOpenedId]);
-
-
-    // const handleCarouselOpenChange = useEffectEvent((carouselOpen: boolean) => handleCarouselOpenChange_(carouselOpen));
+    });
 
     useEffect(() => {
         handleCarouselOpenChange(carouselOpen);
     }, [carouselOpen]);
 
     const handleOpenedProjectIdChange = useEffectEvent((openedProjectId: string | null) => {
-        // const storedOpenedId = storedFilterState.openProjectId;
         if(openedProjectId === storedOpenedId) return;
         console.log(`openedProjectId changed (carouselOpen: ${carouselOpen}):`, openedProjectId, storedOpenedId)
         if(carouselOpen) { // Carousel has either just been opened, or next/prev buttons were used.
@@ -157,14 +152,12 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
                 console.info('Updating URL and pushing history')
                 // TODO: Update URL and push history 
             } else if(openedProjectId === null) {
-                // setStoredOpenedId(openedProjectId);
                 console.error(`openedProjectId is unexpectedly undefined even though the carousel is open`, {cause: [state, storedFilterState, openedProjectId, storedOpenedId]});
             } else if(openedProjectId !== storedOpenedId) {
                 console.info('Updating URL and replacing history')
                 // TODO: Update URL and replace history
             }
         } else if(openedProjectId !== null) {
-            // setStoredOpenedId(openedProjectId);
             console.info('Updating URL and pushing history')
             
             // console.error(`openedProjectId is unexpectedly not undefined even though the carousel is not open`, {cause: [state, storedFilterState, openedProjectId, storedOpenedId]});
@@ -197,16 +190,14 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
             return;
         } 
         const id_ = (typeof id === 'string') ? id : id.id;
-        // const data = (typeof id === 'string') ? projectRecord[id] : id;
 
         const idx = visibleProjects.findIndex((x)=>id_ == x.id);
-        // console.log('Found at index:', idx, visibleProjects[idx], id_)
         if(idx === -1) {
             throw RangeError();
         } else {
             // console.info('Setting activeProjectIndex to:', idx, 'prev:', activeProjectIndex)
             setActiveProjectIndex(idx);
-            // if(carouselOpen) setOpenedProjectId(id_);
+            if(carouselOpen) setOpenedProjectId(id_);
         }
         // console.log('Setted activeProjectIndex to:', activeProjectIndex)
     }, [visibleProjects, carouselOpen, activeProjectIndex, setActiveProjectIndex]);
@@ -215,28 +206,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
     const handleRef = useRef<ProjectBrowserHandle>({
         getActiveProject: useCallback(() => activeProject, [activeProject]),
         getActiveIndex: useCallback(() => activeProjectIndex, [activeProjectIndex]),
-        // getOpenedProject: useCallback(() => openedProject, [openedProject]),
-
-        // setOpenedProjectIndex: (index: number | null) => {
-        //     setActiveProjectIndex(index);
-
-        // },
-
         setActiveProject: setActiveProjectFromId,
-
-        // setActiveProjectFromInfo: (info: ProjectItemInfo | null) => {
-        //     if(null === info) {
-        //         setActiveProjectIndex(null);
-        //         // handleRef.current.setOpenedProjectIndex(null);
-        //     } else {
-        //         const idx = visibleProjects.findIndex((x)=>info.data.id === x.id);
-        //         if(idx === -1) {
-        //             throw RangeError();
-        //         } else {
-        //             setActiveProjectIndex(idx);
-        //         }
-        //     }
-        // }
     });
 
     
@@ -244,18 +214,11 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
     
     if(contentString === undefined)
         contentString = children!.props!.value;
-    // console.log(contentString);
-
-
-    // contentString.split(/a/)
 
     const _contentElements = parse(contentString);
     const contentElements = ((typeof _contentElements === 'string') ? [<>{_contentElements}</>] : Array.isArray(_contentElements) ? _contentElements : [_contentElements]).filter((x)=>typeof x === 'object');
-    // console.log(contentElements);
-
 
     // useInitializeFilterFromURL(filterRangeInfo);
-
 
     return <>
         <FilterSheet projects={visibleProjects} rangeInfo={filterRangeInfo} open={filterSheetOpen} setOpen={setFilterSheetOpen}></FilterSheet>
@@ -271,10 +234,6 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
 export default function ProjectBrowser({children, projects, contentString}: ProjectBrowserProps) {
     const filterRangeInfo = useMemo(() => collectFilterRangeInfo(projects), [projects]);
     const [carouselOpen, setCarouselOpen] = useState<boolean>(false);
-    // const projectRecord: Record<string, ProjectInfo> = Object.fromEntries(
-    //     projects.map((p) => [p.id, p])
-    // );
-
     return <>
         <StrictMode>
             <FilterProvider rangeInfo={filterRangeInfo} carouselOpen={carouselOpen} setCarouselOpen={setCarouselOpen}>
