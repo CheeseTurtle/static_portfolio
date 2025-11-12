@@ -153,6 +153,9 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
             console.log('Clearing opened project ID (opened/stored):', openedProjectId, storedOpenedId);
             setOpenedProjectId(null);
             storedOpenedIdRef.current = null;
+        } else {
+            console.warn('openedProjectId is already null', openedProjectId, storedOpenedId)
+            storedOpenedIdRef.current = null;
         }
         carouselOpenRef.current = open;
         // setCarouselOpen(carouselOpen);
@@ -183,22 +186,23 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
                 console.info('Updating URL and replacing history')
                 // TODO: Update URL and replace history
             }
+            console.log('Storing openedId:', openedId);
+            storedOpenedIdRef.current = openedId;
         } else {
-            if(openedId !== null) {
-                console.warn(`openedProjectId is unexpectedly not null even though the carousel is not open`, {cause: [state, storedFilterState, openedProjectId, storedOpenedId]});
+            if(openedId !== null) { // Newly closed
+                // console.warn(`openedProjectId is unexpectedly not null even though the carousel is not open`, {cause: [state, storedFilterState, openedProjectId, storedOpenedId]});
                 console.info('Updating URL and pushing history')
+                setOpenedProjectId(null);
             } else if(storedOpenedId === null) {
                 // storedOpenedIdRef.current = null;
-                console.warn('storedOpenedId and openedId are both null while carousel is not open')
+                console.error('storedOpenedId and openedId are both null while carousel is not open')
                 return; // This should not happen
             } else {
                 console.info('Updating URL and pushing history')
                 // TODO: Update URL and push history
             }
-            // storedOpenedIdRef.current = null;
+            storedOpenedIdRef.current = null;
         }
-        console.log('Storing openedId:', openedId);
-        storedOpenedIdRef.current = openedId;
         // setStoredOpenedId(openedId);
     }), [openedProjectId, storedOpenedIdRef, carouselOpenRef];
 

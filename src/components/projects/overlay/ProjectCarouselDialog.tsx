@@ -78,14 +78,14 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
   // const options_current = useMemo(()=>options.current, [options.current, options]);
   const containerRef = useRef<HTMLDivElement>(null);
   const opts: EmblaOptionsType = useMemo(()=>{
-    console.log('Remaking options with new containerRef/.current:', containerRef, containerRef.current);
+    // console.log('Remaking options with new containerRef/.current:', containerRef, containerRef.current);
     return ({
     container: containerRef.current ?? undefined,
   })}, [containerRef.current, containerRef]);
   const [emblaRef, embla] = useEmblaCarousel(opts);
 
   const handleOptionsChanged = useCallback((embla: EmblaCarouselType | undefined, options: EmblaOptionsType) => {
-    console.log('embla:', embla, options);
+    // console.log('embla:', embla, options);
     embla?.reInit(options);
   }, []);
 
@@ -155,7 +155,7 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
     if(activeProjectIndex !== null) {
       // if(activeProjectIndex !== emblaApi.selectedScrollSnap())
         // shouldCheckScroll.current= true;
-      console.log('(onReInit)', visibleProjects, emblaApi.slideNodes(), slides);
+      // console.log('(onReInit)', visibleProjects, emblaApi.slideNodes(), slides);
       if(activeProjectIndex !== null && open) {
         // console.log('(init/reInit) Scrolling to index:', activeProjectIndex)
         console.log('(onReInit) Scrolling to index:', activeProjectIndex);
@@ -203,7 +203,7 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
     // setStoredOpen(open_);
     if(!embla) return;
     if(open_ && activeProjectIndex !== null) {
-      console.log('Calling reInit with slideNodes:', embla.slideNodes())
+      // console.log('Calling reInit with slideNodes:', embla.slideNodes())
       embla.reInit({startIndex: activeProjectIndex});
       // if(activeProjectIndex !== null) {
       //   console.log('(handleOpenChange) Scrolling to index:', activeProjectIndex)

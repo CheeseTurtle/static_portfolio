@@ -58,7 +58,7 @@ function Carousel({ orientation = "horizontal",
   ...props
 }: React.ComponentProps<"div"> & CarouselProps) {
   // const containerRef = React.useRef<HTMLDivElement | null>(null);
-  console.log('useEmblaCarousel with opts:', opts, props, externalApi, externalCarouselRef);
+  // console.log('useEmblaCarousel with opts:', opts, props, externalApi, externalCarouselRef);
   // console.log()
 
   const [internalCarouselRef, internalApi] = useEmblaCarousel(
@@ -89,9 +89,9 @@ function Carousel({ orientation = "horizontal",
   //   );
   // })();
 
-  React.useEffect(() => {
-    console.log('(CAROUSEL) API:', api, carouselRef);
-  }, [api, carouselRef]);
+  // React.useEffect(() => {
+  //   console.log('(CAROUSEL) API:', api, carouselRef);
+  // }, [api, carouselRef]);
 
   const tweenFactor = React.useRef(0);
   const [canScrollPrev, setCanScrollPrev] = React.useState(false)
@@ -239,7 +239,7 @@ function Carousel({ orientation = "horizontal",
     canScrollNext,
   }), [carouselRef, api, opts, orientation, scrollPrev, scrollNext, canScrollNext, canScrollPrev, setApi, plugins]);
 
-  console.log('context value:', contextValue);
+  // console.log('context value:', contextValue);
 
   return (
     <CarouselContext.Provider
@@ -265,9 +265,9 @@ function CarouselContent({ children, className, ...props }: React.ComponentProps
   const obj = useCarousel()
   const { carouselRef, orientation, api }  = obj;
 
-  React.useEffect(()=>{
-    console.log('(CONTENT) API:', api, obj);
-  }, [api, obj]);
+  // React.useEffect(()=>{
+  //   console.log('(CONTENT) API:', api, obj);
+  // }, [api, obj]);
 
   return (
     <div
@@ -296,9 +296,9 @@ function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
   const obj = useCarousel()
   const { orientation, api }  = obj;
 
-  React.useEffect(()=>{
-    console.log('(ITEM) API:', api, obj);
-  }, [api, obj]);
+  // React.useEffect(()=>{
+  //   console.log('(ITEM) API:', api, obj);
+  // }, [api, obj]);
 
   return (
     <div
@@ -409,9 +409,9 @@ function CarouselDots() {
   const obj = useCarousel();
   const {api} = obj;
 
-  React.useEffect(()=>{
-    console.log('(DOTS) API:', api, obj);
-  }, [api, obj]);
+  // React.useEffect(()=>{
+  //   console.log('(DOTS) API:', api, obj);
+  // }, [api, obj]);
   
   const { selectedIndex, slideIndices, onDotButtonClick } = useDotButton(api);
 
@@ -489,7 +489,7 @@ export const useDotButton = (
     }
   }, [emblaApi, onInit, onSelect])
 
-  console.log({selectedIndex, slideNodes, slideIndices});
+  // console.log({selectedIndex, slideNodes, slideIndices});
 
   return {
     selectedIndex,
