@@ -1,15 +1,12 @@
 import * as React from "react"
 import useEmblaCarousel, {
+  type EmblaViewportRefType,
   type UseEmblaCarouselType,
 } from "embla-carousel-react"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-
-import { useDotButton } from "./carousel-dot-button";
-
-import {gsap} from 'gsap';
 
 import type {EmblaCarouselType, EmblaEventType, EmblaOptionsType} from "embla-carousel";
 
@@ -30,6 +27,8 @@ type CarouselProps = {
   orientation?: "horizontal" | "vertical"
   setApi?: (api: CarouselApi) => void,
   onCarouselSelect?: (api: CarouselApi | undefined) => void,
+  externalApi?: CarouselApi,
+  externalCarouselRef?: EmblaViewportRefType
 }
 
 type CarouselContextProps = {
@@ -53,26 +52,47 @@ function useCarousel() {
   return context
 }
 
-function Carousel({
-  orientation = "horizontal",
-  opts,
-  setApi,
-  plugins,
-  className,
-  children,
-  onCarouselSelect: onSelect_,
+function Carousel({ orientation = "horizontal",
+  externalApi, externalCarouselRef,
+  opts, setApi, plugins, className, children, onCarouselSelect: onSelect_,
   ...props
 }: React.ComponentProps<"div"> & CarouselProps) {
   // const containerRef = React.useRef<HTMLDivElement | null>(null);
-const [carouselRef, api] = useEmblaCarousel(
-    {
+  console.log('useEmblaCarousel with opts:', opts, props, externalApi, externalCarouselRef);
+  // console.log()
+
+  const [internalCarouselRef, internalApi] = useEmblaCarousel(
+    externalApi ? undefined : { // Only initialize if no external api
       ...opts,
-      container: '#embla-container',
-      // container: containerRef,
       axis: (orientation === "horizontal") ? "x" : "y",
     },
-    plugins
-  )
+    externalApi ? undefined : plugins
+  );
+
+  const carouselRef = externalCarouselRef ?? internalCarouselRef;
+  const api = externalApi ?? internalApi;
+  
+  // const [carouselRef, api] = (()=>{
+  //   if(externalApi !== undefined && externalCarouselRef !== undefined)
+  //     return [externalCarouselRef, externalApi];
+  //   if(externalApi !== undefined || externalCarouselRef !== undefined)
+  //     throw TypeError();
+
+  //   return useEmblaCarousel(
+  //     {
+  //       ...opts,
+  //       // container: '#embla-container',
+  //       // container: containerRef,
+  //       axis: (orientation === "horizontal") ? "x" : "y",
+  //     },
+  //     plugins
+  //   );
+  // })();
+
+  React.useEffect(() => {
+    console.log('(CAROUSEL) API:', api, carouselRef);
+  }, [api, carouselRef]);
+
   const tweenFactor = React.useRef(0);
   const [canScrollPrev, setCanScrollPrev] = React.useState(false)
   const [canScrollNext, setCanScrollNext] = React.useState(false)
@@ -174,7 +194,7 @@ const [carouselRef, api] = useEmblaCarousel(
     }
   }, [api, onSelectInInit]);
 
-    React.useEffect(() => {
+  React.useEffect(() => {
     if (!api) return
     // onSelect(api);
     api.on("select", onSelect)
@@ -185,7 +205,7 @@ const [carouselRef, api] = useEmblaCarousel(
   }, [api, onSelect])
 
 
-   React.useEffect(() => {
+  React.useEffect(() => {
     if (!api) return;
 
     setTweenFactor(api);
@@ -196,32 +216,37 @@ const [carouselRef, api] = useEmblaCarousel(
       .on('reInit', tweenOpacity)
       .on('slideFocus', tweenOpacity);
 
-    return () => { api
-      .off('reInit', setTweenFactor)
+    return () => {
+      api
+        .off('reInit', setTweenFactor)
       .off('scroll', tweenOpacity)
       .off('reInit', tweenOpacity)
       .off('slideFocus', tweenOpacity);
     }
   }, [api, tweenOpacity, setTweenFactor]);
 
+  const contextValue: CarouselContextProps = React.useMemo(() => ({
+    carouselRef,
+    api,
+    setApi,
+    plugins,
+    opts,
+    orientation:
+      orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
+    scrollPrev,
+    scrollNext,
+    canScrollPrev,
+    canScrollNext,
+  }), [carouselRef, api, opts, orientation, scrollPrev, scrollNext, canScrollNext, canScrollPrev, setApi, plugins]);
+
+  console.log('context value:', contextValue);
+
   return (
     <CarouselContext.Provider
-      value={{
-        carouselRef,
-        api,
-        setApi,
-        plugins,
-        opts,
-        orientation:
-          orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
-        scrollPrev,
-        scrollNext,
-        canScrollPrev,
-        canScrollNext,
-      }}
+      value={contextValue}
     >
       <div
-        ref={carouselRef}
+        // ref={carouselRef}
         onKeyDownCapture={handleKeyDown}
         className={cn("relative", className)}
         role="region"
@@ -235,13 +260,19 @@ const [carouselRef, api] = useEmblaCarousel(
   )
 }
 
-function CarouselContent({ className, ...props }: React.ComponentProps<"div">) {
-  const { carouselRef, orientation } = useCarousel()
+function CarouselContent({ children, className, ...props }: React.ComponentProps<"div">) {
+  // const { orientation, api } = useCarousel();
+  const obj = useCarousel()
+  const { carouselRef, orientation, api }  = obj;
+
+  React.useEffect(()=>{
+    console.log('(CONTENT) API:', api, obj);
+  }, [api, obj]);
 
   return (
     <div
     // className="overflow-hidden"
-    id="embla-container"
+    // id="embla-container"
     data-slot="carousel-content"
     ref={carouselRef}
     {...props}
@@ -256,12 +287,18 @@ function CarouselContent({ className, ...props }: React.ComponentProps<"div">) {
     // {/* {...props} */}
     // {/* /> */}
     >
+      {children}
     </div>
   )
 }
 
 function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
-  const { orientation } = useCarousel()
+  const obj = useCarousel()
+  const { orientation, api }  = obj;
+
+  React.useEffect(()=>{
+    console.log('(ITEM) API:', api, obj);
+  }, [api, obj]);
 
   return (
     <div
@@ -284,7 +321,8 @@ function CarouselPrevious({
   size = "icon",
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { orientation, scrollPrev, canScrollPrev } = useCarousel()
+  const obj = useCarousel();
+  const { orientation, scrollPrev, canScrollPrev } = obj;
 
   return (
     <Button
@@ -314,7 +352,7 @@ function CarouselNext({
   size = "icon",
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { orientation, scrollNext, canScrollNext } = useCarousel()
+  const { orientation, scrollNext, canScrollNext } = useCarousel();
 
   return (
     <Button
@@ -367,11 +405,21 @@ function CarouselDotButton (props: CarouselDotButtonPropType) {
 
 function CarouselDots() {
 
-  const {api} = useCarousel();
+  // const obj = useCarousel();
+  const obj = useCarousel();
+  const {api} = obj;
+
+  React.useEffect(()=>{
+    console.log('(DOTS) API:', api, obj);
+  }, [api, obj]);
   
   const { selectedIndex, slideIndices, onDotButtonClick } = useDotButton(api);
 
-  return <div data-role='carousel-dot-buttons' className="flex flex-wrap justify-end items-center mr-[calc((2.6rem-1.4rem)/(-2))]">
+  return <div 
+    data-role='carousel-dot-buttons' 
+    // className="flex flex-wrap justify-end items-center mr-[calc((2.6rem-1.4rem)/(-2))]"
+    className="flex w-full relative justify-items-center justify-center"
+    >
     {slideIndices.map(index=>
       <CarouselDotButton
         key={index}
@@ -382,6 +430,78 @@ function CarouselDots() {
 
   </div>
 }
+
+
+
+type UseDotButtonType = {
+  selectedIndex: number
+  // scrollSnaps: number[]
+  // scrollSnapList: number[]
+  onDotButtonClick: (index: number) => void
+  slideIndices: number[]
+  slideNodes: HTMLElement[],
+  setSelectedIndex: React.Dispatch<React.SetStateAction<number>>,
+  setSlideIndices: React.Dispatch<React.SetStateAction<number[]>>,
+  setSlideNodes: React.Dispatch<React.SetStateAction<HTMLElement[]>>,
+}
+
+export const useDotButton = (
+  emblaApi: EmblaCarouselType | undefined,
+  onButtonClick?: (emblaApi: EmblaCarouselType) => void
+): UseDotButtonType => {
+  const [selectedIndex, setSelectedIndex] = React.useState<number>(0)
+  const [slideIndices, setSlideIndices] = React.useState<number[]>([])
+  const [slideNodes, setSlideNodes] = React.useState<HTMLElement[]>([])
+
+  // const {api: emblaApi} = useCarousel();
+
+  // console.log('EMBLA API:', emblaApi);
+
+  const onDotButtonClick = React.useCallback(
+    (index: number) => {
+      if (!emblaApi) return;
+      emblaApi.scrollTo(index);
+      onButtonClick?.(emblaApi);
+    },
+    [emblaApi, onButtonClick]
+  )
+
+  const onInit = React.useCallback((emblaApi: EmblaCarouselType) => {
+    const engine = emblaApi.internalEngine();
+    setSlideIndices(engine.slideIndexes);
+    setSlideNodes(emblaApi.slideNodes());
+  }, [setSlideIndices, setSlideNodes]);
+
+  const onSelect = React.useCallback((emblaApi: EmblaCarouselType) => {
+    setSelectedIndex(emblaApi.selectedScrollSnap())
+  }, [setSelectedIndex]);
+
+  React.useEffect(() => {
+    if (!emblaApi) return
+
+    onInit(emblaApi)
+    onSelect(emblaApi)
+
+    emblaApi.on('reInit', onInit).on('reInit', onSelect).on('select', onSelect)
+
+    return () => {
+      emblaApi.off('reInit', onInit).off('reInit', onSelect).off('select', onSelect);
+    }
+  }, [emblaApi, onInit, onSelect])
+
+  console.log({selectedIndex, slideNodes, slideIndices});
+
+  return {
+    selectedIndex,
+    onDotButtonClick,
+    setSelectedIndex,
+    setSlideIndices,
+    setSlideNodes,
+    slideNodes,
+    slideIndices
+  }
+}
+
 
 export {
   type CarouselApi,

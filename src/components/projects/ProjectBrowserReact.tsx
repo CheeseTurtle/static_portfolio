@@ -90,7 +90,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
 
     const handleSheetOpenChange = useEffectEvent((open: boolean) => {
         if(open === storedFilterSheetOpen) return;
-        console.log('sheetOpen changed:', open, storedFilterSheetOpen);
+        console.log('sheetOpen changed (open/stored):', open, storedFilterSheetOpen);
         try {
             if(open) { // Sheet has been opened
                 setStoredFilterState(state);
@@ -123,7 +123,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
 
     const handleActiveIdChange = useEffectEvent((id: string | undefined | null) => {
         const open = carouselOpenRef.current;
-        console.log('Active ID changed', id, carouselOpen, open, openedProjectId)
+        console.log('Active ID changed (id/carouselOpen/open/openedProjectId):', id, carouselOpen, open, openedProjectId)
         if(carouselOpen || open || (openedProjectId !== null && openedProjectId !== undefined)) {
             setOpenedProjectId(id ?? null);
         }
@@ -143,14 +143,14 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
     const handleCarouselOpenChange   = useEffectEvent((open: boolean) => {
         const activeId = activeProjectId;
         const storedOpenedId = storedOpenedIdRef.current;
-        console.log('carouselOpen changed in root:', open, activeProjectIndex, activeProjectId, activeId, openedProjectId, storedOpenedId);
+        console.log('carouselOpen changed in root:', open, '; activeProjectIndex / activeId / openedId / storedOpenedId:', activeProjectIndex, activeId, openedProjectId, storedOpenedId);
         if(open) {
-            if(openedProjectId === null && activeProjectId !== undefined) {
-                console.log('Setting opened project ID:', activeProjectId, storedOpenedId);
-                setOpenedProjectId(activeProjectId);
+            if(openedProjectId === null && activeId !== undefined) {
+                console.log('Setting opened project ID (active/stored):', activeId, storedOpenedId);
+                setOpenedProjectId(activeId);
             }
         } else if(openedProjectId !== null) {
-            console.log('Clearing opened project ID:', openedProjectId, storedOpenedId);
+            console.log('Clearing opened project ID (opened/stored):', openedProjectId, storedOpenedId);
             setOpenedProjectId(null);
             storedOpenedIdRef.current = null;
         }
@@ -165,39 +165,40 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
 
     useEffect( () => {
         const openedId = openedProjectId;
-        const open = carouselOpenRef.current;
+        const carouselOpen = carouselOpenRef.current;
         const storedOpenedId = storedOpenedIdRef.current;
-        console.log(`openedProjectId changed (carouselOpen: ${open}):`, openedId, storedOpenedId)
         if(openedId === storedOpenedId) {
-            console.warn('openedId === toredOpenedId', openedId, storedOpenedId);
+            console.warn('openedId === storedOpenedId', openedId, storedOpenedId);
             return;
         }
-        if(open) { // Carousel has either just been opened, or next/prev buttons were used.
+        console.log(`openedProjectId changed (carouselOpen: ${carouselOpen}); openedId/storedOpenedId: `, openedId, storedOpenedId)
+        if(carouselOpen) { // Carousel has either just been opened, or next/prev buttons were used.
             if(storedOpenedId === null) { // Carousel just opened
                 if(openedId === null) return;
                 console.info('Updating URL and pushing history')
                 // TODO: Update URL and push history 
             } else if(openedId === null) {
-                console.error(`openedProjectId is unexpectedly undefined even though the carousel is open`, {cause: [state, storedFilterState, openedId, storedOpenedId]});
+                console.error(`openedProjectId is unexpectedly null even though the carousel is open`, {cause: [state, storedFilterState, openedId, storedOpenedId]});
             } else if(openedId !== storedOpenedId) {
                 console.info('Updating URL and replacing history')
                 // TODO: Update URL and replace history
             }
-            // console.log('Storing openedId:', openedId);
-            storedOpenedIdRef.current = openedId;
         } else {
             if(openedId !== null) {
+                console.warn(`openedProjectId is unexpectedly not null even though the carousel is not open`, {cause: [state, storedFilterState, openedProjectId, storedOpenedId]});
                 console.info('Updating URL and pushing history')
-                // console.error(`openedProjectId is unexpectedly not undefined even though the carousel is not open`, {cause: [state, storedFilterState, openedProjectId, storedOpenedId]});
             } else if(storedOpenedId === null) {
                 // storedOpenedIdRef.current = null;
+                console.warn('storedOpenedId and openedId are both null while carousel is not open')
                 return; // This should not happen
             } else {
                 console.info('Updating URL and pushing history')
                 // TODO: Update URL and push history
             }
-            storedOpenedIdRef.current = null;
+            // storedOpenedIdRef.current = null;
         }
+        console.log('Storing openedId:', openedId);
+        storedOpenedIdRef.current = openedId;
         // setStoredOpenedId(openedId);
     }), [openedProjectId, storedOpenedIdRef, carouselOpenRef];
 
@@ -225,7 +226,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
         if(idx === -1) {
             throw RangeError();
         } else {
-            console.info('Setting activeProjectIndex to:', idx, 'prev:', activeProjectIndex, carouselOpen, carouselOpenRef.current)
+            console.info('Setting activeProjectIndex to:', idx, 'prev:', activeProjectIndex, 'carouselOpen/ref.current:', carouselOpen, carouselOpenRef.current)
             setActiveProjectIndex(idx);
             if(carouselOpen || carouselOpenRef.current) setOpenedProjectId(id_);
         }

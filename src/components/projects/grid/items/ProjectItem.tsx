@@ -8,6 +8,9 @@ import ExpandedPart from "./expansion/ExpandedPart";
 import {gsap} from "gsap";
 import {ImageRow} from './expansion/ImageRow';
 
+import type {EmblaCarouselType, EmblaEventType, EmblaOptionsType} from "embla-carousel";
+
+
 
 export interface ProjectItemHandle {
     // setExpanded: (value: boolean) => void;
@@ -49,6 +52,7 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({ openedPro
     // console.log('projectInfo:', project);
   const { id, images, title, date, summary, description, tags, contentHtml } = project;
   // const [expanded, setExpanded] = useState(false);
+
 
   const year = useMemo(()=>(date.explicitDate?.year ?? date.getFullYear()), [date]);
   const selfRef = useRef<HTMLDivElement>(null);

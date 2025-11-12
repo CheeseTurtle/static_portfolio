@@ -63,6 +63,9 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
   const nextRef = useRef<HTMLButtonElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
+  const [_api, _setApi] = useState<EmblaCarouselType | null>(null);
+
+
   // const [options, setOptions] = useState<EmblaOptionsType>({loop: false})
   // const options = useMemo<EmblaOptionsType>(() => ({startIndex: activeProjectIndex ?? undefined}), [activeProjectIndex]);
   // const options = useRef<EmblaOptionsType>({});
@@ -73,7 +76,21 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
   // }, [options]);
 
   // const options_current = useMemo(()=>options.current, [options.current, options]);
-  const [emblaRef, embla] = useEmblaCarousel({});
+  const containerRef = useRef<HTMLDivElement>(null);
+  const opts: EmblaOptionsType = useMemo(()=>{
+    console.log('Remaking options with new containerRef/.current:', containerRef, containerRef.current);
+    return ({
+    container: containerRef.current ?? undefined,
+  })}, [containerRef.current, containerRef]);
+  const [emblaRef, embla] = useEmblaCarousel(opts);
+
+  const handleOptionsChanged = useCallback((embla: EmblaCarouselType | undefined, options: EmblaOptionsType) => {
+    console.log('embla:', embla, options);
+    embla?.reInit(options);
+  }, []);
+
+  useEffect(()=>handleOptionsChanged(embla, opts), [embla, opts]);
+
   // console.log('contentElements:', contentElements)
   const allSlides = useMemo(()=>Object.fromEntries(contentElements.map(elem=>[elem.props["data-project-id"], elem])), [contentElements]);
   // const allSlides = Object.fromEntries(contentElements.map(elem=>[elem.props["data-project-id"], elem]));
@@ -117,14 +134,14 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
   // if (!open || !slides) return null;
 
   const onSelect = useCallback((emblaApi: EmblaCarouselType | undefined) => {
-    console.log('onSelect', activeProjectIndex, openedProjectId, emblaApi ? {
+    console.log('onSelect (activeProjectIndex, openedProjectId, emblaApi):', activeProjectIndex, openedProjectId, emblaApi ? {
       scrollSnap: emblaApi.selectedScrollSnap(),
       prevSnap: emblaApi.previousScrollSnap(),
       emblaApi
     } : undefined);
     if(!emblaApi) return;
     const index = emblaApi.selectedScrollSnap();
-    console.log('Setting activeProjectIndex:', index, activeProjectIndex, openedProjectId);
+    console.log('Setting activeProjectIndex (index/activeProjectIndex/openedProjectId):', index, activeProjectIndex, openedProjectId);
     setActiveProjectIndex(index);  // This should also update opened project id IF the carousel is already open -- TODO: streamline/unify?
     if(activeProjectId !== null && activeProjectId !== undefined && openedProjectId !== activeProjectId)
       setOpenedProjectId(activeProjectId);
@@ -182,11 +199,11 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
   // }, [embla]);
 
   const handleOpenChange = useEffectEvent((open_: boolean, embla: EmblaCarouselType | undefined) => {
-    console.log('carouselOpen changed:', open_, open, activeProjectIndex, embla); // , storedOpen);
+    console.log('[ProjectCarouselDialog] carouselOpen changed (open_/open/activeIndex/embla):', open_, open, activeProjectIndex, embla); // , storedOpen);
     // setStoredOpen(open_);
     if(!embla) return;
     if(open_ && activeProjectIndex !== null) {
-      console.log('reinit', embla.slideNodes())
+      console.log('Calling reInit with slideNodes:', embla.slideNodes())
       embla.reInit({startIndex: activeProjectIndex});
       // if(activeProjectIndex !== null) {
       //   console.log('(handleOpenChange) Scrolling to index:', activeProjectIndex)
@@ -195,7 +212,6 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
       // }
     }
   });
-
 
   useEffect(()=> {
     handleOpenChange(open, embla);
@@ -307,9 +323,9 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
                     </DialogHeader>
                 </VisuallyHidden>
                 {/* <div className="relative z-60 w-full max-w-3xl" onClick={(e) => e.stopPropagation()}> */}
-                <Carousel className="overflow-visible z-60 pointer-events-auto w-full max-w-2xl" onCarouselSelect={onSelect}>  
+                <Carousel ref={emblaRef} externalCarouselRef={emblaRef} externalApi={embla} opts={opts} className="overflow-visible z-60 pointer-events-auto w-full max-w-2xl" onCarouselSelect={onSelect}>  
                     {/* // className="w-full max-w-3xl h-[70vh]" */}
-                    <CarouselContent className="overflow-visible pointer-events-visible w-full">
+                    <CarouselContent ref={containerRef} id="embla-container" className="overflow-visible pointer-events-visible w-full">
                         {...slideElems}
                     </CarouselContent>
                     <CarouselPrevious ref={prevRef} className='disabled:pointer-events-auto'/> 
