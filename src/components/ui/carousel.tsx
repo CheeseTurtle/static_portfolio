@@ -121,6 +121,7 @@ const [carouselRef, api] = useEmblaCarousel(
       const scrollProgress = emblaApi.scrollProgress()
       const slidesInView = emblaApi.slidesInView()
       const isScrollEvent = eventName === 'scroll'
+      // console.log(emblaApi.scrollSnapList(), engine.scrollSnapList, engine.scrollSnaps, engine.slideIndexes, emblaApi.slideNodes())
 
       emblaApi.scrollSnapList().forEach((scrollSnap, snapIndex) => {
         let diffToTarget = scrollSnap - scrollProgress
@@ -148,6 +149,7 @@ const [carouselRef, api] = useEmblaCarousel(
 
           const tweenValue = 1 - Math.abs(diffToTarget * tweenFactor.current)
           const opacity = numberWithinRange(tweenValue, 0, 1).toString()
+          // console.log(slideIndex, opacity)
           emblaApi.slideNodes()[slideIndex].style.opacity = opacity
         })
       })
@@ -206,7 +208,9 @@ const [carouselRef, api] = useEmblaCarousel(
     <CarouselContext.Provider
       value={{
         carouselRef,
-        api: api,
+        api,
+        setApi,
+        plugins,
         opts,
         orientation:
           orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
@@ -217,6 +221,7 @@ const [carouselRef, api] = useEmblaCarousel(
       }}
     >
       <div
+        ref={carouselRef}
         onKeyDownCapture={handleKeyDown}
         className={cn("relative", className)}
         role="region"
@@ -236,6 +241,7 @@ function CarouselContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
     // className="overflow-hidden"
+    id="embla-container"
     data-slot="carousel-content"
     ref={carouselRef}
     {...props}

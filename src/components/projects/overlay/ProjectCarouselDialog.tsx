@@ -64,7 +64,7 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
   const overlayRef = useRef<HTMLDivElement>(null);
 
   // const [options, setOptions] = useState<EmblaOptionsType>({loop: false})
-  const options = useMemo<EmblaOptionsType>(() => ({startIndex: activeProjectIndex ?? undefined}), [activeProjectIndex]);
+  // const options = useMemo<EmblaOptionsType>(() => ({startIndex: activeProjectIndex ?? undefined}), [activeProjectIndex]);
   // const options = useRef<EmblaOptionsType>({});
   // const updateOptions = useCallback((newIndex: number | null) => {
   //   const newIndex_ = newIndex ?? undefined;
@@ -73,7 +73,7 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
   // }, [options]);
 
   // const options_current = useMemo(()=>options.current, [options.current, options]);
-  const [emblaRef, embla] = useEmblaCarousel(options);
+  const [emblaRef, embla] = useEmblaCarousel({});
   // console.log('contentElements:', contentElements)
   const allSlides = useMemo(()=>Object.fromEntries(contentElements.map(elem=>[elem.props["data-project-id"], elem])), [contentElements]);
   // const allSlides = Object.fromEntries(contentElements.map(elem=>[elem.props["data-project-id"], elem]));
@@ -88,7 +88,7 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
   const slideElems = slides.map((slide, i) => (
       <CarouselItem key={i} id={`slide-${i}`} className="pointer-events-visible">
       {/* // <div className="p-1"> */}
-      <Card className="relative w-full-[35vw] flex pointer-events-visible">
+      <Card className="relative w-full flex pointer-events-visible">
           {/* <Button
             onClick={(evt) => {setOpen(false); evt.preventDefault(); }}
           // className="absolute top-4 right-4 text-white text-2xl"
@@ -126,7 +126,7 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
     const index = emblaApi.selectedScrollSnap();
     console.log('Setting activeProjectIndex:', index, activeProjectIndex, openedProjectId);
     setActiveProjectIndex(index);  // This should also update opened project id IF the carousel is already open -- TODO: streamline/unify?
-    if(activeProjectId !== null && activeProjectId !== undefined && openedProjectId === null)
+    if(activeProjectId !== null && activeProjectId !== undefined && openedProjectId !== activeProjectId)
       setOpenedProjectId(activeProjectId);
   }, [activeProjectIndex, setActiveProjectIndex, activeProjectId, openedProjectId, setOpenedProjectId]);  
 
@@ -182,10 +182,11 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
   // }, [embla]);
 
   const handleOpenChange = useEffectEvent((open_: boolean, embla: EmblaCarouselType | undefined) => {
-    console.log('carouselOpen changed:', open_, open, activeProjectIndex); // , storedOpen);
+    console.log('carouselOpen changed:', open_, open, activeProjectIndex, embla); // , storedOpen);
     // setStoredOpen(open_);
     if(!embla) return;
-    if(open && activeProjectIndex !== null) {
+    if(open_ && activeProjectIndex !== null) {
+      console.log('reinit', embla.slideNodes())
       embla.reInit({startIndex: activeProjectIndex});
       // if(activeProjectIndex !== null) {
       //   console.log('(handleOpenChange) Scrolling to index:', activeProjectIndex)
@@ -306,9 +307,9 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
                     </DialogHeader>
                 </VisuallyHidden>
                 {/* <div className="relative z-60 w-full max-w-3xl" onClick={(e) => e.stopPropagation()}> */}
-                <Carousel ref={open ? emblaRef : null} className="overflow-visible z-60 pointer-events-auto" onCarouselSelect={onSelect}>  
+                <Carousel className="overflow-visible z-60 pointer-events-auto w-full max-w-2xl" onCarouselSelect={onSelect}>  
                     {/* // className="w-full max-w-3xl h-[70vh]" */}
-                    <CarouselContent className="overflow-visible pointer-events-visible">
+                    <CarouselContent className="overflow-visible pointer-events-visible w-full">
                         {...slideElems}
                     </CarouselContent>
                     <CarouselPrevious ref={prevRef} className='disabled:pointer-events-auto'/> 
