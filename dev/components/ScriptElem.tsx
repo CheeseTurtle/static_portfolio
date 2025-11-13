@@ -1,4 +1,5 @@
-import { useLayoutEffect } from "preact/hooks";
+// import { useLayoutEffect } from "preact/hooks";
+import {useLayoutEffect} from 'react';
 import { gsap, ScrollTrigger, ScrollSmoother, ScrollToPlugin } from "gsap/all";
 gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
 

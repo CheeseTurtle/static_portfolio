@@ -47,6 +47,15 @@ export default defineConfig({
     // @ts-expect-error
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     plugins: [tailwindcss()],
+    logLevel: 'info',
+    build: {
+      rollupOptions: {
+        onwarn(warning, warn) {
+          console.log('WARNING:', warning);
+          warn(warning);
+        }
+      }
+    },
     resolve: {
       alias: {
         "preact": "react",

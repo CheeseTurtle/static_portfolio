@@ -1,5 +1,6 @@
 // fixPreactRef.ts
-import { useCallback } from 'preact/hooks';
+// import { useCallback } from 'preact/hooks';
+import {useCallback} from 'react';
 
 export function fixPreactRef<T extends HTMLElement>(
   setNode: (el: T | null) => void
