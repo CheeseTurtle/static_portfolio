@@ -96,7 +96,7 @@
       "@/*": [
         "./src/*"
       ],
-      "preact/hooks": ["npm:@react/hooks"],
+      "preact/hooks": ["npm:@react/"],
       "preact/*": ["npm:@react/*"],
       // "react": ["./node_modules/preact/compat/"],
       // "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
