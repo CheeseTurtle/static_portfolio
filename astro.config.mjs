@@ -51,6 +51,7 @@ export default defineConfig({
       alias: {
         "preact": "react",
         "preact/hooks": "react",
+         'react/hooks': 'react', // Redirect bad imports to main react
         // "react": "@preact/compat",
         // 'react-dom/test-utils': 'preact/test-utils',
         // 'react-dom': '@preact/compat',
