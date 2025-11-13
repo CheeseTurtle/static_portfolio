@@ -66,6 +66,8 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
   const [_api, _setApi] = useState<EmblaCarouselType | null>(null);
 
 
+  
+
   // const [options, setOptions] = useState<EmblaOptionsType>({loop: false})
   // const options = useMemo<EmblaOptionsType>(() => ({startIndex: activeProjectIndex ?? undefined}), [activeProjectIndex]);
   // const options = useRef<EmblaOptionsType>({});
@@ -159,7 +161,7 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
       if(activeProjectIndex !== null && open) {
         // console.log('(init/reInit) Scrolling to index:', activeProjectIndex)
         console.log('(onReInit) Scrolling to index:', activeProjectIndex);
-        emblaApi.scrollTo(activeProjectIndex, true);
+        emblaApi.scrollTo(activeProjectIndex, false);
       }
       // console.log(emblaApi.scrollTo);
       // requestAnimationFrame(()=>{emblaApi.scrollTo(activeProjectIndex, true)});
@@ -205,17 +207,17 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
     if(open_ && activeProjectIndex !== null) {
       // console.log('Calling reInit with slideNodes:', embla.slideNodes())
       embla.reInit({startIndex: activeProjectIndex});
-      // if(activeProjectIndex !== null) {
-      //   console.log('(handleOpenChange) Scrolling to index:', activeProjectIndex)
-      //   embla.scrollTo(activeProjectIndex, true);
-      //   // setOpenedProjectId(activeProjectId ?? null);
-      // }
+      if(activeProjectIndex !== null) {
+        console.log('(handleOpenChange) Scrolling to index:', activeProjectIndex)
+        embla.scrollTo(activeProjectIndex, true);
+        // setOpenedProjectId(activeProjectId ?? null);
+      }
     }
   });
 
   useEffect(()=> {
     handleOpenChange(open, embla);
-  }, [open, embla, visibleProjects]);
+  }, [open, embla]);
 
 //   const onOpenChange = useCallback((open: boolean) => {
 //     console.log('ON OPEN CHANGE', open);
@@ -304,6 +306,24 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
   //   embla.reInit({startIndex});
   // }, [startIndex, embla]);
 
+
+
+  useEffect(() => {
+    if (!embla) return;
+    
+    const options = embla.internalEngine().options;
+    console.log('[Embla Config]', {
+      duration: options.duration,
+      // speed: options.,
+      dragFree: options.dragFree,
+      containScroll: options.containScroll
+    });
+    
+    // // Test if scrollTo with animation works
+    // console.log('[Embla] Testing animation...');
+    // embla.scrollTo(1, false); // Should animate to slide 1
+  }, [embla]);
+
   return <Dialog open={open} onOpenChange={setOpen} modal={true}>
         <DialogPortal container={document.getElementById('modal-root')}>
             {/* <div id='dialog-wrapper' className="fixed p-0 m-0 inset-0 z-40 bg-transparent border-none shadow-none w-full h-full"> */}
@@ -325,7 +345,7 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
                 {/* <div className="relative z-60 w-full max-w-3xl" onClick={(e) => e.stopPropagation()}> */}
                 <Carousel ref={emblaRef} externalCarouselRef={emblaRef} externalApi={embla} opts={opts} className="overflow-visible z-60 pointer-events-auto w-full max-w-2xl" onCarouselSelect={onSelect}>  
                     {/* // className="w-full max-w-3xl h-[70vh]" */}
-                    <CarouselContent ref={containerRef} id="embla-container" className="overflow-visible pointer-events-visible w-full">
+                    <CarouselContent id="embla-container" className="overflow-visible pointer-events-visible w-full">
                         {...slideElems}
                     </CarouselContent>
                     <CarouselPrevious ref={prevRef} className='disabled:pointer-events-auto'/> 

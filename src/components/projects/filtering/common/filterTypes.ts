@@ -25,7 +25,9 @@ export type FilterState = {
   year: [number | undefined, number | undefined] | undefined; // min and max
   categories: Set<string>; // selected categories
   tags: Record<TagType, Set<string>>; // selected tags by type
-  openProjectId?: string | null
+  openProjectId?: string | null;
+  urlProjectId?: string | null;
+  _urlReplace?: boolean;
 };
 
 export enum FilterField {
@@ -42,15 +44,18 @@ type ResetPayload = {
     tagTypes?: TagType[] | TagType
 }
 
+
+export type InitFromURL = { category?: string[], lang?: string[], skill?: string[], topic?: string[], year?: [number | undefined, number | undefined] };
+
 export type FilterAction =
   | { type: 'SET_YEAR'; payload: [number, number] }
   | { type: 'TOGGLE_CATEGORY'; payload: string }
   | { type: 'TOGGLE_TAG'; payload: { tagType: TagType; tagText: string } }
   | { type: 'RESET'; payload?: ResetPayload }
-  | { type: 'OPEN_PROJECT'; payload: { id?: string | undefined, changeCarouselState?: boolean }}
-  | { type: 'INIT_FROM_URL'; payload: { category?: string[], lang?: string[], skill?: string[], topic?: string[], year?: [number | undefined, number | undefined], project?: string | null } };
-
-
+  //   | { type: 'OPEN_PROJECT'; payload: { id?: string | undefined, changeCarouselState?: boolean }}
+  | { type: 'INIT_FROM_URL'; payload: InitFromURL & {project?: string | null} }
+  | { type: 'UPDATE_URL_PROJECT', payload: {projectId?: string | null, replace?: boolean} }
+  | { type: 'CLEAR_URL_PROJECT', payload?: {} }
 
 
 
@@ -102,7 +107,8 @@ export type FilterReducer = React.Reducer<FilterState, FilterAction>;
 
 export function createFilterReducer(rangeInfo: FilterRangeInfo): FilterReducer {
     return function filterReducer(state: FilterState, action: FilterAction): FilterState {
-        console.log('Reducer:', action.type, action.payload);
+        console.log('[filterReducer] Action:', action.type, action.payload);
+        console.log('[filterReducer] Current state:', state);
         switch (action.type) {
             case 'SET_YEAR':
                 const minYear = (action.payload[0] > rangeInfo.minYear) ? action.payload[0] : undefined;
@@ -165,19 +171,43 @@ export function createFilterReducer(rangeInfo: FilterRangeInfo): FilterReducer {
                 return { year: undefined, categories: new Set<string>(), tags: <Record<TagType, Set<string>>>TAGTYPES.reduce((acc, t) => ({ ...acc, [t]: new Set() }), {}) };
             }
 
+            case 'UPDATE_URL_PROJECT': {
+                const prevId = state.openProjectId ?? null;
+                const nextId = action.payload.projectId ?? null;
+                
+                const replace = !((prevId == null && nextId != null) || (prevId != null && nextId == null));
+                
+
+                return { 
+                    ...state, 
+                    openProjectId: nextId,
+                    _urlReplace: replace  // temporary flag for the sync hook
+                };
+            }
+
 
             case 'INIT_FROM_URL': {
-                const newState = action.payload;
-                return {
-                    categories: new Set<string>(newState.category),
-                    year: newState.year,
-                    openProjectId: newState.project ?? null,
+                const newState = {
+                    categories: new Set<string>(action.payload.category),
+                    year: action.payload.year,
+                    openProjectId: action.payload.project ?? null,
                     tags: {
-                        lang: new Set<string>(newState.lang),
-                        skill: new Set<string>(newState.skill),
-                        topic: new Set<string>(newState.topic)
-                    }
+                        lang: new Set<string>(action.payload.lang),
+                        skill: new Set<string>(action.payload.skill),
+                        topic: new Set<string>(action.payload.topic)
+                    },
+                    urlProjectId: action.payload.project, // Store the URL project ID here
                 };
+                console.log('[filterReducer] INIT_FROM_URL new state:', newState);
+                return newState;
+            }
+
+            case "CLEAR_URL_PROJECT": {
+                const newState = {
+                    ...state,
+                    urlProjectId: undefined,
+                };
+                console.log('[filterReducer] CLEAR_URL_PROJECT new state:', newState);
             }
 
             // case 'OPEN_PROJECT': {
@@ -187,6 +217,7 @@ export function createFilterReducer(rangeInfo: FilterRangeInfo): FilterReducer {
 
             default:
                 // state.openProjectId = undefined;
+                // state._urlReplace =
                 return state;
         }
     }
