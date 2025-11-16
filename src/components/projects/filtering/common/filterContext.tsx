@@ -1,20 +1,20 @@
-import { createContext, useContext, useMemo, useReducer, type Dispatch, type SetStateAction } from 'react';
-import { createFilterReducer, TAGTYPES, type FilterAction, type FilterRangeInfo, type FilterState, type TagType } from './filterTypes';
-// import type { ProjectBrowserHandle } from '../../ProjectBrowserReact';
+import { createContext, useContext, useEffect, useEffectEvent, useMemo, useReducer, type Dispatch, type SetStateAction } from 'react';
+import { createFilterReducer, TAGTYPES, type FilterAction, type FilterRangeInfo, type FilterReducer, type FilterState, type TagType } from './filterTypes';
+import type { ProjectBrowserHandle } from '../../ProjectBrowserReact';
 
-export type FilterContextValue = {
+type FilterContextValue = {
   state: FilterState;
   dispatch: React.Dispatch<FilterAction>;
   carouselOpen: boolean;
   setCarouselOpen: Dispatch<SetStateAction<boolean>>;
-  // browser: ProjectBrowserHandle | null
+  browser: ProjectBrowserHandle | null
 };
 
 
 
 const FilterContext = createContext<FilterContextValue | undefined>(undefined);
 
-export function FilterProvider({ children, rangeInfo, carouselOpen, setCarouselOpen }: { children: React.ReactNode, rangeInfo: FilterRangeInfo, carouselOpen: boolean, setCarouselOpen: Dispatch<SetStateAction<boolean>> }) {
+export function FilterProvider({ children, rangeInfo, carouselOpen, setCarouselOpen, browser }: { children: React.ReactNode, rangeInfo: FilterRangeInfo, carouselOpen: boolean, setCarouselOpen: Dispatch<SetStateAction<boolean>>, browser: ProjectBrowserHandle | null}) {
   const reducer = useMemo(() => createFilterReducer(rangeInfo), [rangeInfo]);
 
   const [state, dispatch] = useReducer(reducer, {
@@ -33,7 +33,7 @@ export function FilterProvider({ children, rangeInfo, carouselOpen, setCarouselO
   // }, [state.openProjectId, handleOpenProjectChange]);
 
 
-  return <FilterContext.Provider value={{ state, dispatch, carouselOpen, setCarouselOpen }}>{children}</FilterContext.Provider>;
+  return <FilterContext.Provider value={{ state, dispatch, carouselOpen, setCarouselOpen, browser }}>{children}</FilterContext.Provider>;
 }
 
 export function useFilter() {

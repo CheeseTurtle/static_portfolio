@@ -1,4 +1,4 @@
-import React, { forwardRef, StrictMode, useCallback, useEffect, useEffectEvent, useImperativeHandle, useInsertionEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react"
+import React, { forwardRef, StrictMode, useCallback, useEffect, useEffectEvent, useImperativeHandle, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react"
 import ProjectGrid from "./grid/ProjectGrid";
 // import ProjectCarousel from "./overlay/ProjectCarousel";
 import ProjectCarouselDialog from "./overlay/ProjectCarouselDialog";
@@ -60,11 +60,9 @@ function isEquivalentFilterState(s1: FilterState, s2: FilterState, includeOpenPr
 }
 
 const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps & {filterRangeInfo: FilterRangeInfo, carouselOpen: boolean, setCarouselOpen: Dispatch<SetStateAction<boolean>>}>(({children, filterRangeInfo, projects, contentString, carouselOpen, setCarouselOpen}: ProjectBrowserProps & {filterRangeInfo: FilterRangeInfo, carouselOpen: boolean, setCarouselOpen: Dispatch<SetStateAction<boolean>>}, ref) => {
-    // const initialized = useRef<boolean>(false);
     console.log('[ProjectBrowserInner] Render start', {
       url: window.location.href,
-      search: window.location.search,
-    //   initialized: initialized.current
+      search: window.location.search
     });
     const [activeProjectIndex, setActiveProjectIndex] = useState<number | null>(null);
     const [openedProjectId, setOpenedProjectId] = useState<string | null>(null);
@@ -156,7 +154,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
 
     useEffect(() => {
         handleActiveIdChange(activeProjectId);
-    }, [activeProjectId, handleActiveIdChange]);
+    }, [activeProjectIndex, activeProjectId, handleActiveIdChange]);
 
 
     const carouselOpenRef = useRef<boolean>(carouselOpen);
@@ -330,7 +328,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
 
     useEffect(() => {
         const handlePopState = (event: PopStateEvent) => {
-            console.log('%cBrowser navigation detected:', 'color: black; background-color: yellow;', event.state, window.location.search);
+            console.log('Browser navigation detected:', event.state);
             
             const [filterState, projectId] = parseURL(filterRangeInfo, window.location.search);
             
@@ -349,13 +347,12 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
                 }
             } else {
                 // No project in URL, close carousel
-                if (carouselOpen) setCarouselOpen(false);
+                // if (carouselOpen) setCarouselOpen(false);
                 // setActiveProjectFromId(null);
-                // if(!carouselOpen) {
-                // setActiveProjectIndex(null);
-                setOpenedProjectId(null);
-                storedOpenedIdRef.current = null;
-                // }
+                if(!carouselOpen) {
+                    setActiveProjectIndex(null);
+                    setOpenedProjectId(null);
+                }
             }
         };
 
@@ -364,7 +361,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
         return () => {
             window.removeEventListener('popstate', handlePopState);
         };
-    }, [visibleProjects, storedOpenedIdRef, carouselOpen, setOpenedProjectId, setCarouselOpen, setActiveProjectFromId, filterRangeInfo]);
+    }, [visibleProjects, carouselOpen, setActiveProjectIndex, setCarouselOpen, setActiveProjectFromId, filterRangeInfo]);
 
     const handleRef = useRef<ProjectBrowserHandle>({
         getActiveProject: useCallback(() => activeProject, [activeProject]),
@@ -386,9 +383,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
     const _contentElements = parse(contentString);
     const contentElements = ((typeof _contentElements === 'string') ? [<>{_contentElements}</>] : Array.isArray(_contentElements) ? _contentElements : [_contentElements]).filter((x)=>typeof x === 'object');
 
-
-
-    // useInitializeFromURL(filterRangeInfo, initialized.current);
+    useInitializeFromURL(filterRangeInfo);
 
     console.log('[ProjectBrowserInner] Render end');
 
@@ -407,19 +402,16 @@ export default function ProjectBrowser({children, projects, contentString}: Proj
     const filterRangeInfo = useMemo(() => collectFilterRangeInfo(projects), [projects]);
     const [carouselOpen, setCarouselOpen] = useState<boolean>(false);
 
-    const setCarouselOpen_ = useCallback((open: boolean) => {
-        console.log('%cCalling carousel setOpen with:', 'background-color: yellow; color: black;', open);
-        setCarouselOpen(open);
-    }, [setCarouselOpen]) as Dispatch<SetStateAction<boolean>>;
-
 
     // const syncCarouselPosition = useRef<(id: string | null) => void>(null);
+
+    const browserHandle = useRef<ProjectBrowserHandle>(null);
 
     return <>
         <AlertToast></AlertToast>
         {/* <StrictMode> */}
-            <FilterProvider rangeInfo={filterRangeInfo} carouselOpen={carouselOpen} setCarouselOpen={setCarouselOpen_}>
-                <ProjectBrowserInner filterRangeInfo={filterRangeInfo} projects={projects} contentString={contentString}  carouselOpen={carouselOpen} setCarouselOpen={setCarouselOpen_}>
+            <FilterProvider rangeInfo={filterRangeInfo} carouselOpen={carouselOpen} setCarouselOpen={setCarouselOpen} browser={browserHandle.current}>
+                <ProjectBrowserInner ref={browserHandle} filterRangeInfo={filterRangeInfo} projects={projects} contentString={contentString}  carouselOpen={carouselOpen} setCarouselOpen={setCarouselOpen}>
                     {children}
                 </ProjectBrowserInner>
             </FilterProvider>
