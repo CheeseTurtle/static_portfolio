@@ -1,0 +1,153 @@
+
+
+click item {
+    text: |
+        - If clicked item's ID is equal to current (therefore non-null) activeProjectId (therefore assume activeProjectIndex is non-null), set carouselOpen to `true`.
+        - Otherwise, set activeProjectIndex to clicked item's index.
+    |
+}
+
+
+
+scroll carousel -> ACTIVE_INDEX.update active_index -> ACTIVE_INDEX.active_index changed
+
+(ACTIVE_INDEX.active_index changed -> ACTIVE_ID.update active_id): | Look up ID of project @ `visibleProjects[active_index]` |
+
+ACTIVE_ID.update active_id -> ACTIVE_ID.active_id changed
+
+(ACTIVE_ID.active_id changed -> OPEN_ID.update open_project_id): when carousel_open
+
+
+close sheet -> reset tag_visual_order
+# Assume that the carousel is closed (or, if init from URL, not yet open) and openProjectId is null
+# when the filter is changed (and, therefore, when visibleProjects changes).
+close sheet -> FILTER.update filter -> FILTER.filter changed
+
+FILTER.filter changed -> VISIBLE_PROJECTS.update visible_projects -> VISIBLE_PROJECTS.visible_projects changed
+
+
+VISIBLE_PROJECTS.visible_projects changed -> try_resolve_active_id_to_new_index_or_show_toast -> ACTIVE_INDEX.update active_index
+try_resolve_active_id_to_new_index_or_show_toast{ 
+    text: |
+        - If there is a current activeId, look it up in visibleProjects.
+        - If it is found, update activeIndex to this index; if it is not found, update activeIndex to null.
+    |
+}
+
+pop_state -> read_url
+
+load_page -> read_url -> FILTER.update filter
+             read_url -> URL_PROJECT_ID.update url_project_id -> URL_PROJECT_ID.defer url_project_id -> URL_PROJECT_ID.deferred url_project_id changed
+
+URL_PROJECT_ID.deferred url_project_id changed -> try_resolve_deferred_url_project_id_to_index_or_show_toast
+try_resolve_deferred_url_project_id_to_index_or_show_toast {
+    text: |
+        **If deferred urlProjectId is NOT equal to openProjectId:**
+
+        - If deferred urlProjectId is not null:
+            - Look up deferred urlProjectId in visibleProjects (we assume filter is up-to-date and has already been applied).
+            - If it is found, update activeIndex to the new index and set carouselOpen to `true`; if it is not found, show error toast and make no change to activeIndex, unless activeProjectId and/or openProjectId is equal to the invalid urlProjectId (in which case, set activeProjectIndex to null and set carouselOpen to false). 
+        - Otherwise (i.e. deferred urlProjectId) is null:
+            - Set openProjectId to null and set carouselOpen to `false`.
+    |
+}
+
+
+try_resolve_deferred_url_project_id_to_index_or_show_toast -> ACTIVE_INDEX.update active_index
+try_resolve_deferred_url_project_id_to_index_or_show_toast -> update carousel_open (deferred?)
+
+
+OPEN_ID.update open_project_id -> OPEN_ID.open_project_id changed -> URL_PROJECT_ID.update url_project_id -> URL_PROJECT_ID.url_project_id changed -> handle url_project_id changed
+
+handle url_project_id changed {
+    text: |
+    **If urlProjectId is equal to openProjectId:**
+        - Create new URL by adding/replacing/removing project ID in URL according to new value of urlProjectId.
+        - If the new URL is equal to the current URL, return without further action.
+        - Get old urlProjectId from current URL.
+        - Otherwise:
+            - If old urlProjectId was null and new urlProjectId is non-null, or vice-versa, PUSH history (new URL with project ID).
+            - If old urlProjectId was non-null and new urlProjectId is also non-null, REPLACE history.
+            - Otherwise (i.e. both are null), make no change.
+    |
+}
+
+
+update carousel_open -> carousel_open changed -> handle carousel_open changed
+
+
+handle carousel_open changed {
+    text: |
+        - If carouselOpen is `true`:
+            - If activeProjectIndex is null or activeProjectId is null, set carouselOpen to `false` and set openProjectId and urlProjectId to null, then return. (This should not occur!)
+            - Set openProjectId to activeProjectId (triggers update urlProjectId, which triggers history push) and scrollTo activeProjectIndex.
+        - Otherwise (i.e. carouselOpen is `false`):
+            - Set openProjectId to null (triggers update urlProjectId, which triggers history push)
+    |
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# open carousel
+# close carousel
+
+# click item
+
+
+
+# scroll carousel -> ACTIVE_INDEX.update active_index -> ACTIVE_INDEX.active_index changed
+
+# (ACTIVE_INDEX.active_index changed -> ACTIVE_ID.update active_id): | Look up ID of project @ `visibleProjects[active_index]` |
+
+# ACTIVE_ID.update active_id -> ACTIVE_ID.active_id changed
+
+# (ACTIVE_ID.active_id changed -> OPEN_ID.update open_id): when carousel_open
+
+
+# close sheet -> reset tag_visual_order
+# # Assume that the carousel is closed (or, if init from URL, not yet open) and openProjectId is null
+# # when the filter is changed (and, therefore, when visibleProjects changes).
+# close sheet -> FILTER.update filter -> FILTER.filter changed
+
+# FILTER.filter changed -> VISIBLE_PROJECTS.update visible_projects -> VISIBLE_PROJECTS.visible_projects changed
+
+
+# VISIBLE_PROJECTS.visible_projects changed -> try_resolve_active_id_to_new_index_or_show_toast -> ACTIVE_INDEX.update active_index
+# try_resolve_active_id_to_new_index_or_show_toast
+
+
+# load_page -> read_url -> FILTER.update filter
+#              read_url -> URL_PROJECT_ID.update url_project_id -> URL_PROJECT_ID.defer url_project_id -> URL_PROJECT_ID.deferred url_project_id changed
+
+# URL_PROJECT_ID.deferred url_project_id changed -> try_resolve_deferred_url_project_id_to_index_or_show_toast -> set_active_index_and_set_carousel_open
+# set_active_index_and_set_carousel_open -> ACTIVE_INDEX.update active_index
+# set_active_index_and_set_carousel_open -> update carousel_open (deferred?)
+
+# pop_state -> read_url
+
+# OPEN_ID.update open_id -> OPEN_ID.open_id changed -> push_or_replace_history
+# OPEN_ID.open_id changed -> URL_PROJECT_ID.update url_project_id
+
+
+
+
+
+
+
+
+

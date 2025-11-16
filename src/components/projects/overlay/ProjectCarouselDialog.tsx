@@ -130,9 +130,6 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
       {/* // </div> */}
       </CarouselItem>
   ));
-  // const slides = visibleProjects.map((p)=>allSlides[p.id]);
-  // console.log('slides:', slides);
-
   // if (!open || !slides) return null;
 
   const onSelect = useCallback((emblaApi: EmblaCarouselType | undefined) => {
@@ -155,16 +152,10 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
     if(!emblaApi) return;
     console.log('On reInit:', activeProjectIndex, emblaApi.selectedScrollSnap());
     if(activeProjectIndex !== null) {
-      // if(activeProjectIndex !== emblaApi.selectedScrollSnap())
-        // shouldCheckScroll.current= true;
-      // console.log('(onReInit)', visibleProjects, emblaApi.slideNodes(), slides);
       if(activeProjectIndex !== null && open) {
-        // console.log('(init/reInit) Scrolling to index:', activeProjectIndex)
         console.log('(onReInit) Scrolling to index:', activeProjectIndex);
         emblaApi.scrollTo(activeProjectIndex, false);
       }
-      // console.log(emblaApi.scrollTo);
-      // requestAnimationFrame(()=>{emblaApi.scrollTo(activeProjectIndex, true)});
     }
 
   }, [activeProjectIndex, embla]);
@@ -182,23 +173,6 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
         // .off('select', onSelect) 
     };
   }, [embla, onEmblaReInit]);
-
-  // useEffect(() => {
-  //   if (embla && slides.length > 0) {
-  //     embla.reInit({startIndex: startIndex});
-  //     if(activeProjectIndex !== null)
-  //       embla.scrollTo(activeProjectIndex, false);
-  //   }
-  // }, [embla, slides, activeProjectIndex]);
-
-  // useEffect(() => {
-  //   if(!embla) return;
-  //   if(activeProjectIndex !== null && activeProjectIndex !== embla.selectedScrollSnap()) {
-  //     const slideNodes = embla.slideNodes();
-  //     console.log('(useEffect)', visibleProjects, slideNodes, slides);
-  //     embla.scrollTo(activeProjectIndex, true);
-  //   }
-  // }, [embla]);
 
   const handleOpenChange = useEffectEvent((open_: boolean, embla: EmblaCarouselType | undefined) => {
     console.log('[ProjectCarouselDialog] carouselOpen changed (open_/open/activeIndex/embla):', open_, open, activeProjectIndex, embla); // , storedOpen);
@@ -219,48 +193,6 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
     handleOpenChange(open, embla);
   }, [open, embla]);
 
-//   const onOpenChange = useCallback((open: boolean) => {
-//     console.log('ON OPEN CHANGE', open);
-//     // if(open) {
-//     //   // activeProjectIndex should already be set
-//     //   setOpenedProjectId(activeProjectId ?? null);
-//     // } else {
-//     //   setOpenedProjectId(null);
-//     // }
-//     // console.log('Setting carousel open:', open, activeProjectId);
-//     setOpen(open);
-//   }, [setOpen]);
-
-  // useEffect(() => {
-  //   if(!embla) return;
-  //   const carouselDiv = carouselRef.current;
-  //   const backdropDiv = backdropRef.current;
-  //   if(!backdropDiv || !carouselDiv) return;
-    
-  //   if(open) {
-  //     // if(embla && embla.selectedScrollSnap() !== activeProjectIndex) embla.scrollTo(activeProjectIndex, false);
-  //     // console.log('Animating "to" visible')
-  //     gsap.to([carouselDiv, backdropDiv], {
-  //       opacity: 1.0, duration: 0.3, visibility: 'visible',
-  //       onStart: () => {
-  //         gsap.set([carouselDiv, backdropDiv], {
-  //           visibility: 'visible'
-  //         })
-  //       }
-  //     });
-  //   } else { // TODO: Only if visible
-  //     // setOpenedProjectId(null);
-  //     // console.log('Animating "to" hidden')
-  //     gsap.to([carouselDiv, backdropDiv], {
-  //       opacity: 0.0, duration: 0.3,
-  //       onComplete: () => {
-  //         gsap.set([carouselDiv, backdropDiv], {
-  //           visibility: 'hidden'
-  //         })
-  //       }
-  //     })
-  //   }
-  // }, [open, embla, activeProjectIndex]);
 
   const noPropagate = (e: PointerEvent | RPointerEvent<HTMLButtonElement | HTMLDivElement>) => {
     // console.log('No propagate:', e);
@@ -268,61 +200,6 @@ export default function ProjectCarouselDialog({ startIndex, open, setOpen, activ
     // e.preventDefault();
   };
 
-  // const noPropagate2 = (ev: PointerEvent) => {
-  //   // console.log('No propagate 2:', ev, ev.target, ev.currentTarget, ev.relatedTarget);
-  //   const target = (ev.target ? (ev.target as HTMLElement) : null);
-  //   ev.preventDefault();
-  //   ev.stopImmediatePropagation();
-  //   ev.stopPropagation();
-  // };
-  // const noPropagate2Opts = {
-  //   capture: true,
-  //   once: false,
-  //   passive: false
-  // };
-
-  // const logEvent = (e: RMouseEvent | RPointerEvent<HTMLButtonElement>) => {
-  //   console.log('Event:', e);
-  // };
-
-  // useEffect(() => {
-  //   const prev = prevRef.current, next = nextRef.current, overlay = overlayRef.current;
-
-  //   if(prev || next || overlay) {
-  //     prev?.addEventListener('pointerdown', noPropagate2, noPropagate2Opts);
-  //     next?.addEventListener('pointerdown', noPropagate2, noPropagate2Opts);
-  //     overlay?.addEventListener('pointerdown', noPropagate2, noPropagate2Opts);
-
-  //     return () => {
-  //       prev?.removeEventListener('pointerdown', noPropagate2, noPropagate2Opts);
-  //       next?.removeEventListener('pointerdown', noPropagate2, noPropagate2Opts);
-  //       overlay?.removeEventListener('pointerdown', noPropagate2, noPropagate2Opts);
-  //     };
-  //   }
-  // });
-
-  // useEffect(()=>{
-  //   if(!embla) return;
-  //   embla.reInit({startIndex});
-  // }, [startIndex, embla]);
-
-
-
-  useEffect(() => {
-    if (!embla) return;
-    
-    const options = embla.internalEngine().options;
-    console.log('[Embla Config]', {
-      duration: options.duration,
-      // speed: options.,
-      dragFree: options.dragFree,
-      containScroll: options.containScroll
-    });
-    
-    // // Test if scrollTo with animation works
-    // console.log('[Embla] Testing animation...');
-    // embla.scrollTo(1, false); // Should animate to slide 1
-  }, [embla]);
 
   return <Dialog open={open} onOpenChange={setOpen} modal={true}>
         <DialogPortal container={document.getElementById('modal-root')}>
