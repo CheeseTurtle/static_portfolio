@@ -6,7 +6,7 @@ import { getProjectKeyFromTagType } from "./filterTypes";
 
 type TagButtonsProps = {
     colorClassName?: string,
-    selectedTags: Set<string>,
+    selectedTags: Set<string> | undefined,
     availableTags: Set<string>,
     projects: ProjectInfo[],
     tagType: TagType,
@@ -97,7 +97,7 @@ export default function TagButtons(props: TagButtonsProps) {
     const availableChildren: Record<string, ReactElement<TagButtonProps>> = useMemo(()=>Object.fromEntries(
         availableTags.map(
             tagText => [tagText, 
-                <TagButton key={tagText} colorClassName={props.colorClassName} isPressed={props.selectedTags.has(tagText)} tagText={tagText} toggleTag={toggleTag}></TagButton>
+                <TagButton key={tagText} colorClassName={props.colorClassName} isPressed={props.selectedTags ? props.selectedTags.has(tagText) : false} tagText={tagText} toggleTag={toggleTag}></TagButton>
             ]
         )
     ), [availableTags, toggleTag, props.selectedTags]);
