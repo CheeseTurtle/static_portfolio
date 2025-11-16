@@ -12,7 +12,6 @@ import mdx from "@astrojs/mdx";
 // https://astro.build/config
 // eslint-disable-next-line @typescript-eslint/no-unsafe-call
 export default defineConfig({
-  // @ts-ignore
   tsconfig: "./tsconfig.json",
   // prefetch: true,
   site: "https://cheeseturtle.github.io/static_profile/",
@@ -44,7 +43,8 @@ export default defineConfig({
   //   }
   // },
   vite: {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-commen
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     plugins: [tailwindcss()],
     logLevel: 'info',

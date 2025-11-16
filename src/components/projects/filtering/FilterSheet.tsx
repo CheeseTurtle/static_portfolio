@@ -14,12 +14,11 @@ import type { ProjectData, ProjectInfo } from "../types";
 import FilterForm from "./FilterForm";
 import type { FilterRangeInfo } from "./common/filterTypes";
 import { useFilter } from "./common/filterContext";
-import { useBrowserContext } from "./common/browserContext";
 
 
 export type FilterSheetProps = {
-    // open: boolean,
-    // setOpen: Dispatch<SetStateAction<boolean>> | ((open: boolean) => void),
+    open: boolean,
+    setOpen: Dispatch<SetStateAction<boolean>>,
     rangeInfo: FilterRangeInfo,
     projects: ProjectInfo[],
     // allProjects: ProjectData[],
@@ -43,10 +42,7 @@ export type FilterSpec = {
 
 export default function FilterSheet(props: FilterSheetProps) {
     
-    // const {state, dispatch} = useFilter();
-
-    // const open = useBrowserContext(s=>s.sheetOpen);
-    // const setOpen = useBrowserContext(s=>s.setSheetOpen);
+    const {state, dispatch} = useFilter();
 
     // This is the shared reset function all TagButtons can call
     const resetAll = useEffectEvent(() => {
@@ -74,7 +70,7 @@ export default function FilterSheet(props: FilterSheetProps) {
                 <SheetDescription>Turtles</SheetDescription>
             </SheetHeader>
 
-            <FilterForm registerReset={registerReset} {...props}></FilterForm>
+            <FilterForm state={state} dispatch={dispatch} registerReset={registerReset} {...props}></FilterForm>
 
             {/* <SheetFooter>
                 <Button type="submit">Save changes</Button>

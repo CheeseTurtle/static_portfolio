@@ -6,15 +6,14 @@ import {Slider} from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import type { FilterAction, FilterRangeInfo, FilterState } from "./common/filterTypes";
 import type { ProjectData, ProjectInfo } from "../types";
-import { doubleEq, tripleEq, useBrowserContext, useFilterContext } from "./common/browserContext";
 
 type SliderProps = React.ComponentProps<typeof Slider>;
 
 
 type FilterFormProps = {
     projects: ProjectInfo[],
-    // state: FilterState,
-    // dispatch: Dispatch<FilterAction>,
+    state: FilterState,
+    dispatch: Dispatch<FilterAction>,
     registerReset: (resetFn: ()=>void) => ()=>void,
 } & FilterSheetProps;
 
@@ -25,12 +24,10 @@ export type TagType = ('lang' | 'topic' | 'skill');  // | 'concept');
 const TAGTYPES: TagType[] = ['lang', 'skill', 'topic'];
 
 const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, ref) => {
-    const setYear = useFilterContext(s=>s.setYear);
 
     // Year slider
     const slider = <Slider min={props.rangeInfo.minYear} max={props.rangeInfo.maxYear} defaultValue={[props.rangeInfo.minYear, props.rangeInfo.maxYear]}
-        // onValueChange={(value: [number, number]) => props.dispatch({type: 'SET_YEAR', payload: value})}
-        onValueChange={(value: [number, number])=> setYear(value)}
+        onValueChange={(value: [number, number]) => props.dispatch({type: 'SET_YEAR', payload: value})}
         // vocab=""
         color='green'
         // minStepsBetweenThumbs={1}
@@ -42,9 +39,25 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, ref) =>
 
     const tagSections = useMemo( ()=>
         TAGTYPES.map((tt =>
-            <TagFilterSection projects={props.projects} key={tt} tagType={tt} rangeInfo={props.rangeInfo} registerReset={props.registerReset}></TagFilterSection>
+            <TagFilterSection projects={props.projects} state={props.state} dispatch={props.dispatch} key={tt} tagType={tt} rangeInfo={props.rangeInfo} registerReset={props.registerReset}></TagFilterSection>
         ))
-    , [props.rangeInfo, props.registerReset, props.projects]);
+        // <Accordion type='multiple'>
+        //     <AccordionHeader>
+        //         Hello
+        //         <AccordionTrigger>Trigger</AccordionTrigger>
+        //     </AccordionHeader>
+
+        //     <AccordionContent>
+        //         {
+        //             TAGTYPES.map((tt => (
+        //                 <AccordionItem value={tt}>
+                            
+        //                 </AccordionItem>
+        //             )))
+        //         }
+        //     </AccordionContent>
+        // </Accordion>
+    , [props.state, props.rangeInfo, props.dispatch]);
 
     return <>
         {slider}

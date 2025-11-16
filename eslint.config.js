@@ -15,7 +15,9 @@ import { defineConfig } from "eslint/config";
 
 export default defineConfig([
   eslint.configs.recommended,
+  // @ts-expect-error Incompatibility
   tseslint.configs.eslintRecommended,
+  // @ts-expect-error Incompatibility
   tseslint.configs.recommendedTypeChecked,
   // // @ts-expect-error Incompatibility
   // tseslint.configs.stylisticTypeChecked,
