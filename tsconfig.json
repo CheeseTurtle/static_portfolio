@@ -31,6 +31,7 @@
       "jsxImportSource": "react",
       "checkJs": false,
       "diagnostics": true,
+      "noErrorTruncation": false,
       "strict": true,
       "allowImportingTsExtensions": true,
       "allowSyntheticDefaultImports": true,
@@ -85,10 +86,11 @@
   "exclude": [
     "node_modules",
     "**/node_modules",
-    "node_modules/**/*",
     "**/node_modules/**",
+    "node_modules/**/*",
     "dist",
     "dist/**/*",
+    "**/dist",
     "**/dist/**",
   ],
   "compilerOptions": {

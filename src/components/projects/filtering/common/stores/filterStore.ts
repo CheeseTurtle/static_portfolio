@@ -1,5 +1,5 @@
 import { createStore } from "zustand";
-import { createWithEqualityFn } from "zustand/traditional";
+// import { createWithEqualityFn } from "zustand/traditional";
 import { subscribeWithSelector } from "zustand/middleware";
 import {
   collectFilterRangeInfo,
@@ -8,7 +8,6 @@ import {
   type TagType,
 } from "../filterTypes";
 import type { ProjectInfo } from "@/components/projects/types";
-import { spec } from "node:test/reporters";
 
 
 export enum FilterField {
@@ -33,7 +32,7 @@ export interface FilterDataProps {
   // bears: number,
   year: [number | null, number | null] | null; // min and max
   categories: Set<string>; // selected categories
-  tags: Record<TagType, Set<string>>; // selected tags by type
+  tags: Record<TagType, Set<string>> | null; // selected tags by type
   // openProjectId?: string | null;
   // urlProjectId?: string | null;
   // _urlReplace?: boolean;
@@ -114,23 +113,35 @@ export const createFilterStore = (
     toggleCategory: (value, active) =>
       set((state) => {
         // const categories = new Set(state.categories);
-        if (state.categories.has(value)) {
+        if (state.categories !== null && state.categories.has(value)) {
           if (active === true) return {};
           state.categories.delete(value);
         } else if (active === false) return {};
+        else if(state.categories === null)
+          return { categories: new Set<string>([value]) };
         else state.categories.add(value);
         return { categories: new Set<string>(state.categories) };
       }),
 
     toggleTag: (tagType, tagText, active) =>
       set((state) => {
-        const tags = { ...state.tags, [tagType]: new Set(state.tags[tagType]) };
-        const tagSet = tags[tagType];
-        if (tagSet.has(tagText)) {
+        // const tags = { ...state.tags, [tagType]: new Set(state.tags?.[tagType] ?? []) };
+        const tags = state.tags;
+        const tagSet = tags?.[tagType];
+        if (tagSet !== undefined && tagSet.has(tagText)) {
           if (active === true) return {};
           tagSet.delete(tagText);
         } else if (active === false) return {};
+        else if(tags === null)
+          return {tags: {
+              lang: new Set<string>([]),
+              skill: new Set<string>([]),
+              topic: new Set<string>([]),
+              [tagType]: new Set<string>([tagText])}};
+        else if(tagSet === undefined)
+          tags[tagType] = new Set<string>([tagText]);
         else tagSet.add(tagText);
+        
         return { tags };
       }),
 
@@ -145,28 +156,38 @@ export const createFilterStore = (
         const newTags =
           lang === undefined && skill === undefined && topic === undefined
             ? undefined
-            : {
-                lang:
-                  lang === undefined ? state.tags.lang : new Set<string>(lang),
-                skill:
-                  skill === undefined
-                    ? state.tags.skill
-                    : new Set<string>(skill),
-                topic:
-                  topic === undefined
-                    ? state.tags.topic
-                    : new Set<string>(topic),
-              };
+            : (()=>{
+                const ret: Partial<Record<TagType, Set<string>>> = {};
+                if(lang !== undefined)
+                  ret.lang = new Set<string>(lang);
+                if(skill !== undefined)
+                  ret.skill = new Set<string>(skill);
+                if(topic !== undefined)
+                  ret.topic = new Set<string>(topic);
+                return {...(state.tags ?? {lang: new Set<string>([]), skill: new Set<string>([]), topic: new Set<string>([])}), ...ret};
+            })();
+            // : {
+            //     lang:
+            //       lang === undefined ? state.tags?.lang ?? null : new Set<string>(lang),
+            //     skill:
+            //       skill === undefined
+            //         ? state.tags?.skill
+            //         : new Set<string>(skill),
+            //     topic:
+            //       topic === undefined
+            //         ? state.tags?.topic
+            //         : new Set<string>(topic),
+            //   };
         const newState = {
           categories:
             category === undefined
               ? state.categories
               : new Set<string>(category),
-          year: year === undefined ? state.year : (year ?? undefined),
-          tags: newTags,
+          year: year === undefined ? (state.year ?? null) : (year ?? null),
+          tags: newTags ?? null,
         };
-        console.log("[filterReducer] INIT_FROM_URL new state:", newState);
-        return {...state, newState};
+        console.log("[createStore] INIT_FROM_URL new state:", newState);
+        return {...state, ...newState};
       }, true),
     resetFilter: (payload?) =>
       set((state) => {
@@ -181,7 +202,7 @@ export const createFilterStore = (
                     ? rangeInfo.maxYear
                     : state.year[1],
                 ] // as [number, number] | [number, undefined] | [undefined, number]
-              : state.year;
+              : (state.year ?? null);
           const categories =
             payload.mask & FilterField.CATEGORY
               ? new Set<string>()
@@ -198,14 +219,14 @@ export const createFilterStore = (
                         ...acc,
                         [t]: tagTypes.includes(t)
                           ? new Set<string>()
-                          : state.tags[t],
+                          : state.tags?.[t],
                       }),
                       {},
                     )
                   : TAGTYPES.reduce(
                       (acc, t) => ({
                         ...acc,
-                        [t]: t === tagTypes ? new Set() : state.tags[t],
+                        [t]: t === tagTypes ? new Set() : state.tags?.[t],
                       }),
                       {},
                     )
