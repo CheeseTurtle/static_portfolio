@@ -70,6 +70,7 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({ openedPro
   }, [id, activeProjectId]);
   
   const onClick = useCallback(() => {
+      console.log('%cItem clicked:', 'color: black; background-color: yellow;', id, window.location.search);
       // console.log('ONCLICK -- id:', id, activeProject, activeProjectIndex, openedProjectId);
       // console.log('onClick expanded:', expanded);
       if(id === activeProjectId) {
@@ -89,9 +90,9 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({ openedPro
         console.log(`Setting activeProjectId to ${id} -- prev:`, activeProjectId);
         setActiveProjectItem(id);
       }
-    }, [id, activeProjectId, setCarouselOpen, setActiveProjectItem]);
+    }, [id, activeProjectId, setCarouselOpen, setActiveProjectItem, setOpenedProjectId]);
 
-  useImperativeHandle(ref, () => ({onClick}), [id, activeProjectId]);  // [activeProject, activeProjectId, setActiveProjectItem, setCarouselOpen]);
+  useImperativeHandle(ref, () => ({onClick}), [onClick]);  // [activeProject, activeProjectId, setActiveProjectItem, setCarouselOpen]);
 
   useEffect(() => {
       const el = extraRef.current;

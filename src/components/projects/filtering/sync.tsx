@@ -71,7 +71,7 @@ export function parseURL(rangeInfo: FilterRangeInfo, url: string): [InitFromURL,
 
 
 export function useInitializeFromURL(rangeInfo: FilterRangeInfo) {
-  const { dispatch, carouselOpen, setCarouselOpen, browser } = useFilter();
+  const { dispatch, carouselOpen, setCarouselOpen } = useFilter();
   const hasInitialized = useRef<boolean>(false);
 
 
