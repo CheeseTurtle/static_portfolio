@@ -14,7 +14,7 @@ import type { ProjectData, ProjectInfo } from "../types";
 import FilterForm from "./FilterForm";
 import type { FilterRangeInfo } from "./common/filterTypes";
 import { useFilter } from "./common/filterContext";
-import { useBrowserContext } from "./common/browserContext";
+import { useBrowserContext, type BrowserStore } from "./common/browserContext";
 
 
 export type FilterSheetProps = {
@@ -22,6 +22,7 @@ export type FilterSheetProps = {
     // setOpen: Dispatch<SetStateAction<boolean>> | ((open: boolean) => void),
     rangeInfo: FilterRangeInfo,
     projects: ProjectInfo[],
+    // browserStore: BrowserStore,
     // allProjects: ProjectData[],
     // // visibleProjects: ProjectData[],
     // // setVisibleProjects: Dispatch<SetStateAction<ProjectData[]>>,

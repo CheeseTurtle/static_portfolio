@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, type Dispatch, type ReactNode } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, type Dispatch, type ReactNode } from "react";
 import type { TagType } from "../FilterForm";
 import type { FilterSpec } from "../FilterSheet";
 import TagButton from "../common/TagButton";
@@ -76,11 +76,20 @@ const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProp
     
     const availableTags = useMemo(() => props.rangeInfo[props.tagType], [props.rangeInfo, props.tagType]);
     
-    const selectedTags = useFilterContext(s=>s.tags?.[props.tagType], (a, b) => {
-        if(!((a && a.size) && (b && b.size)))
-            return true;
-        return a.size === b.size && Array.prototype.every.call(a, (x=>b.has(x)));
-    });
+    const selectedTags = useFilterContext(s=>s.tags, (a_, b_) => {
+        const a = a_?.[props.tagType];
+        const b = b_?.[props.tagType];
+        // if(!((a && a.size) || (b && b.size)))
+        //     return true;
+        if(a?.size && b?.size) {
+            return a.size === b.size && Array.prototype.every.call(a, (x=>b.has(x)));
+        }
+        return !a?.size && !b?.size;
+    })?.[props.tagType];
+
+      useEffect(()=>{
+        console.log('Selected tags:', props.tagType, selectedTags);
+    }, [selectedTags]);
     // const selectedTags = useMemo(()=>props.filterSpec.tags[props.tagType], [props.filterSpec.tags[props.tagType], props.tagType]);
 
     const toggleTag_ = useFilterContext(s=>s.toggleTag, shallow);

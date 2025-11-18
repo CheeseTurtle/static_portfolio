@@ -3,9 +3,11 @@ import { subscribeWithSelector } from "zustand/middleware";
 import { useStoreWithEqualityFn } from "zustand/traditional";
 import { createFilterStore, type FilterDataProps, type FilterStore, type FilterStoreState, type SetFilterProps } from "./stores/filterStore";
 import { collectFilterRangeInfo, getProjectKeyFromTagType, TAGTYPES, type FilterRangeInfo } from "./filterTypes";
-import { createStore } from "zustand";
+import { createStore, type StoreApi } from "zustand";
 import React from "react";
 import { useStore } from "zustand";
+import {shallow} from "zustand/shallow";
+// import {createComputed} from "zustand-computed";
 
 export function findNewIndex(ids: Iterable<string>, id: string): number | null {
     let index = 0;
@@ -33,10 +35,16 @@ export interface BrowserStoreState {
     sheetOpen: boolean;
     
     // Derived (cheap to compute)
-    readonly visibleProjectIds: Set<string>;
-    readonly activeProjectId: string | null;
-    readonly openProjectId: string | null;
+    /*readonly*/ visibleProjectIds: Set<string>;
+    /*readonly*/ activeProjectId: string | null;
+    /*readonly*/ openProjectId: string | null;
     
+    getVisibleProjectIds: (visibleProjectsArg?: ProjectInfo[]) => Set<string>;
+
+    getActiveProjectId: (activeProjectIndexArg?: number | null) => string | null;
+
+    getOpenProjectId: (carouselOpenArg?: boolean, activeProjectIdArg?: string | null) => string | null;
+
     // Actions
     setActiveProjectIndex: (index: number | null) => void;
     clickItem: (itemId: string, itemIndex: number) => void;
@@ -62,6 +70,17 @@ export interface BrowserStoreState {
 export type BrowserStore = ReturnType<typeof createBrowserStore>;
 export type ShowToastFn = (text: string) => void;
 export type ScrollToFn = (index: number, jump?: boolean) => void;
+
+
+export function clearURLProject(push?: boolean) {
+    const search = window.location.search;
+    if(!search) return;
+    const params = new URLSearchParams(search);
+    params.delete('project');
+    const newSearch = params.toString();
+    if(newSearch === search.slice(1)) return;
+}
+
 
 export function parseURL(rangeInfo: FilterRangeInfo, url: string): [Partial<SetFilterProps>, string | null] {
     const params = new URLSearchParams(url);
@@ -121,21 +140,24 @@ export const createBrowserStore = (
             sheetOpen: false,
             
             // Derived values
-            get visibleProjectIds() {
+            visibleProjectIds: new Set<string>(allProjects.map(x=>x.id)),
+            getVisibleProjectIds() {
                 // return new Set(get().visibleProjects.keys());
                 return new Set(get().visibleProjects.map(x=>x.id));
             },
             
-            get activeProjectId() {
-                const { activeProjectIndex } = get();
+            activeProjectId: null,
+            getActiveProjectId(activeProjectIndexArg?: number | null) {
+                const activeProjectIndex = activeProjectIndexArg ?? get().activeProjectIndex
                 return activeProjectIndex !== null 
                     ? get().getIdForIndex(activeProjectIndex)
                     : null;
             },
             
-            get openProjectId() {
+            openProjectId: null,
+            getOpenProjectId(carouselOpenArg?: boolean, activeProjectIdArg?: string | null) {
                 const { carouselOpen, activeProjectId } = get();
-                return carouselOpen ? activeProjectId : null;
+                return (carouselOpenArg ?? carouselOpen) ? (activeProjectIdArg ?? activeProjectId) : null;
             },
             
             // Actions
@@ -150,8 +172,8 @@ export const createBrowserStore = (
             },
             
             clickItem: (itemId, itemIndex) => {
-                console.log('ITEM CLICKED');
                 const { activeProjectId, carouselOpen, setCarouselOpen, setActiveProjectIndex } = get();
+                console.log('ITEM CLICKED', activeProjectId, carouselOpen, itemId, itemIndex);
                 
                 if (itemId === activeProjectId && activeProjectId !== null) {
                     // Click on already-active item opens carousel
@@ -180,8 +202,8 @@ export const createBrowserStore = (
                 } else {
                     // Closing carousel
                     set({ carouselOpen: false });
-                    // get()._syncUrlToState();
                 }
+                get()._syncUrlToState();
             },
 
             onCarouselOpenChange(open) {
@@ -229,7 +251,7 @@ export const createBrowserStore = (
                         scrollTo?.(index, false);
                     } else {
                         showToast(`Project '${projectId}' not found in current filter`);
-                        
+                        clearURLProject();
                         // If current active/open is the invalid ID, clear it
                         if (get().activeProjectId === projectId) {
                             set({
@@ -261,6 +283,7 @@ export const createBrowserStore = (
                         });
                     } else {
                         showToast(`Project '${projectId}' not found`);
+                        // clearURLProject();
                     }
                 }
             },
@@ -313,10 +336,10 @@ export const createBrowserStore = (
                     params.delete('project');
                 }
                 
-                const query = params.toString();
-                const newUrl = query ? `?${query}` : window.location.pathname;
+                const newQuery = params.toString();
+                if (newQuery === window.location.search.slice(1)) return;
+                const newUrl = `${window.location.pathname}${newQuery ? `?${newQuery}` : ''}`;
                 
-                if (newUrl === window.location.href) return;
                 
                 // Determine push vs replace based on old/new state
                 const wasNull = oldProjectId === null;
@@ -399,6 +422,24 @@ export const createBrowserStore = (
         },
         { fireImmediately: false }
     );
+
+    store.subscribe((s=>s.visibleProjects), (projects, prevProjects) => {
+        if(shallow(projects, prevProjects)) return;
+        store.setState({visibleProjectIds: new Set<string>(projects.map(x=>x.id))});
+    }, {fireImmediately: true});
+
+    store.subscribe(s=>s.activeProjectIndex, (index, prevIndex) => {
+        if(index === prevIndex) return;
+        const activeProjectId = store.getState().getActiveProjectId(index);
+        store.setState({activeProjectId});
+    }, {fireImmediately: true});
+
+    store.subscribe(s=>({carouselOpen: s.carouselOpen, activeProjectId: s.activeProjectId}), ({carouselOpen, activeProjectId}, {carouselOpen: prevCarouselOpen, activeProjectId: prevActiveProjectId}) => {
+        if(carouselOpen === prevCarouselOpen && activeProjectId === prevActiveProjectId) return;
+        
+        const openProjectId = store.getState().getOpenProjectId(carouselOpen, activeProjectId);
+        store.setState({openProjectId});
+    }, {fireImmediately: true});
     
     return store;
 };
@@ -423,22 +464,22 @@ function BrowserStoreContextInner({
     // Initialize from URL on mount
     const hasInitialized = React.useRef(false);
     
-    // React.useEffect(() => {
-    //     if (hasInitialized.current) return;
-    //     hasInitialized.current = true;
+    React.useEffect(() => {
+        if (hasInitialized.current) return;
+        hasInitialized.current = true;
         
-    //     store.getState().initFromUrl(window.location.search, showToast);
-    // }, [showToast]);
+        store.getState().initFromUrl(window.location.search, showToast);
+    }, [showToast]);
     
-    // // Handle browser back/forward
-    // React.useEffect(() => {
-    //     const handlePopState = () => {
-    //         store.getState().handlePopState(showToast);
-    //     };
+    // Handle browser back/forward
+    React.useEffect(() => {
+        const handlePopState = () => {
+            store.getState().handlePopState(showToast);
+        };
         
-    //     window.addEventListener('popstate', handlePopState);
-    //     return () => window.removeEventListener('popstate', handlePopState);
-    // }, [showToast]);
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [showToast]);
     
     return <>{children}</>;
 }
@@ -467,6 +508,94 @@ export function BrowserStoreProvider({
 
 export const doubleEq =(a: any, b: any) => (a==b);
 export const tripleEq =(a: any, b: any) => (a===b);
+
+
+
+
+
+export function useBrowserStore() {
+    const store = React.useContext(BrowserStoreContext);
+    if (!store) throw new Error('Missing BrowserStoreContext.Provider in the tree');
+    return store;
+}
+
+
+// type UseBrowserContext = (<T>(
+//     selector: (state: BrowserStoreState) => T,
+//     equalityFn?: (left: T, right: T) => boolean,
+// ) => T) & BrowserStore;
+
+// export const useBrowserContext: UseBrowserContext =  Object.assign(
+//     ((selector: (state: BrowserStoreState) => any, equalityFn?: (left: any, right: any) => boolean) => {
+//         const store = React.useContext(BrowserStoreContext);
+//         if (!store) throw new Error('Missing BrowserStoreContext.Provider in the tree');
+//         // return useStoreWithEqualityFn(store, selector, (a: any, b: any) => {
+//         //     const result = a === b;
+//         //     console.log('COMPARING:', a, b, result);
+//         //     return result;
+//         // });
+//         // return useStoreWithEqualityFn(store, selector, equalityFn);
+//         // return useStore(store, selector);
+//         // console.log(selector);
+//         return equalityFn 
+//             ? useStoreWithEqualityFn(store, selector, equalityFn) 
+//             : useStore(store, selector);
+//     }) as (<T>(
+//         selector: (state: BrowserStoreState) => T,
+//         equalityFn?: (left: T, right: T) => boolean,
+//     ) => T), {
+//         get getInitialState() {
+//             return useBrowserStore().getInitialState;
+//         },
+//         get setState() {
+//             return useBrowserStore().setState;
+//         },
+//         get getState() {
+//             return useBrowserStore().getState;
+//         },
+//         get subscribe() {
+//             return useBrowserStore().subscribe;
+//         }
+//     });
+
+// type UseFilterContext = (<T>(
+//     selector: (state: FilterStoreState) => T,
+//     equalityFn?: (left: T, right: T) => boolean,
+// ) => T) & FilterStore;
+
+
+
+export function useFilterStore() {
+    const store = useBrowserContext(state=>state.filterStore);
+    return store;
+}
+
+// export const useFilterContext: UseFilterContext = Object.assign(((
+//     selector: (state: FilterStoreState) => any,
+//     equalityFn?: (left: any, right: any) => boolean,
+// ) => {
+//     const filterStore = useBrowserContext(state => state.filterStore);
+//     // return useStoreWithEqualityFn(filterStore, selector, equalityFn);
+//     // return useStore(filterStore, selector);
+//     return equalityFn
+//         ? useStoreWithEqualityFn(filterStore, selector, equalityFn)
+//         : useStore(filterStore, selector);
+// }) as (<T>(selector: (state: FilterStoreState) => T, equalityFn?: (a: T, b: T) => boolean) => T), {
+//     get getInitialState() {
+//         return useFilterStore().getInitialState;
+//     },
+//     get setState() {
+//         return useFilterStore().setState;
+//     },
+//     get getState() {
+//         return useFilterStore().getState;
+//     },
+//     get subscribe() {
+//         return useFilterStore().subscribe;
+//     } 
+// });
+
+
 
 export function useBrowserContext<T>(
     selector: (state: BrowserStoreState) => T,

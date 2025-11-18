@@ -39,10 +39,12 @@ const ProjectGrid = (({}: ProjectGridProps) => {
 
   // Split projects row-wise into columns
   const cols: ProjectInfo[][] = useMemo(() => {
+    // console.log('Projects:', projects.map(x=>[x.id, x.date]))
     const arr: ProjectInfo[][] = Array.from({ length: columns }, () => []);
     projects.forEach((p, i) => {
       arr[i % columns].push(p);
     });
+    // console.log(arr.map(a=>a.map(x=>[x.id,x.date])))
     return arr;
   }, [projects, columns]);
 

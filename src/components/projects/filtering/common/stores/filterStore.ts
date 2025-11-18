@@ -128,9 +128,10 @@ export const createFilterStore = (
         // const tags = { ...state.tags, [tagType]: new Set(state.tags?.[tagType] ?? []) };
         const tags = state.tags;
         const tagSet = tags?.[tagType];
+        let newTagSet = new Set<string>(tagSet);
         if (tagSet !== undefined && tagSet.has(tagText)) {
           if (active === true) return {};
-          tagSet.delete(tagText);
+          newTagSet.delete(tagText);
         } else if (active === false) return {};
         else if(tags === null)
           return {tags: {
@@ -140,9 +141,9 @@ export const createFilterStore = (
               [tagType]: new Set<string>([tagText])}};
         else if(tagSet === undefined)
           tags[tagType] = new Set<string>([tagText]);
-        else tagSet.add(tagText);
+        else newTagSet.add(tagText);
         
-        return { tags };
+        return { tags: {...(tags ?? {lang: new Set(), skill: new Set(), topic: new Set()}), [tagType]: newTagSet } };
       }),
 
     setFilter: ({

@@ -195,6 +195,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
         <FilterSheet 
             projects={visibleProjects} 
             rangeInfo={filterRangeInfo} 
+            // browserStore={store}
         />
         <ProjectGrid />
         <ProjectCarouselDialog 

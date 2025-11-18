@@ -27,7 +27,7 @@ export default function ProjectCarouselDialog({ contentElements }: ProjectCarous
     // Get all state and actions from the store
     const open = useBrowserContext(s => s.carouselOpen);
     const setOpen = useBrowserContext(s => s.setCarouselOpen);
-    const onOpenChange = useBrowserContext(s=>s.onCarouselOpenChange);
+    const onOpenChange = useBrowserContext(s=>s.setCarouselOpen);
     const activeProjectIndex = useBrowserContext(s => s.activeProjectIndex);
     const setActiveProjectIndex = useBrowserContext(s => s.setActiveProjectIndex);
     // const visibleProjects = useBrowserContext(s => Array.from(s.visibleProjects.values()));
@@ -121,21 +121,24 @@ export default function ProjectCarouselDialog({ contentElements }: ProjectCarous
     //     }
     // }, [open, embla, activeProjectIndex]);
 
-    // Handle options changes
-    const handleOptionsChanged = useCallback((embla: EmblaCarouselType | undefined, options: EmblaOptionsType) => {
-        embla?.reInit(options);
-    }, []);
+    // // Handle options changes
+    // const handleOptionsChanged = useCallback((embla: EmblaCarouselType | undefined, options: EmblaOptionsType) => {
+    //     embla?.reInit(options);
+    // }, []);
 
-    useEffect(() => {
-        handleOptionsChanged(embla, opts);
-    }, [embla, opts, handleOptionsChanged]);
+    // useEffect(() => {
+    //     handleOptionsChanged(embla, opts);
+    // }, [embla, opts, handleOptionsChanged]);
 
     const noPropagate = (e: React.PointerEvent<HTMLButtonElement | HTMLDivElement>) => {
         e.stopPropagation();
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange} modal={true}>
+        <Dialog open={open} onOpenChange={(open) => {
+            console.log('Open changed:', open);
+            onOpenChange(open);
+        }} modal={true}>
             <DialogPortal container={document.getElementById('modal-root')}>
                 <DialogContent 
                     className="border-0 shadow-none p-0 m-0 items-center justify-center focus:outline-none z-50 flex w-full h-full inset-0 pointer-events-none" 
