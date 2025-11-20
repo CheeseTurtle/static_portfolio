@@ -86,11 +86,11 @@ export default function ProjectCarouselDialog({ contentElements }: ProjectCarous
     const onEmblaReInit = useCallback((emblaApi: EmblaCarouselType | undefined) => {
         if (!emblaApi) return;
         
-        console.log('[Carousel] onReInit - activeIndex:', activeProjectIndex, 'embla snap:', emblaApi.selectedScrollSnap());
+        // console.log('[Carousel] onReInit - activeIndex:', activeProjectIndex, 'embla snap:', emblaApi.selectedScrollSnap());
         
         if (activeProjectIndex !== null && open) {
-            console.log('[Carousel] (onReInit) Scrolling to index:', activeProjectIndex);
-            emblaApi.scrollTo(activeProjectIndex, false);
+            // console.log('[Carousel] (onReInit) Scrolling to index:', activeProjectIndex);
+            emblaApi.scrollTo(activeProjectIndex, true);
         }
     }, [activeProjectIndex, open]);
 
@@ -108,18 +108,20 @@ export default function ProjectCarouselDialog({ contentElements }: ProjectCarous
         };
     }, [embla, onEmblaReInit, onSelect]);
 
+
+    const wasOpen = useRef<boolean>(false);
     // Handle carousel open/close
-    // useEffect(() => {
-    //     console.log('[Carousel] open changed:', open, 'activeIndex:', activeProjectIndex, 'embla:', !!embla);
+    useEffect(() => {
+        // console.log('[Carousel] open changed:', open, 'activeIndex:', activeProjectIndex, 'embla:', !!embla);
+        if (!embla) return;
         
-    //     if (!embla) return;
-        
-    //     if (open && activeProjectIndex !== null) {
-    //         console.log('[Carousel] Opening - reInit and scroll to:', activeProjectIndex);
-    //         embla.reInit({ startIndex: activeProjectIndex });
-    //         embla.scrollTo(activeProjectIndex, true);
-    //     }
-    // }, [open, embla, activeProjectIndex]);
+        if (open && activeProjectIndex !== null) {
+            // console.log('[Carousel] Opening - reInit and scroll to:', activeProjectIndex);
+            if(!wasOpen.current) embla.reInit({ startIndex: activeProjectIndex });
+            else embla.scrollTo(activeProjectIndex, false);
+        }
+        wasOpen.current = open;
+    }, [open, embla, activeProjectIndex]);
 
     // // Handle options changes
     // const handleOptionsChanged = useCallback((embla: EmblaCarouselType | undefined, options: EmblaOptionsType) => {
@@ -145,9 +147,10 @@ export default function ProjectCarouselDialog({ contentElements }: ProjectCarous
                     aria-describedby={undefined}
                 >
                     <DialogOverlay 
+                        id="carousel-dialog-overlay"
                         ref={overlayRef} 
                         className="fixed p-0 m-0 inset-0 z-40 bg-black/40 backdrop-blur-sm"
-                        onClick={() => setOpen(false)} 
+                        onClick={(e) => {setOpen(false); e.preventDefault();}} 
                         onPointerDownCapture={noPropagate} 
                         onPointerDown={noPropagate}
                     />

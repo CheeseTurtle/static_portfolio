@@ -9,7 +9,7 @@ import {
     SheetTrigger
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { useCallback, useEffectEvent, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useCallback, useEffectEvent, useRef, useState, type Dispatch, type ReactElement, type RefObject, type SetStateAction } from "react";
 import type { ProjectData, ProjectInfo } from "../types";
 import FilterForm from "./FilterForm";
 import type { FilterRangeInfo } from "./common/filterTypes";
@@ -20,8 +20,16 @@ import { useBrowserContext, type BrowserStore } from "./common/browserContext";
 export type FilterSheetProps = {
     // open: boolean,
     // setOpen: Dispatch<SetStateAction<boolean>> | ((open: boolean) => void),
+    contentRef?: RefObject<HTMLDivElement | null>,
+    triggerRef?: RefObject<HTMLButtonElement | null>,
+    // ref?: RefObject<ReactElement<FilterSheetProps>>,
     rangeInfo: FilterRangeInfo,
     projects: ProjectInfo[],
+    resetAll: () => void,
+    registeredResets: RefObject<Set<()=>void>>,
+    // registerReset: (resetFn: () => void) => void,
+    registerReset: (resetFn: ()=>void) => ()=>void,
+
     // browserStore: BrowserStore,
     // allProjects: ProjectData[],
     // // visibleProjects: ProjectData[],
@@ -42,40 +50,30 @@ export type FilterSpec = {
 
 
 
-export default function FilterSheet(props: FilterSheetProps) {
+export default function FilterSheet({contentRef, triggerRef, resetAll, registeredResets, registerReset, ...props}: FilterSheetProps) {
     
     // const {state, dispatch} = useFilter();
 
     // const open = useBrowserContext(s=>s.sheetOpen);
     // const setOpen = useBrowserContext(s=>s.setSheetOpen);
 
-    // This is the shared reset function all TagButtons can call
-    const resetAll = useEffectEvent(() => {
-        // We'll notify children via a callback they register
-        registeredResets.current.forEach((fn) => fn());
-    });
 
-    // Keep a registry of reset callbacks for each TagButtons
-    const registeredResets = useRef<Set<() => void>>(new Set());
 
-    const registerReset = useCallback((resetFn: () => void) => {
-        registeredResets.current.add(resetFn);
-        return () => {registeredResets.current.delete(resetFn);} // cleanup
-    }, []);
 
     return <Sheet onOpenChange={
         (open) => {
             if(!open) resetAll();
         }
     }>
-        <SheetTrigger>Open</SheetTrigger>
-        <SheetContent side='top'>
+        <SheetTrigger ref={triggerRef}>Open</SheetTrigger>
+        <SheetContent side='top' className='overflow-y-auto max-h-screen top-0 bottom-0 h-min overscroll-none' ref={contentRef}>
+            {/* <div className="container overscroll-auto max-h-full"> */}
             <SheetHeader>
                 <SheetTitle>Turtles</SheetTitle>
                 <SheetDescription>Turtles</SheetDescription>
             </SheetHeader>
 
-            <FilterForm registerReset={registerReset} {...props}></FilterForm>
+            <FilterForm inSheet={true} resetAll={resetAll} registeredResets={registeredResets} registerReset={registerReset} {...props}></FilterForm>
 
             {/* <SheetFooter>
                 <Button type="submit">Save changes</Button>
@@ -83,6 +81,7 @@ export default function FilterSheet(props: FilterSheetProps) {
                     <Button variant="outline">Close</Button>
                 </SheetClose>
             </SheetFooter> */}
+            {/* </div> */}
         </SheetContent>
     </Sheet>
 }   

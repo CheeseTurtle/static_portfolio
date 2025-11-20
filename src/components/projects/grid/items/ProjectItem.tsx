@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, type ReactElement, type RefAttributes } from "react";
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, type MouseEvent, type MouseEventHandler, type PointerEventHandler, type ReactElement, type RefAttributes } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { ProjectInfo } from "../../types";
 import { BadgeRows } from "./badges/BadgeRows";
@@ -6,9 +6,10 @@ import { convertToBadgeType, type BadgeType } from "./badges/badgeTypes";
 import ExpandedPart from "./expansion/ExpandedPart";
 import { gsap } from "gsap";
 import { ImageRow } from './expansion/ImageRow';
+import { useBrowserContext } from "../../filtering/common/browserContext";
 
 export interface ProjectItemHandle {
-    onClick: () => void;
+    onClick: (evt: MouseEvent<HTMLDivElement>) => void;
 }
 
 type ProjectItemProps = {
@@ -19,8 +20,9 @@ type ProjectItemProps = {
     activeProjectIndex: number | null;
     openProjectId: string | null;
     carouselOpen: boolean;
-    clickItem: (itemId: string, itemIndex: number) => void;
+    clickItem: (itemId: string, itemIndex: number, newState?: 'active' | 'open' | undefined) => void;
     setCarouselOpen: (open: boolean) => void;
+    extraRef?: React.RefObject<HTMLDivElement | null>,
 };
 
 export type ProjectItemElement = ReactElement<ProjectItemProps & RefAttributes<ProjectItemHandle>>;
@@ -34,13 +36,18 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
     openProjectId,
     carouselOpen,
     clickItem,
-    setCarouselOpen
+    setCarouselOpen,
+    extraRef: extraRef_,
 }: ProjectItemProps, ref) => {
     const { id, images, title, date, summary, description, tags } = project;
 
+    const clearActiveItem = useBrowserContext(s=>s.clearActiveItem);
+
     const year = useMemo(() => (date.explicitDate?.year ?? date.getFullYear()), [date]);
     const selfRef = useRef<HTMLDivElement>(null);
-    const extraRef = useRef<HTMLDivElement>(null);
+    const localExtraRef = useRef<HTMLDivElement>(null);
+
+    const extraRef = useMemo(()=>extraRef_ ?? localExtraRef, [extraRef_]);
 
     const newEntries = useMemo(() => Object.entries(tags || {}).map(([k, vs]) => {
         const newKey = convertToBadgeType(k);
@@ -57,14 +64,18 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
         return id === activeProjectId;
     }, [id, activeProjectId]);
 
-    const onClick = useCallback(() => {
+    const onClick: MouseEventHandler<HTMLDivElement> = useCallback((evt) => {
+        evt.stopPropagation();
+        evt.preventDefault();
+        const pointerType = (evt.nativeEvent as PointerEvent).pointerType;
+        const isMouse = pointerType === 'mouse';
         console.log('%cItem clicked:', 'color: black; background-color: yellow;', id, projectIndex, window.location.search);
         
         // Use the clickItem action from the store
         // This handles both:
         // 1. Clicking an already-active item (opens carousel)
         // 2. Clicking a different item (makes it active)
-        clickItem(id, projectIndex);
+        clickItem(id, projectIndex, isMouse ? 'open' : undefined);
     }, [id, projectIndex, clickItem]);
 
     useImperativeHandle(ref, () => ({ onClick }), [onClick]);
@@ -79,7 +90,7 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
             gsap.killTweensOf(el);
             gsap.fromTo(
                 el,
-                { height: 0, opacity: 0 },
+                { height: el.clientHeight, opacity: el.style.opacity },
                 {
                     height: el.scrollHeight,
                     opacity: 1,
@@ -96,16 +107,35 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
             const currentHeight = el.clientHeight;
             gsap.fromTo(
                 el,
-                { height: currentHeight, opacity: 1 },
+                { height: currentHeight, opacity: el.style.opacity },
                 { height: 0, opacity: 0, duration: 0.3, ease: "power1.in" }
             );
         }
     }, [id, expanded]);
 
+    const onHover: PointerEventHandler<HTMLDivElement> = useCallback((evt) => {
+        if(carouselOpen) return;
+        const pointerType = evt.pointerType;
+        const isMouse = pointerType === 'mouse';
+        if(!isMouse) return;
+        clickItem(id, projectIndex, 'active');
+    }, [clickItem, carouselOpen, projectIndex, id]);
+
+    const onUnhover: PointerEventHandler<HTMLDivElement> =  useCallback((evt) => {
+        if(carouselOpen) return;
+        const pointerType = evt.pointerType;
+        const isMouse = pointerType === 'mouse';
+        if(!isMouse) return;
+        // clickItem(id, projectIndex, 'active');
+        clearActiveItem();
+    }, [clearActiveItem, carouselOpen, projectIndex, id]);
+
     return (
         <Card 
             ref={selfRef}
             onClick={onClick}
+            onPointerEnter={onHover}
+            onPointerLeave={onUnhover}
             className={`
                 relative cursor-pointer overflow-hidden transition-all
                 hover:shadow-lg

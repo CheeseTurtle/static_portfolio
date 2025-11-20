@@ -7,6 +7,8 @@ import type { FilterAction, FilterRangeInfo, FilterState } from "../common/filte
 import type { ProjectInfo } from "../../types";
 import { useFilterContext } from "../common/browserContext";
 import { shallow } from "zustand/shallow";
+import { Button } from "@/components/ui/button";
+import ResetButton from "../common/ResetButton";
 
 
 
@@ -19,7 +21,8 @@ type TagFilterSectionProps = {
     // availableTags: Set<string>,
     rangeInfo: FilterRangeInfo,
     registerReset: (resetFn: ()=>void) => ()=>void,
-    // setSelectedTags: (tags: string[] | undefined) => void
+    // setSelectedTags: (tags: string[] | undefined) => void,
+    reset: () => void,
 };
 
 
@@ -67,8 +70,6 @@ const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProp
     // ), [props.filterSpec, props.tagType]);
 
     const [singular, plural] = getSectionWords(props.tagType);
-
-    
     
     const sectionTitle = plural.slice(0,1).toUpperCase() + plural.slice(1);
     
@@ -87,16 +88,19 @@ const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProp
         return !a?.size && !b?.size;
     })?.[props.tagType];
 
-      useEffect(()=>{
-        console.log('Selected tags:', props.tagType, selectedTags);
-    }, [selectedTags]);
+    //   useEffect(()=>{
+    //     console.log('Selected tags:', props.tagType, selectedTags);
+    // }, [selectedTags]);
     // const selectedTags = useMemo(()=>props.filterSpec.tags[props.tagType], [props.filterSpec.tags[props.tagType], props.tagType]);
 
     const toggleTag_ = useFilterContext(s=>s.toggleTag, shallow);
     const toggleTag = useCallback((tagText: string) => toggleTag_(props.tagType, tagText), [props.tagType]);
 
     return <div data-role='tag-filter-section' data-tag-type={props.tagType}>    
-        <h3>{sectionTitle}</h3>
+        <div className="inline-flex">
+            <h3>{sectionTitle}</h3>
+            <ResetButton onClick={()=>props.reset()}>Reset</ResetButton>
+        </div>
         <TagButtons projects={props.projects} tagType={props.tagType} availableTags={availableTags} colorClassName={colorClassName} toggleTag={toggleTag} selectedTags={selectedTags} registerReset={props.registerReset}></TagButtons>
     </div>
 });

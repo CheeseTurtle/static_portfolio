@@ -87,9 +87,9 @@ export default function TagButtons(props: TagButtonsProps) {
     // [selected tags, unselected tags]
     const [visualOrder, setVisualOrder] = useState<[string[],string[]]>([[],availableTags]);
 
-    useEffect(()=>{
-        console.log('Selected tags:', props.tagType, props.selectedTags);
-    }, [props.selectedTags]);
+    // useEffect(()=>{
+    //     console.log('Selected tags:', props.tagType, props.selectedTags);
+    // }, [props.selectedTags]);
 
     // update visualOrder on mount or when availableTags changes
     useEffect(() => {

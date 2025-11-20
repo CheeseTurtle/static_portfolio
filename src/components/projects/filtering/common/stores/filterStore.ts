@@ -8,6 +8,7 @@ import {
   type TagType,
 } from "../filterTypes";
 import type { ProjectInfo } from "@/components/projects/types";
+import { Value } from "@radix-ui/react-select";
 
 
 export enum FilterField {
@@ -57,6 +58,9 @@ export interface FilterStoreActions {
     value: [number | null, number | null] | null,
   ) => void;
   toggleCategory: (value: string, active?: boolean) => void;
+
+  setCategories: (value: string[]) => void;
+
   toggleTag: (tagType: TagType, tagText: string, active?: boolean) => void;
   setFilter: (spec: Partial<SetFilterProps>) => void;
   resetFilter: (payload?: ResetPayload) => void;
@@ -122,6 +126,14 @@ export const createFilterStore = (
         else state.categories.add(value);
         return { categories: new Set<string>(state.categories) };
       }),
+
+    setCategories: (value: string[]) => set(state=>{
+      const oldSize = state.categories.size;
+      const newSize = value.length;
+      if(newSize === oldSize && value.every(x=>state.categories.has(x))) return {}; // No change
+      const newCategories = new Set<string>(value);
+      return {categories: newCategories};
+    }),
 
     toggleTag: (tagType, tagText, active) =>
       set((state) => {

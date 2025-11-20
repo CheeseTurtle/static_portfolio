@@ -1,6 +1,6 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TooltipArrow, type TooltipArrowProps, TooltipPortal, type TooltipContentProps, type TooltipPortalProps, type TooltipTriggerProps, type TooltipProviderProps, type TooltipProps } from "@radix-ui/react-tooltip";
-import React from "react";
+import React, { forwardRef } from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 import type { PropsWithoutRef } from "react";
 import { cn } from "@/lib/utils";
@@ -154,7 +154,7 @@ export type SliderTooltipProps = PropsWithOptionalPropType<TooltipProps, "childr
 };
 
 
-export const SliderTooltip = ({children, portalContainer, forceMount, contentClassName, triggerProps, contentProps, arrowProps, providerProps, sideOffset = 0, arrowClassName, ...props}: SliderTooltipProps) => {
+export const SliderTooltip = forwardRef(({children, portalContainer, forceMount, contentClassName, triggerProps, contentProps, arrowProps, providerProps, sideOffset = 0, arrowClassName, ...props}: SliderTooltipProps, ref) => {
     const content = React.useMemo(()=>(
         typeof props.content === 'object' ? props.content : <p>{props.content}</p>
     ), [props.content]);
@@ -175,4 +175,4 @@ export const SliderTooltip = ({children, portalContainer, forceMount, contentCla
     //         </TooltipContent>
     //     </TooltipPortal>
     // </Tooltip>
-};
+});

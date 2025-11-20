@@ -1,5 +1,5 @@
 // src/components/ProjectGrid.tsx
-import { memo, useMemo } from "react";
+import { memo, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 import ProjectItem from "./items/ProjectItem";
 import type { ProjectInfo } from "./../types";
 import { useWindowSize } from "../../../hooks/useWindowSize";
@@ -20,6 +20,9 @@ const ProjectGrid = (({}: ProjectGridProps) => {
   const openProjectId = useBrowserContext(s => s.openProjectId);
   const carouselOpen = useBrowserContext(s => s.carouselOpen);
   
+  // const activeProjectId = useDeferredValue(activeProjectId_);
+  // const activeProjectIndex = useDeferredValue(activeProjectIndex_);
+
   // Get actions from store
   const clickItem = useBrowserContext(s => s.clickItem);
   const setCarouselOpen = useBrowserContext(s => s.setCarouselOpen);
@@ -48,14 +51,17 @@ const ProjectGrid = (({}: ProjectGridProps) => {
     return arr;
   }, [projects, columns]);
 
+  // const maxExtraHeight = useRef<number>(0);
+
+  
+
   return (
-    <div className="flex w-full gap-4">
+    <div className="flex w-full gap-4 min-h-screen">
       {cols.map((col, i) => (
         <div key={i} className="flex-1 flex flex-col gap-4">
           {col.map((p, index) => {
             // Calculate the actual index in the full projects array
             const projectIndex = projects.findIndex(proj => proj.id === p.id);
-            
             return (
               <ProjectItem 
                 key={p.id}

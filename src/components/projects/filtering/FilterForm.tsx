@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useMemo, useState, type Dispatch } from "react";
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, type Dispatch } from "react";
 import type { FilterSheetProps } from "./FilterSheet";
 // import { Accordion, AccordionContent, AccordionHeader, AccordionItem, AccordionTrigger } from "@radix-ui/react-accordion";
 import TagFilterSection from "./sections/TagFilterSection";
@@ -7,7 +7,11 @@ import YearSlider from "@/components/projects/filtering/sections/YearSlider";
 import { cn } from "@/lib/utils";
 import type { FilterAction, FilterRangeInfo, FilterState } from "./common/filterTypes";
 import type { ProjectData, ProjectInfo } from "../types";
-import { doubleEq, tripleEq, useBrowserContext, useBrowserStore, useFilterContext, type BrowserStore } from "./common/browserContext";
+import { doubleEq, tripleEq, useBrowserContext, useBrowserStore, useFilterContext, useFilterContextItems, type BrowserStore } from "./common/browserContext";
+import { Button } from "@/components/ui/button";
+import { FilterField } from "./common/stores/filterStore";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import ResetButton from "./common/ResetButton";
 
 // type SliderProps = React.ComponentProps<typeof Slider>;
 
@@ -17,6 +21,7 @@ type FilterFormProps = {
     // state: FilterState,
     // dispatch: Dispatch<FilterAction>,
     registerReset: (resetFn: ()=>void) => ()=>void,
+    inSheet?: boolean,
     // browserStore: BrowserStore,
 } & FilterSheetProps;
 
@@ -56,6 +61,9 @@ const TAGTYPES: TagType[] = ['lang', 'skill', 'topic'];
 
 const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, ref) => {
     const setYear = useFilterContext(s=>s.setYear);
+    const resetFilter = useFilterContext(s=>s.resetFilter);
+    const setCategories = useFilterContext(s=>s.setCategories);
+    // const {setYear, resetFilter, toggleCategory} = useFilterContextItems(['resetFilter', 'setYear', 'toggleCategory']);
     
     // const year = useFilterContext(s=>s.year, (a,b) => compareYearRanges(props.rangeInfo.minYear, props.rangeInfo.maxYear, a, b)); 
     const year0 = useFilterContext(s=>s.year?.[0], (a,b) => a === b || (a ?? props.rangeInfo.minYear) === (b ?? props.rangeInfo.minYear));
@@ -74,6 +82,20 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, ref) =>
     // }), [setShowTooltips, browserStore]);
 
 
+    const resetYear = useCallback((resetMin: boolean = true, resetMax: boolean = true)=>{
+        const mask = (resetMin ? (resetMax ? FilterField.ALL_YEAR : FilterField.MIN_YEAR) : (resetMax ? FilterField.MAX_YEAR : null));
+        (mask !== null) && resetFilter({mask});
+    }, [resetFilter]);
+
+    const resetCategories = useCallback(()=>resetFilter({mask: FilterField.CATEGORY}), [resetFilter]);
+
+    const resetTags = useCallback((tagTypes?: TagType | TagType[]) => {
+        resetFilter({mask: FilterField.TAG, tagTypes});
+    }, [resetFilter]);
+
+    const categoryNames = useMemo(()=>Array.from(props.rangeInfo.categories), [props.rangeInfo.categories]);
+
+
     // Year slider
     const slider = <YearSlider value={yearValue} min={props.rangeInfo.minYear} max={props.rangeInfo.maxYear} defaultValue={[props.rangeInfo.minYear, props.rangeInfo.maxYear]}
         // onValueChange={(value: [number, number]) => props.dispatch({type: 'SET_YEAR', payload: value})}
@@ -90,13 +112,47 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, ref) =>
 
     const tagSections = useMemo( ()=>
         TAGTYPES.map((tt =>
-            <TagFilterSection projects={props.projects} key={tt} tagType={tt} rangeInfo={props.rangeInfo} registerReset={props.registerReset}></TagFilterSection>
+            <TagFilterSection reset={()=>resetTags(tt)} projects={props.projects} key={tt} tagType={tt} rangeInfo={props.rangeInfo} registerReset={props.registerReset}></TagFilterSection>
         ))
-    , [props.rangeInfo, props.registerReset, props.projects]);
+    , [props.rangeInfo, props.registerReset, props.projects, resetTags]);
+
+    const selectedCategoriesSet = useFilterContext(state=>state.categories, (a,b)=>(a.size === b.size && [...a].every(x=>b.has(x))));
+    const selectedCategories = Array.from(selectedCategoriesSet);
+
+    // const onCategoriesChange = useCallback((value: string[]) => {
+        
+    // }, [selectedCategories, toggleCategory]);
 
     return <>
-        {slider}
-        {tagSections}
+        <div className='filter-year'>
+            <div className="inline-flex">
+                <h3>Year</h3>
+                <span>{year0 ?? props.rangeInfo.minYear} - {year1 ?? props.rangeInfo.maxYear}</span>
+                <ResetButton onClick={()=>{
+                    // console.log('Clicked'); 
+                    resetYear()
+                }}>Reset year</ResetButton>
+                <span>Hello</span>
+            </div>
+            {slider}
+        </div>
+        <div className='filter-categories'>
+            <div className='inline-flex'>
+                <h3>Categories</h3>
+                <Button onClick={()=>resetCategories()}>Reset categories</Button>
+            </div>
+            <ToggleGroup type="multiple" variant="default" value={selectedCategories} onValueChange={setCategories}>
+                {categoryNames.map(name=><ToggleGroupItem key={name} value={name} >{name}</ToggleGroupItem>)}
+            </ToggleGroup>
+
+        </div>
+        <div className='filter-tags'>
+            <div className="inline-flex">
+                <h3>Tags</h3>
+                <ResetButton onClick={()=>resetTags()}>Reset tags</ResetButton>
+            </div>
+            {tagSections}
+        </div>
     </>;
 });
 

@@ -13,6 +13,8 @@ import AlertToast from "./toasts";
 import {shallow} from "zustand/shallow";
 import { BrowserStoreProvider, doubleEq, useBrowserContext, useFilterContext, type ScrollToFn } from "./filtering/common/browserContext";
 import { toast } from "sonner";
+import FilterForm from "./filtering/FilterForm";
+import {useScrollSentinel, useValueChangeWatcher} from "./scrolling";
 
 
 type ProjectBrowserProps = {
@@ -151,6 +153,28 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
         setCarouselOpen(true);
     }, []); //}, [getIndexForId, setActiveProjectIndex, setCarouselOpen, onCarouselOpenChange]);
 
+
+    const clearActiveItem = useBrowserContext(s=>s.clearActiveItem);
+
+    useEffect(()=>{
+        const handler = (evt: MouseEvent) => {
+            // if(evt.defaultPrevented) return;
+            if(evt.target && evt.target instanceof HTMLDivElement && evt.target.id === "carousel-dialog-overlay") {
+                return;
+            }
+            // console.log('Window click:', evt.target, evt.currentTarget, evt.relatedTarget, evt.bubbles, evt.eventPhase, evt.defaultPrevented, evt.detail);
+            clearActiveItem();
+        };
+        
+        // document.addEventListener(type, listener)
+        const opts: AddEventListenerOptions = {
+            capture: false
+        };
+        document.addEventListener('click', handler, opts);
+
+        return () => document.removeEventListener('click', handler, opts);
+    }, [clearActiveItem]);
+
     // const handleRef = useRef<ProjectBrowserHandle>({
     //     getActiveProject: () => activeProject,
     //     getActiveIndex: () => activeProjectIndex,
@@ -191,13 +215,74 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
 
     console.log('[ProjectBrowserInner] Render end');
 
+    // Keep a registry of reset callbacks for each TagButtons
+    const registeredResets = useRef<Set<() => void>>(new Set());
+
+    const registerReset = useCallback((resetFn: () => void) => {
+        registeredResets.current.add(resetFn);
+        return () => {registeredResets.current.delete(resetFn);} // cleanup
+    }, []);
+
+    
+    // This is the shared reset function all TagButtons can call
+    const resetAll = useEffectEvent(() => {
+        // We'll notify children via a callback they register
+        registeredResets.current.forEach((fn) => fn());
+    });
+
+
+    // const scrollHandler = useCallback((evt: Event) => {
+    //     // explicitOriginalTarget = originalTarget = target = srcElement = div#root
+    //     if(!(evt?.target instanceof HTMLDivElement && evt.target.id === "root")) return;
+    //     // console.log(evt);
+    //     // console.log(window.screenTop, window.scrollY);
+    //     console.log(evt.target.scrollTop, evt.target.clientTop, evt.target.offsetTop);
+    //     console.log(evt.target.scrollTop + evt.target.scrollHeight, window.innerHeight, window.screenTop)
+    // }, []);
+
+    // useEffect(()=>{
+    //     const opts: AddEventListenerOptions = {capture: true};
+    //     window.addEventListener('scroll', scrollHandler, opts);
+
+    //     return () => window.removeEventListener('scroll', scrollHandler, opts);
+    // }, []);
+
+    
+    // const container = document.getElementById('root');
+    const {inView, sentinelRef} = useScrollSentinel(null, 0, true, '-15% 0px 0px 0px');
+
+    const formRef = useRef<HTMLDivElement>(null);
+    const sheetContentRef = useRef<HTMLDivElement>(null);
+    const sheetTriggerRef = useRef<HTMLButtonElement>(null);
+    const onInViewChange = useCallback((value: boolean, prev: boolean)=> {
+        console.log('In view change:', prev, value);
+        
+    }, []);
+
+    useValueChangeWatcher<boolean, boolean>(inView, onInViewChange, {});
+
      return <>
         <FilterSheet 
+            contentRef={sheetContentRef}
+            triggerRef={sheetTriggerRef}
             projects={visibleProjects} 
             rangeInfo={filterRangeInfo} 
+            registerReset={registerReset}
+            resetAll={resetAll}
+            registeredResets={registeredResets}
             // browserStore={store}
-        />
-        <ProjectGrid />
+            />
+            <div className="flex-col flex ml-30 mr-30 " ref={formRef}>
+                <div>Filters</div>
+                <FilterForm inSheet={false} projects={visibleProjects} rangeInfo={filterRangeInfo} registerReset={registerReset} registeredResets={registeredResets} resetAll={resetAll}></FilterForm>
+                <div ref={sentinelRef} className="h-0 w-full"></div>
+            </div>
+            <div>
+                <div>
+                    Showing {visibleProjects.length} project(s) matching the current filter.
+                </div>
+                <ProjectGrid />
+            </div>
         <ProjectCarouselDialog 
             contentElements={contentElements}
         />
@@ -225,8 +310,10 @@ export default function ProjectBrowser({children, projects, contentString}: Proj
         scrollToRef.current?.(index, jump);
     }, []);
 
+    const scrollContainer = useRef<HTMLDivElement>(null);
 
     return <>
+        <div ref={scrollContainer} id='project-browser-wrapper' className="overflow-y-scroll inset-0 w-full h-full p-0 m-0 bg-none border-none outline-none">
         {/* <StrictMode> */}
             <AlertToast></AlertToast>
             {/* <AlertToast message={toastMessage} onClose={() => setToastMessage(null)} /> */}
@@ -245,5 +332,6 @@ export default function ProjectBrowser({children, projects, contentString}: Proj
                 </ProjectBrowserInner>
             </BrowserStoreProvider>
         {/* </StrictMode> */}
+        </div>
     </>;
 } 

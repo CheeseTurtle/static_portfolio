@@ -7,6 +7,7 @@ import { createStore, type StoreApi } from "zustand";
 import React from "react";
 import { useStore } from "zustand";
 import {shallow} from "zustand/shallow";
+import type { ValueOf } from "node_modules/astro/dist/type-utils";
 // import {createComputed} from "zustand-computed";
 
 export function findNewIndex(ids: Iterable<string>, id: string): number | null {
@@ -47,7 +48,10 @@ export interface BrowserStoreState {
 
     // Actions
     setActiveProjectIndex: (index: number | null) => void;
-    clickItem: (itemId: string, itemIndex: number) => void;
+    clickItem: (itemId: string, itemIndex: number, newState?: 'active' | 'open' | undefined) => void;
+
+    clearActiveItem: () => void;
+
     setCarouselOpen: (open: boolean) => void;
     setSheetOpen: (open: boolean) => void;
     handlePopState: (showToast: ShowToastFn) => void;
@@ -171,19 +175,34 @@ export const createBrowserStore = (
                 }
             },
             
-            clickItem: (itemId, itemIndex) => {
+            clickItem: (itemId, itemIndex, newState?: 'active' | 'open' | undefined) => {
                 const { activeProjectId, carouselOpen, setCarouselOpen, setActiveProjectIndex } = get();
-                console.log('ITEM CLICKED', activeProjectId, carouselOpen, itemId, itemIndex);
-                
-                if (itemId === activeProjectId && activeProjectId !== null) {
-                    // Click on already-active item opens carousel
-                    // set({ carouselOpen: true });
-                    setCarouselOpen(true);
+                // console.log('ITEM CLICKED', activeProjectId, carouselOpen, itemId, itemIndex, newState);
+
+                if(newState === undefined) {
+                    if (itemId === activeProjectId && activeProjectId !== null) {
+                        // Click on already-active item opens carousel
+                        // set({ carouselOpen: true });
+                        setCarouselOpen(true);
+                    } else {
+                        // Click on different item activates it
+                        // set({ activeProjectIndex: itemIndex });
+                        setActiveProjectIndex(itemIndex);
+                    }
                 } else {
-                    // Click on different item activates it
-                    // set({ activeProjectIndex: itemIndex });
-                    setActiveProjectIndex(itemIndex);
+                    set({
+                        activeProjectIndex: itemIndex,
+                        activeProjectId: itemId
+                    });
+                    if(newState === 'open')
+                        setCarouselOpen(true);
                 }
+            },
+
+            clearActiveItem() {
+                // Assume the carousel is not open
+                set({activeProjectIndex: null/*, openProjectId: null*/});
+                // set({activeProjectId: null});
             },
             
             setCarouselOpen: (open) => {
@@ -625,4 +644,38 @@ export function useFilterContext<T>(
     return equalityFn
         ? useStoreWithEqualityFn(filterStore, selector, equalityFn)
         : useStore(filterStore, selector);
+}
+
+
+
+// type MappedTypeWithNewProperties<Type> = {
+//     [Property in keyof Type as Exclude<Property, "hello">]: Type[Property]
+// }
+
+
+type ValueFor<T, K extends keyof T> = T[K];
+type EntryFor<T, K extends keyof T> = (
+    (T extends {[P in K]: infer V}
+    ?
+    [K, V]
+    : 
+    never
+));
+// type x = EntryFor<FilterStoreState, "allProjects" | "categories">;
+
+type KeyOf<T> = T extends any ? keyof T : never;
+// type EntryOf<T> = T extends any ? (T extends {[P in keyof T]: (infer V extends T[P])} ? [keyof T,V] : never) : never;
+type EntryOf<T> = ValueOf<{[K in keyof T]: [K, T[K]]}>;
+// type EntryOf<T> = T extends Map<infer K, infer V> ? [K, V] : (T extends Record<infer K, infer V> ? [K, V] : never);
+
+type EntriesOf<T> = EntryOf<T>[];
+
+type x = EntryOf<FilterStoreState>; // | ValueOf<FilterStoreState>;
+
+export function useFilterContextItems<K extends (keyof FilterStoreState)>(keys: K[], equalityFn?: (left: Pick<FilterStoreState, K>, right: Pick<FilterStoreState, K>) => boolean): Pick<FilterStoreState, K> {
+    return useFilterContext(state=>Object.fromEntries(keys.map(k=>[k, state[k]]) as EntriesOf<FilterStoreState>), equalityFn);
+}
+
+export function useBrowserContextItems<K extends (keyof BrowserStoreState)>(keys: K[], equalityFn?: (left: Pick<BrowserStoreState, K>, right: Pick<BrowserStoreState, K>) => boolean): Pick<BrowserStoreState, K> {
+    return useBrowserContext(state=>Object.fromEntries(keys.map(k=>[k, state[k]]) as EntriesOf<BrowserStoreState>), equalityFn);
 }
