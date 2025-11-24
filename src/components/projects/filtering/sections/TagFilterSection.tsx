@@ -1,14 +1,18 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, type Dispatch, type ReactNode } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Dispatch, type ReactNode } from "react";
 import type { TagType } from "../FilterForm";
 import type { FilterSpec } from "../FilterSheet";
 import TagButton from "../common/TagButton";
 import TagButtons from "../common/TagButtons";
 import type { FilterAction, FilterRangeInfo, FilterState } from "../common/filterTypes";
 import type { ProjectInfo } from "../../types";
-import { useFilterContext } from "../common/browserContext";
+import { useFilterContext, useFilterStore } from "../common/browserContext";
 import { shallow } from "zustand/shallow";
 import { Button } from "@/components/ui/button";
 import ResetButton from "../common/ResetButton";
+import { Toggle } from "@/components/ui/toggle";
+import { Switch } from "@/components/ui/switch";
+import { Ampersand } from "lucide-react";
+import BoolSwitch from "./BoolSwitch";
 
 
 
@@ -45,11 +49,11 @@ function getSectionWords(tt: TagType): [string, string] {
 function getSectionColors(tt: TagType): string {
     switch(tt) {
         case 'lang':
-            return 'bg-green-500 text-white hover:bg-green-600';
+            return 'bg-green-500 text-white hover:bg-green-600 disabled:bg-green-100';
         case 'skill':
-            return "bg-blue-500 text-white hover:bg-blue-600";
+            return "bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-100";
         case 'topic':
-            return "bg-gray-500 text-white hover:bg-gray-600";
+            return "bg-gray-500 text-white hover:bg-gray-600 disabled:bg-gray-100";
         // case 'concept':
         //     return "bg-red-500 text-white hover:bg-red-600";
         default:
@@ -64,10 +68,6 @@ interface TagFilterSectionHandle {
 
 
 const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProps>((props: TagFilterSectionProps, ref) => {
-
-    // const selectedTags = useMemo(()=>(
-    //     props.filterSpec[props.tagType]
-    // ), [props.filterSpec, props.tagType]);
 
     const [singular, plural] = getSectionWords(props.tagType);
     
@@ -88,6 +88,8 @@ const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProp
         return !a?.size && !b?.size;
     })?.[props.tagType];
 
+    const canReset = Boolean(selectedTags?.size);
+
     //   useEffect(()=>{
     //     console.log('Selected tags:', props.tagType, selectedTags);
     // }, [selectedTags]);
@@ -96,13 +98,42 @@ const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProp
     const toggleTag_ = useFilterContext(s=>s.toggleTag, shallow);
     const toggleTag = useCallback((tagText: string) => toggleTag_(props.tagType, tagText), [props.tagType]);
 
-    return <div data-role='tag-filter-section' data-tag-type={props.tagType}>    
-        <div className="inline-flex">
-            <h3>{sectionTitle}</h3>
-            <ResetButton onClick={()=>props.reset()}>Reset</ResetButton>
+    
+    // return <div data-role='tag-filter-section' data-tag-type={props.tagType}>    
+    //     <div className="inline-flex">
+    //         <h3>{sectionTitle}</h3>
+    //         <ResetButton onClick={()=>props.reset()}>Reset</ResetButton>
+    //     </div>
+    //     <TagButtons projects={props.projects} tagType={props.tagType} availableTags={availableTags} colorClassName={colorClassName} toggleTag={toggleTag} selectedTags={selectedTags} registerReset={props.registerReset}></TagButtons>
+    // </div>
+    //  return <div className={`filter-tag-section space-y-0 mb-5`}>
+    //     <div className="space-y-1 inline-flex">
+    //         <div role="heading" aria-level={4} className="text-sm font-semibold">{filterField[0].toLocaleUpperCase() + filterField.slice(1)}</div>
+    //         {headingExtra ?? null}
+    //         <ResetButton onClick={()=>resetFn()}>{resetLabel}</ResetButton>
+    //     </div>
+    //     {children}
+    // </div>   
+
+    const [useOr, setUseOr] = useState<boolean>(false);
+    const setTagMode = useFilterContext(s=>s.setTagMode);
+    useEffect(()=>{
+        setTagMode(props.tagType, Number(useOr));
+    }, [useOr, props.tagType, setTagMode]);
+
+    return <div role="group" aria-labelledby="languages-label" className="space-y-0 mb-5" data-role='tag-filter-section' data-tag-type={props.tagType}>
+        <div className="inline-flex items-baseline">
+            <span id="languages-label" className="text-xs font-semibold" role="heading" aria-level={4}>
+                {sectionTitle}
+            </span>
+            <ResetButton disabled={!canReset} onClick={()=>props.reset()}>Reset</ResetButton>
+            {/* <Toggle pressed={useOr} onPressedChange={setUseOr} className="text-xs h-[1em] m-0">
+                MATCH {useOr ? 'ANY' : 'ALL'}
+            </Toggle> */}
+            <BoolSwitch checked={useOr} onCheckedChange={setUseOr}></BoolSwitch>
         </div>
         <TagButtons projects={props.projects} tagType={props.tagType} availableTags={availableTags} colorClassName={colorClassName} toggleTag={toggleTag} selectedTags={selectedTags} registerReset={props.registerReset}></TagButtons>
-    </div>
+    </div>;
 });
 
 export default TagFilterSection;

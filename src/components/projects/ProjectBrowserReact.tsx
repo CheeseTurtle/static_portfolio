@@ -11,16 +11,22 @@ import { collectFilterRangeInfo, getProjectKeyFromTagType, TAGTYPES, type Filter
 import AlertToast from "./toasts";
 
 import {shallow} from "zustand/shallow";
-import { BrowserStoreProvider, doubleEq, useBrowserContext, useFilterContext, type ScrollToFn } from "./filtering/common/browserContext";
+import { BrowserStoreProvider, doubleEq, useBrowserContext, useFilterContext, type ScrollToFn, type ShowToastFn } from "./filtering/common/browserContext";
 import { toast } from "sonner";
 import FilterForm from "./filtering/FilterForm";
 import {useScrollSentinel, useValueChangeWatcher} from "./scrolling";
+import { Accordion } from "../ui/accordion";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible";
+import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { CountStoreProvider } from "./filtering/common/stores/countStoreContext";
 
 
 type ProjectBrowserProps = {
     projects: ProjectInfo[],
     contentString?: string,
     children?: {props?: {value: string}},
+    showToast: ShowToastFn,
 } & React.ComponentProps<'div'>;
 
 
@@ -68,7 +74,7 @@ function isEquivalentFilterState(s1: FilterState, s2: FilterState, includeOpenPr
 
 const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps & {
     filterRangeInfo: FilterRangeInfo
-}>(({ children, filterRangeInfo, contentString }, ref) => {
+}>(({ children, filterRangeInfo, contentString, showToast }, ref) => {
     console.log('[ProjectBrowserInner] Render start', {
         url: window.location.href,
         search: window.location.search,
@@ -115,43 +121,43 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
     //     [visibleProjects, activeProjectIndex]
     // );
 
-    const setActiveProjectFromId = React.useCallback((id: string | ProjectInfo | null) => {
-        if (id === null) {
-            console.warn('Setting activeProjectIndex to null');
-            setActiveProjectIndex(null);
-            return;
-        }
+    // const setActiveProjectFromId = React.useCallback((id: string | ProjectInfo | null) => {
+    //     if (id === null) {
+    //         console.warn('Setting activeProjectIndex to null');
+    //         setActiveProjectIndex(null);
+    //         return;
+    //     }
         
-        const id_ = (typeof id === 'string') ? id : id.id;
-        const idx = getIndexForId(id_);
+    //     const id_ = (typeof id === 'string') ? id : id.id;
+    //     const idx = getIndexForId(id_);
         
-        if (idx === null) {
-            console.error(`Project with id '${id_}' not found in visible projects`);
-            return;
-        }
+    //     if (idx === null) {
+    //         console.error(`Project with id '${id_}' not found in visible projects`);
+    //         return;
+    //     }
         
-        console.info('Setting activeProjectIndex to:', idx);
-        setActiveProjectIndex(idx);
-    }, []); // , [getIndexForId, setActiveProjectIndex]);
+    //     console.info('Setting activeProjectIndex to:', idx);
+    //     setActiveProjectIndex(idx);
+    // }, []); // , [getIndexForId, setActiveProjectIndex]);
 
     
-    const setOpenProjectFromId = React.useCallback((id: string | null) => {
-        console.log('Set open project from ID:', id);
+    // const setOpenProjectFromId = React.useCallback((id: string | null) => {
+    //     console.log('Set open project from ID:', id);
         
-        if (id === null) {
-            setCarouselOpen(false);
-            return;
-        }
+    //     if (id === null) {
+    //         setCarouselOpen(false);
+    //         return;
+    //     }
         
-        const idx = getIndexForId(id);
-        if (idx === null) {
-            console.error(`Project with id '${id}' not found in visible projects`);
-            return;
-        }
+    //     const idx = getIndexForId(id);
+    //     if (idx === null) {
+    //         console.error(`Project with id '${id}' not found in visible projects`);
+    //         return;
+    //     }
         
-        setActiveProjectIndex(idx);
-        setCarouselOpen(true);
-    }, []); //}, [getIndexForId, setActiveProjectIndex, setCarouselOpen, onCarouselOpenChange]);
+    //     setActiveProjectIndex(idx);
+    //     setCarouselOpen(true);
+    // }, []); //}, [getIndexForId, setActiveProjectIndex, setCarouselOpen, onCarouselOpenChange]);
 
 
     const clearActiveItem = useBrowserContext(s=>s.clearActiveItem);
@@ -212,7 +218,6 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
 
     // useInitializeFromURL(filterRangeInfo, initialized.current);
 
-
     console.log('[ProjectBrowserInner] Render end');
 
     // Keep a registry of reset callbacks for each TagButtons
@@ -252,17 +257,18 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
     const {inView, sentinelRef} = useScrollSentinel(null, 0, true, '-15% 0px 0px 0px');
 
     const formRef = useRef<HTMLDivElement>(null);
-    const sheetContentRef = useRef<HTMLDivElement>(null);
-    const sheetTriggerRef = useRef<HTMLButtonElement>(null);
+    // const sheetContentRef = useRef<HTMLDivElement>(null);
+    // const sheetTriggerRef = useRef<HTMLButtonElement>(null);
     const onInViewChange = useCallback((value: boolean, prev: boolean)=> {
         console.log('In view change:', prev, value);
-        
     }, []);
 
     useValueChangeWatcher<boolean, boolean>(inView, onInViewChange, {});
 
+    const [filterExpanded, setFilterExpanded] = useState<boolean>(false);
+
      return <>
-        <FilterSheet 
+        {/* <FilterSheet 
             contentRef={sheetContentRef}
             triggerRef={sheetTriggerRef}
             projects={visibleProjects} 
@@ -271,19 +277,36 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
             resetAll={resetAll}
             registeredResets={registeredResets}
             // browserStore={store}
-            />
-            <div className="flex-col flex ml-30 mr-30 " ref={formRef}>
-                <div>Filters</div>
-                <FilterForm inSheet={false} projects={visibleProjects} rangeInfo={filterRangeInfo} registerReset={registerReset} registeredResets={registeredResets} resetAll={resetAll}></FilterForm>
-                <div ref={sentinelRef} className="h-0 w-full"></div>
-            </div>
-            <div>
+            /> */}
+            <h1 className="text-3xl font-black align-middle self-center justify-self-center justify-center text-center w-full p-10 ">Projects</h1>
+            <Collapsible open={filterExpanded} onOpenChange={setFilterExpanded} ref={formRef} asChild>
+                <div className="flex-col flex ml-30 mr-30 bg-linear-to-tr from-gray-900 to-gray-800 rounded-lg p-0">
+                    <CollapsibleTrigger asChild>
+                        <div className="text-popover-foreground text-lg font-bold justify-center w-full items-center content-center align-middle text-center p-10 select-none cursor-pointer">
+                            <div role="heading" aria-level={2}>Filters</div>
+                        </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent asChild>
+                        <div className="pt-0 p-10 w-full CollapsibleContent">
+                            <FilterForm inSheet={false} projects={visibleProjects} rangeInfo={filterRangeInfo} registerReset={registerReset} registeredResets={registeredResets} resetAll={resetAll}></FilterForm>
+                        </div>
+                    </CollapsibleContent>
+                    <CollapsibleTrigger asChild>
+                        <div className="w-full h-min flex flex-row justify-center cursor-pointer">
+                            <ChevronDown size={40} className={cn("relative flex tansition-all duration-300", filterExpanded ? 'rotate-180' : 'rotate-0')}></ChevronDown>
+                        </div>
+                    </CollapsibleTrigger>
+                    <div ref={sentinelRef} className="h-0 w-full"></div>
+                </div>
+            </Collapsible>
+            <div className="mt-5">
                 <div>
                     Showing {visibleProjects.length} project(s) matching the current filter.
                 </div>
                 <ProjectGrid />
             </div>
         <ProjectCarouselDialog 
+            showToast={showToast}
             contentElements={contentElements}
         />
     </>;
@@ -323,13 +346,16 @@ export default function ProjectBrowser({children, projects, contentString}: Proj
                 showToast={showToast}
                 scrollTo={scrollTo}
             >
-                <ProjectBrowserInner 
-                    filterRangeInfo={filterRangeInfo} 
-                    projects={projects} 
-                    contentString={contentString}
-                >
-                    {children}
-                </ProjectBrowserInner>
+                <CountStoreProvider>
+                    <ProjectBrowserInner 
+                        filterRangeInfo={filterRangeInfo} 
+                        projects={projects} 
+                        contentString={contentString}
+                        showToast={showToast}
+                    >
+                        {children}
+                    </ProjectBrowserInner>
+                </CountStoreProvider>
             </BrowserStoreProvider>
         {/* </StrictMode> */}
         </div>

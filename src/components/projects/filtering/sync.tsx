@@ -59,7 +59,11 @@ export function parseURL(rangeInfo: FilterRangeInfo, url: string): [InitFromURL,
     const topic = params.get("topic")?.split(",") ?? undefined
 
     const yearParam = params.get("year");
-    const [minYear_, maxYear_] = (yearParam === undefined || yearParam?.length === 0) ? [undefined, undefined] : (yearParam ?? "-").split("-").map(Number);
+    const [minYear_, maxYear_] = (yearParam === undefined || yearParam?.length === 0) ? [undefined, undefined] : (
+      yearParam && !yearParam?.includes('-') 
+      ? [Number(yearParam), Number(yearParam)]  // TODO: Handle invalid arg
+      : (yearParam ?? "-").split("-").map(Number)
+    );
     
     const project: string | null = params.get('project') ?? null;
 

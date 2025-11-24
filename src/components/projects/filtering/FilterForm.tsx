@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, type Dispatch } from "react";
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode } from "react";
 import type { FilterSheetProps } from "./FilterSheet";
 // import { Accordion, AccordionContent, AccordionHeader, AccordionItem, AccordionTrigger } from "@radix-ui/react-accordion";
 import TagFilterSection from "./sections/TagFilterSection";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { FilterField } from "./common/stores/filterStore";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import ResetButton from "./common/ResetButton";
+import { Toggle } from "@/components/ui/toggle";
 
 // type SliderProps = React.ComponentProps<typeof Slider>;
 
@@ -59,45 +60,71 @@ const compareYearRanges = (minYear: number, maxYear: number, a: [number | null, 
 export type TagType = ('lang' | 'topic' | 'skill');  // | 'concept');
 const TAGTYPES: TagType[] = ['lang', 'skill', 'topic'];
 
+
+type FilterFormSectionProps = {
+    filterField: 'categories' | 'year' | 'tags';
+    headingExtra?: ReactNode,
+    children: ReactNode,
+    canReset: boolean,
+    resetFn: () => void,
+};
+
+
+// function AndOrToggle() {
+//     return <Toggle></Toggle>
+// }
+
+function FilterFormSection({filterField, headingExtra, children, resetFn, canReset}: FilterFormSectionProps) {
+    const resetLabel = "Reset " + filterField;
+    return <div className={`filter-${filterField} space-y-0 mb-5`}>
+        <div className="space-y-1 inline-flex">
+            <div role="heading" aria-level={3} className="text-sm font-semibold">{filterField[0].toLocaleUpperCase() + filterField.slice(1)}</div>
+            {headingExtra ?? null}
+            <ResetButton disabled={!canReset} onClick={()=>resetFn()}>{resetLabel}</ResetButton>
+        </div>
+        {children}
+    </div>   
+}
+
+
 const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, ref) => {
-    const setYear = useFilterContext(s=>s.setYear);
-    const resetFilter = useFilterContext(s=>s.resetFilter);
-    const setCategories = useFilterContext(s=>s.setCategories);
-    // const {setYear, resetFilter, toggleCategory} = useFilterContextItems(['resetFilter', 'setYear', 'toggleCategory']);
     
-    // const year = useFilterContext(s=>s.year, (a,b) => compareYearRanges(props.rangeInfo.minYear, props.rangeInfo.maxYear, a, b)); 
-    const year0 = useFilterContext(s=>s.year?.[0], (a,b) => a === b || (a ?? props.rangeInfo.minYear) === (b ?? props.rangeInfo.minYear));
-    const year1 = useFilterContext(s=>s.year?.[1], (a,b) => a === b || (a ?? props.rangeInfo.maxYear) === (b ?? props.rangeInfo.maxYear));
+    // #region Set/Reset
+    const setYear = useFilterContext(s=>s.setYear);
+    const setCategories = useFilterContext(s=>s.setCategories);
 
-    const yearValue = useMemo(()=>[year0 ?? props.rangeInfo.minYear, year1 ?? props.rangeInfo.maxYear], [year0, year1, props.rangeInfo.minYear, props.rangeInfo.maxYear]);
-
-    // // const sheetOpen = useBrowserContext(s=>s.sheetOpen);
-    // const [showTooltips, setShowTooltips] = useState<boolean>(false);
-
-    // const browserStore = useBrowserStore();
-
-    // useEffect(()=>browserStore.subscribe(s=>s.sheetOpen, (sheetOpen, prevSheetOpen) => {
-    //     // if(sheetOpen === prevSheetOpen) return;
-    //     setShowTooltips(sheetOpen);
-    // }), [setShowTooltips, browserStore]);
-
-
+    const resetFilter = useFilterContext(s=>s.resetFilter);
     const resetYear = useCallback((resetMin: boolean = true, resetMax: boolean = true)=>{
         const mask = (resetMin ? (resetMax ? FilterField.ALL_YEAR : FilterField.MIN_YEAR) : (resetMax ? FilterField.MAX_YEAR : null));
         (mask !== null) && resetFilter({mask});
     }, [resetFilter]);
-
     const resetCategories = useCallback(()=>resetFilter({mask: FilterField.CATEGORY}), [resetFilter]);
-
     const resetTags = useCallback((tagTypes?: TagType | TagType[]) => {
         resetFilter({mask: FilterField.TAG, tagTypes});
     }, [resetFilter]);
 
+    // #endregion
+    
+    // #region Values
+    const year0 = useFilterContext(s=>s.year?.[0], (a,b) => a === b || (a ?? props.rangeInfo.minYear) === (b ?? props.rangeInfo.minYear));
+    const year1 = useFilterContext(s=>s.year?.[1], (a,b) => a === b || (a ?? props.rangeInfo.maxYear) === (b ?? props.rangeInfo.maxYear));
+    const yearValue = useMemo(()=>[year0 ?? props.rangeInfo.minYear, year1 ?? props.rangeInfo.maxYear], [year0, year1, props.rangeInfo.minYear, props.rangeInfo.maxYear]);
+    
     const categoryNames = useMemo(()=>Array.from(props.rangeInfo.categories), [props.rangeInfo.categories]);
+    const selectedCategoriesSet = useFilterContext(state=>state.categories, (a,b)=>(a.size === b.size && [...a].every(x=>b.has(x))));
+    const selectedCategories = Array.from(selectedCategoriesSet);
+    const selectedTags = useFilterContext(s=>s.tags);
+    // #endregion
 
 
-    // Year slider
-    const slider = <YearSlider value={yearValue} min={props.rangeInfo.minYear} max={props.rangeInfo.maxYear} defaultValue={[props.rangeInfo.minYear, props.rangeInfo.maxYear]}
+    const canResetYear = useMemo(()=>yearValue[0] !== props.rangeInfo.minYear || yearValue[1] !== props.rangeInfo.maxYear, [yearValue, props.rangeInfo.minYear, props.rangeInfo.maxYear]);
+    const canResetCategories = useMemo(()=>selectedCategoriesSet.size > 0, [selectedCategoriesSet.size]);
+    const canResetTags = selectedTags ? Object.values(selectedTags).some((v)=>v.size) : false;
+    const canToggleCategory = useFilterContext(s=>s.canToggleCategory);
+    
+
+    // #region Year slider
+    const yearSlider = <YearSlider value={yearValue} min={props.rangeInfo.minYear} max={props.rangeInfo.maxYear} defaultValue={[props.rangeInfo.minYear, props.rangeInfo.maxYear]}
         // onValueChange={(value: [number, number]) => props.dispatch({type: 'SET_YEAR', payload: value})}
         onValueChange={(value: [number, number])=> setYear(value)}
         onValueCommit={(value: [number, number]) => console.log(value)}
@@ -107,52 +134,39 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, ref) =>
         step={1}
         className={cn("w-[60%]", undefined)}
     ></YearSlider>
+    // #endregion
 
-    // Tags
+    // #region Categories
 
+    // #endregion
+
+
+    // #region Tags
     const tagSections = useMemo( ()=>
         TAGTYPES.map((tt =>
             <TagFilterSection reset={()=>resetTags(tt)} projects={props.projects} key={tt} tagType={tt} rangeInfo={props.rangeInfo} registerReset={props.registerReset}></TagFilterSection>
         ))
     , [props.rangeInfo, props.registerReset, props.projects, resetTags]);
+    // #endregion
 
-    const selectedCategoriesSet = useFilterContext(state=>state.categories, (a,b)=>(a.size === b.size && [...a].every(x=>b.has(x))));
-    const selectedCategories = Array.from(selectedCategoriesSet);
-
-    // const onCategoriesChange = useCallback((value: string[]) => {
-        
-    // }, [selectedCategories, toggleCategory]);
 
     return <>
-        <div className='filter-year'>
-            <div className="inline-flex">
-                <h3>Year</h3>
-                <span>{year0 ?? props.rangeInfo.minYear} - {year1 ?? props.rangeInfo.maxYear}</span>
-                <ResetButton onClick={()=>{
-                    // console.log('Clicked'); 
-                    resetYear()
-                }}>Reset year</ResetButton>
-                <span>Hello</span>
-            </div>
-            {slider}
-        </div>
-        <div className='filter-categories'>
-            <div className='inline-flex'>
-                <h3>Categories</h3>
-                <Button onClick={()=>resetCategories()}>Reset categories</Button>
-            </div>
-            <ToggleGroup type="multiple" variant="default" value={selectedCategories} onValueChange={setCategories}>
-                {categoryNames.map(name=><ToggleGroupItem key={name} value={name} >{name}</ToggleGroupItem>)}
-            </ToggleGroup>
+        <FilterFormSection filterField="year" resetFn={resetYear} canReset={canResetYear} headingExtra={<span>{year0 ?? props.rangeInfo.minYear} - {year1 ?? props.rangeInfo.maxYear}</span>}>
+            {yearSlider}
+        </FilterFormSection>
 
-        </div>
-        <div className='filter-tags'>
-            <div className="inline-flex">
-                <h3>Tags</h3>
-                <ResetButton onClick={()=>resetTags()}>Reset tags</ResetButton>
-            </div>
+        <FilterFormSection filterField="categories" resetFn={resetCategories} canReset={canResetCategories}>
+            <ToggleGroup type="multiple" variant="default" value={selectedCategories} onValueChange={setCategories}>
+                {categoryNames.map(name=>{
+                    const enabled = !selectedCategories.length || canToggleCategory(name, selectedCategories.includes(name));
+                    return <ToggleGroupItem key={name} value={name} disabled={!enabled} className="disabled:text-shadow-accent">{name[0].toLocaleUpperCase() + name.slice(1)}</ToggleGroupItem>;
+                })}
+            </ToggleGroup>
+        </FilterFormSection>
+
+        <FilterFormSection filterField="tags" resetFn={resetTags} canReset={canResetTags}>
             {tagSections}
-        </div>
+        </FilterFormSection>
     </>;
 });
 

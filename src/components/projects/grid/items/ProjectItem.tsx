@@ -148,6 +148,7 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
                     <span className="text-lg font-semibold">{title}</span>
                     <span className="text-sm text-muted-foreground">{year}</span>
                 </CardTitle>
+                <div>{project.category.toUpperCase()}</div>
             </CardHeader>
 
             {/* Content */}

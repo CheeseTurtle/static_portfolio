@@ -1,8 +1,8 @@
-import type { ProjectInfo } from "@/components/projects/types";
+import type { ProjectInfo, TagKey } from "@/components/projects/types";
 import { subscribeWithSelector } from "zustand/middleware";
 import { useStoreWithEqualityFn } from "zustand/traditional";
-import { createFilterStore, type FilterDataProps, type FilterStore, type FilterStoreState, type SetFilterProps } from "./stores/filterStore";
-import { collectFilterRangeInfo, getProjectKeyFromTagType, TAGTYPES, type FilterRangeInfo } from "./filterTypes";
+import { createFilterStore, type FilterDataProps, type FilterStore, type FilterStoreState, type SetFilterProps, type TagFilterMode } from "./stores/filterStore";
+import { collectFilterRangeInfo, getProjectKeyFromTagType, TAGTYPES, type FilterRangeInfo, type TagType } from "./filterTypes";
 import { createStore, type StoreApi } from "zustand";
 import React from "react";
 import { useStore } from "zustand";
@@ -25,15 +25,17 @@ export interface BrowserStoreInitProps {
 }
 
 export interface BrowserStoreState {
-    // Primitives
-    allProjects: ProjectInfo[];
-    filterRangeInfo: FilterRangeInfo;
-    filterStore: FilterStore;
+    // Base
+    readonly allProjects: ProjectInfo[];
+    readonly filterRangeInfo: FilterRangeInfo;
+    readonly filterStore: FilterStore;
     
     visibleProjects: ProjectInfo[];
     activeProjectIndex: number | null;
     carouselOpen: boolean;
     sheetOpen: boolean;
+
+    readonly tagModes: Record<TagType, TagFilterMode>,
     
     // Derived (cheap to compute)
     /*readonly*/ visibleProjectIds: Set<string>;
@@ -62,7 +64,7 @@ export interface BrowserStoreState {
     onSheetOpenChange: (open: boolean) => void,
     
     // Internal
-    _refilterProjects: (showToast?: ShowToastFn) => void;
+    _refilterProjects: (showToast?: ShowToastFn) => boolean;
     _syncUrlToState: () => void;
     
     // Utils
@@ -162,6 +164,11 @@ export const createBrowserStore = (
             getOpenProjectId(carouselOpenArg?: boolean, activeProjectIdArg?: string | null) {
                 const { carouselOpen, activeProjectId } = get();
                 return (carouselOpenArg ?? carouselOpen) ? (activeProjectIdArg ?? activeProjectId) : null;
+            },
+
+            get tagModes() {
+                const filterStore = get().filterStore;
+                return filterStore.getState().tagModes;
             },
             
             // Actions
@@ -315,10 +322,11 @@ export const createBrowserStore = (
                 const newProjects = get().filterProjects({
                     categories: filterData.categories,
                     year: filterData.year,
-                    tags: filterData.tags
+                    tags: filterData.tags,
+                    tagModes: filterData.tagModes
                 });
                 
-                if (newProjects === null) return; // No change
+                if (newProjects === null) return false; // No change
                 
                 // const visibleProjects = new Map(newProjects.map(p => [p.id, p]));
                 const visibleProjects = newProjects;
@@ -341,6 +349,8 @@ export const createBrowserStore = (
                 
                 // Note: We don't automatically close carousel
                 // The user can still see it's filtered out
+
+                return true;
             },
             
             _syncUrlToState: () => {
@@ -394,7 +404,7 @@ export const createBrowserStore = (
                 return findNewIndex(get().visibleProjects.map(x=>x.id), id);
             },
             
-            filterProjects: ({ year, categories, tags }) => {
+            filterProjects: ({ year, categories, tags, tagModes }) => {
                 const { visibleProjects, visibleProjectIds } = get();
                 let anyChange = false;
                 
@@ -406,7 +416,11 @@ export const createBrowserStore = (
                     
                     for (const t of TAGTYPES) {
                         const k = getProjectKeyFromTagType(t);
-                        if (tags?.[t].size && ![...tags[t]].some(tag => p.tags[k]?.has(tag))) {
+                        if (tags?.[t].size && (
+                            !tagModes[t] ? [...tags[t]].some(tag => !p.tags[k]?.has(tag))
+                            // : ![...tags[t]].some(tag => p.tags[k]?.has(tag))
+                            : !Array.from(p.tags[k]).some(tag=>tags[t].has(tag))
+                        )) {
                             return false;
                         }
                     }
@@ -435,9 +449,48 @@ export const createBrowserStore = (
     // Subscribe to filter changes and refilter
     filterStore.subscribe(
         (state) => ({ categories: state.categories, year: state.year, tags: state.tags }),
-        () => {
+        ({categories, year, tags}) => {
             // Filter store updated, recompute visible projects
-            store.getState()._refilterProjects();
+            if(store.getState()._refilterProjects()) {
+                const params = new URLSearchParams();
+                    for(const tagType of TAGTYPES) {
+                        const tags_ = tags?.[tagType];
+                        if(tags_ && tags_?.size > 0)
+                            params.set(tagType, Array.from(tags_).join(","));
+                    }
+                    if (categories.size > 0) 
+                        params.set('category', Array.from(categories).join(','));
+                    if (year) {
+                        const yearArg = simplifyYearRange(filterRangeInfo, ...year);
+                        if(yearArg) {
+                            if(yearArg[0] === yearArg[1]) {
+                                if(yearArg[0] !== null)
+                                    params.set("year", String(yearArg[0]));
+                            } else {
+                                const minYearStr = year[0] === null ? '' : `${year[0]}`;
+                                const maxYearStr = year[1] === null ? '' : `${year[1]}`;
+                                params.set("year", `${minYearStr}-${maxYearStr}`);
+                            }
+                        }
+                    }
+                
+                    if(window.location.search) {
+                        const params0 = new URLSearchParams(window.location.search);
+                        const project = params0.get('project');
+                        if(project) {
+                            params.set('project', project);
+                        }
+                    }
+                
+                    const query = params.toString();
+                    const newUrl = query ? `?${query}` : location.pathname;
+                
+                    // pushState keeps history; replaceState overwrites it
+                    // window.history.replaceState(null, "", newUrl);
+                    if(newUrl === window.location.href)
+                        return;
+                    window.history.pushState(null, "", newUrl);
+            }
         },
         { fireImmediately: false }
     );

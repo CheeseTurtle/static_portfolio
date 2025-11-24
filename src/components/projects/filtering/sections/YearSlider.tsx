@@ -22,10 +22,10 @@ const YearSliderThumb = React.forwardRef(({ children, index, value, thumbRef, to
   // const localTooltipRef = React.useRef<React.JSX.Element & React.ReactElement<SliderTooltipProps, typeof SliderTooltip>>(null);
   // const tooltipRef_ = React.useMemo(()=>tooltipRef ?? localTooltipRef, [tooltipRef, localTooltipRef]);
 
-  // const localThumbRef = React.useRef<HTMLSpanElement>(null);
-  // const thumbRef_ = thumbRef ?? localThumbRef;
+  const localThumbRef = React.useRef<HTMLSpanElement>(null);
+  const thumbRef_ = thumbRef ?? localThumbRef;
 
-  const [tooltipOpen, setTooltipOpen] = React.useState<boolean>(false);
+  const [tooltipOpen, setTooltipOpen] = React.useState<boolean | undefined>(undefined); // thumbRef_.current?.isSameNode(document.activeElement));
 
   // const onFocusChange = React.useCallback((evt: FocusEvent, capture?: boolean)=>{
   //   // const tooltip = tooltipRef_.current;
@@ -51,19 +51,53 @@ const YearSliderThumb = React.forwardRef(({ children, index, value, thumbRef, to
 
   // console.log(onFocusChange);
 
-  return <SliderTooltip ref={tooltipRef} defaultOpen={false}
+  // React.useEffect(()=>{
+  //   const thumb = thumbRef_.current;
+  //   if(!thumb) return;
+  //   const activeElem = document.activeElement;
+  //   if(!activeElem) return;
+  //   if(activeElem.isSameNode(thumb))
+  //     setTooltipOpen(true)
+  //   else
+  //     setTooltipOpen(false);
+  // }, []);
+
+  // console.log('Slider tooltip', index, tooltipOpen);
+
+  const [hasFocus, setHasFocus] = React.useState<boolean | undefined>(undefined);
+  const [hasMouseFocus, setHasMouseFocus] = React.useState<boolean | undefined>(undefined);
+  // const [hasNonMouseFocus, setHasNonMouseFocus] = React.useState<boolean | undefined>(undefined);
+
+  const onOpenChange = React.useCallback((open: boolean) => {
+    if(open || !(hasFocus || hasMouseFocus)) setTooltipOpen(open);
+  }, [hasFocus, hasMouseFocus]);
+
+  return <SliderTooltip ref={tooltipRef} // defaultOpen={false}
     open={tooltipOpen}
-    onOpenChange={setTooltipOpen}
+    onOpenChange={onOpenChange}
     content={children} /*content={<p>{value?.[index]}</p>}*/ triggerProps={{ asChild: true }} contentProps={{ asChild: false }}>
     <SliderPrimitive.Thumb
-      ref={thumbRef}
+      ref={thumbRef_}
       data-slot="slider-thumb"
       key={index}
+      onMouseEnter={(evt)=>{
+        setHasMouseFocus(true);
+      }}
+      onMouseLeave={(evt)=>{
+        setHasMouseFocus(false);
+        setHasFocus(false);
+      }}
       onFocus={evt => {
+        // console.log('Focused', evt);
+        setHasFocus(true);
         setTooltipOpen(true);
+        // evt.stopPropagation();
       }}
       onBlur={evt => {
+        // console.log('Blurred', evt);
         setTooltipOpen(false);
+        setHasFocus(false);
+        evt.stopPropagation();
       }}
       // onFocusCapture={(evt)=>onFocusChange(evt, true)}
       // onFocus={onFocusChange}
@@ -95,11 +129,11 @@ function YearSlider({
   )
 
   return (
-    <div className="min-w-1.5 w-full grow space-y-2 data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-1.5">
+    <div className="min-w-1.5 w-full flex flex-col grow space-y-2 data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-1.5 ">
       {/* Min/Max Labels Row */}
-      <div className="flex justify-between text-sm text-muted-foreground px-0.5 w-[60%]">
-        <span>{min}</span>
-        <span>{max}</span>
+      <div className="flex justify-between text-sm text-muted-foreground px-0.5 w-[60%] pointer-events-none select-none">
+        <span className="pointer-events-none select-none">{min}</span>
+        <span className="pointer-events-none select-none">{max}</span>
       </div>
 
       {/* Slider row */}

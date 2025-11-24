@@ -3,11 +3,12 @@ import { createStore } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import {
   collectFilterRangeInfo,
+  getProjectKeyFromTagType,
   TAGTYPES,
   type FilterRangeInfo,
   type TagType,
 } from "../filterTypes";
-import type { ProjectInfo } from "@/components/projects/types";
+import type { ProjectInfo, TagKey } from "@/components/projects/types";
 import { Value } from "@radix-ui/react-select";
 
 
@@ -29,6 +30,11 @@ export interface FilterInitProps {
   allProjects: ProjectInfo[];
 }
 
+export enum TagFilterMode {
+  AND = 0,
+  OR = 1
+}
+
 export interface FilterDataProps {
   // bears: number,
   year: [number | null, number | null] | null; // min and max
@@ -37,6 +43,7 @@ export interface FilterDataProps {
   // openProjectId?: string | null;
   // urlProjectId?: string | null;
   // _urlReplace?: boolean;
+  tagModes: Record<TagType, TagFilterMode>;
 }
 
 export interface FilterStoreProps extends FilterInitProps, FilterDataProps {
@@ -50,6 +57,7 @@ export type SetFilterProps = {
   lang?: string[] | Set<string>;
   skill?: string[] | Set<string>;
   topic?: string[] | Set<string>;
+  tagModes?: Partial<Record<TagType, TagFilterMode>>;
 };
 
 
@@ -63,7 +71,15 @@ export interface FilterStoreActions {
 
   toggleTag: (tagType: TagType, tagText: string, active?: boolean) => void;
   setFilter: (spec: Partial<SetFilterProps>) => void;
+
+  setTagMode: (tagType: TagType, mode: TagFilterMode) => void,
+  // canSetFilter: (spec: Partial<SetFilterProps>) => boolean;
+  canToggleCategory: (value: string, currentlyActive: boolean ) => boolean,
+  canToggleTag: (tagType: TagKey, tagText: string, currentlyActive: boolean, visibleProjects: ProjectInfo[], ) => boolean,
   resetFilter: (payload?: ResetPayload) => void;
+
+  applyFilter: (spec: Partial<FilterDataProps>, projects: ProjectInfo[]) => ProjectInfo[], 
+  canApplyFilter: (spec: Partial<FilterDataProps>, projects: ProjectInfo[]) => boolean, 
 }
 
 export interface FilterStoreState extends FilterStoreProps, FilterStoreActions {
@@ -71,6 +87,53 @@ export interface FilterStoreState extends FilterStoreProps, FilterStoreActions {
 }
 
 export type FilterStore = ReturnType<typeof createFilterStore>;
+
+export function applyFilter({tagModes, ...spec}: Partial<Omit<FilterDataProps, "tags">>, projects: ProjectInfo[]): ProjectInfo[];
+export function applyFilter({tagModes, ...spec}: Partial<FilterDataProps> & Pick<FilterDataProps, 'tagModes'>, projects: ProjectInfo[]): ProjectInfo[];
+export function applyFilter({tagModes, ...spec}: Partial<FilterDataProps>, projects: ProjectInfo[]): ProjectInfo[] {
+  const filtered = projects.filter(p=>{
+    if(spec.year && (spec.year[0] !== null || spec.year[1] !== null)) {
+      const year = p.date.getFullYear();
+      const [minYear, maxYear] = spec.year;
+      if((minYear !== null && year < minYear) || (maxYear !== null && year > maxYear)) return false;
+    }
+    if(spec.categories?.size && !spec.categories.has(p.category)) return false;
+    if(spec.tags) {
+      if(!tagModes) throw TypeError(tagModes);
+      let tagKey: TagKey;
+      if(Object.entries(spec.tags).some(([tagType, specTags]) => specTags?.size && 
+      (tagKey = getProjectKeyFromTagType(tagType as TagType)) &&
+      (
+        tagModes[tagType as TagType] 
+        ?
+        // (not) BOOLEAN AND: specTags contains at least one tag that is not found in p.tags
+        [...specTags].some(specTag=>!(p.tags[tagKey]).has(specTag))
+        :
+        // (not) BOOLEAN OR: No tags are common to specTags and p.tags.
+        ![...p.tags[tagKey]].some(pTag=>specTags.has(pTag))
+      )))
+        return false;
+    }
+    return true;
+  });
+  return filtered;
+}
+
+export function canApplyFilter(spec: Partial<FilterDataProps> & Pick<FilterDataProps, 'tagModes'>, projects: ProjectInfo[]): boolean {
+  return projects.some(p=>{
+    if(spec.year && (spec.year[0] !== null || spec.year[1] !== null)) {
+      const year = p.date.getFullYear();
+      const [minYear, maxYear] = spec.year;
+      if((minYear !== null && year < minYear) || (maxYear !== null && year > maxYear)) return false;
+    }
+    if(spec.categories?.size && !spec.categories.has(p.category)) return false;
+    if(spec.tags) {
+      if(Object.entries(spec.tags).some(([tagType, tags]) => tags?.size && [...tags].some(tag=>!((p.tags as Record<TagKey, Set<string>>)[(tagType as TagKey)] as Set<string>).has(tag))))
+        return false;
+    }
+    return true;
+  });
+}
 
 export const createFilterStore = (
   {filterRangeInfo, ...initProps}: FilterInitProps & Partial<FilterDataProps> & { filterRangeInfo?: FilterRangeInfo },
@@ -84,16 +147,25 @@ export const createFilterStore = (
       skill: new Set<string>(),
       topic: new Set<string>(),
     },
+    tagModes: {
+      lang: TagFilterMode.AND,
+      skill: TagFilterMode.AND,
+      topic: TagFilterMode.AND,
+    }
   };
 
   const rangeInfo = filterRangeInfo ?? collectFilterRangeInfo(initProps.allProjects);
-  return createStore<FilterStoreState>()(subscribeWithSelector((set) => ({
+  return createStore<FilterStoreState>()(subscribeWithSelector((set, get) => ({
     ...DEFAULT_PROPS,
     ...initProps,
     filterRangeInfo: rangeInfo,
 
     // addBear: () => set((state) => ({ bears: ++state.bears })),
 
+    setTagMode(tagType, mode) {
+      console.log(`Setting ${tagType} mode to:`, mode);
+      set({tagModes: {...get().tagModes, [tagType]: mode}});
+    },
     setYear: (value) =>
       set((state) => {
         if (value === undefined) return {};
@@ -106,6 +178,7 @@ export const createFilterStore = (
           value[1] !== null && value[1] < rangeInfo.maxYear
             ? value[1]
             : null;
+        
         return {
           year:
             minYear === null && maxYear === null
@@ -113,6 +186,17 @@ export const createFilterStore = (
               : [minYear, maxYear],
         };
       }),
+
+
+
+    setCategories: (value: string[]) => set(state=>{
+      const oldSize = state.categories.size;
+      const newSize = value.length;
+      if(newSize === oldSize && value.every(x=>state.categories.has(x))) return {}; // No change
+      const newCategories = new Set<string>(value);
+      return {categories: newCategories};
+    }),
+
 
     toggleCategory: (value, active) =>
       set((state) => {
@@ -125,15 +209,67 @@ export const createFilterStore = (
           return { categories: new Set<string>([value]) };
         else state.categories.add(value);
         return { categories: new Set<string>(state.categories) };
-      }),
-
-    setCategories: (value: string[]) => set(state=>{
-      const oldSize = state.categories.size;
-      const newSize = value.length;
-      if(newSize === oldSize && value.every(x=>state.categories.has(x))) return {}; // No change
-      const newCategories = new Set<string>(value);
-      return {categories: newCategories};
     }),
+
+    applyFilter(spec, projects): ProjectInfo[] {
+      return applyFilter(
+        {
+          tagModes: get().tagModes,
+          ...spec
+        }, projects
+      );
+      // return projects.filter(p=>{
+      //   if(spec.year && (spec.year[0] !== null || spec.year[1] !== null)) {
+      //     const year = p.date.getFullYear();
+      //     const [minYear, maxYear] = spec.year;
+      //     if((minYear !== null && year < minYear) || (maxYear !== null && year > maxYear)) return false;
+      //   }
+      //   if(spec.categories?.size && !spec.categories.has(p.category)) return false;
+      //   if(spec.tags) {
+      //     if(Object.entries(spec.tags).some(([tagType, tags]) => tags?.size && [...tags].some(tag=>!((p.tags as Record<TagKey, Set<string>>)[(tagType as TagKey)] as Set<string>).has(tag))))
+      //       return false;
+      //   }
+      //   return true;
+      // });
+    },
+
+    canApplyFilter(spec, projects): boolean {
+      return projects.some(p=>{
+        if(spec.year && (spec.year[0] !== null || spec.year[1] !== null)) {
+          const year = p.date.getFullYear();
+          const [minYear, maxYear] = spec.year;
+          if((minYear !== null && year < minYear) || (maxYear !== null && year > maxYear)) return false;
+        }
+        if(spec.categories?.size && !spec.categories.has(p.category)) return false;
+        if(spec.tags) {
+          if(Object.entries(spec.tags).some(([tagType, tags]) => tags?.size && [...tags].some(tag=>!((p.tags as Record<TagKey, Set<string> | undefined>)[(tagType as TagKey)] as Set<string> | undefined)?.has(tag))))
+            return false;
+        }
+        return true;
+      });
+    },
+    
+    canToggleCategory(value, currentlyActive): boolean {
+      if(currentlyActive) return true; // Can always unselect
+      const tags = get().tags;
+      const year = get().year;
+      const ret = get().canApplyFilter({
+        year, tags, categories: new Set([value])
+      }, initProps.allProjects);
+
+      return ret;
+    },
+
+    canToggleTag(tagKey, tagText, currentlyActive, visibleProjects): boolean {
+      if(currentlyActive) return true; // Can always unselect
+      const ret = visibleProjects.some(p=>{
+        const tags = p.tags[tagKey];
+        return (tags.size && tags.has(tagText));
+      });
+      // console.log('Can toggle tag?:', tagKey, tagText, ret);
+      return ret;
+    },
+
 
     toggleTag: (tagType, tagText, active) =>
       set((state) => {
@@ -145,18 +281,22 @@ export const createFilterStore = (
           if (active === true) return {};
           newTagSet.delete(tagText);
         } else if (active === false) return {};
-        else if(tags === null)
-          return {tags: {
-              lang: new Set<string>([]),
-              skill: new Set<string>([]),
-              topic: new Set<string>([]),
-              [tagType]: new Set<string>([tagText])}};
-        else if(tagSet === undefined)
-          tags[tagType] = new Set<string>([tagText]);
+        // else if(tags === null)
+        //   return {tags: {
+        //       lang: new Set<string>([]),
+        //       skill: new Set<string>([]),
+        //       topic: new Set<string>([]),
+        //       [tagType]: new Set<string>([tagText])}};
+        // // else if(tagSet === undefined)
+        // //   tags[tagType] = new Set<string>([tagText]);
         else newTagSet.add(tagText);
+
+        console.log(`Setting ${tagType} tags to:`, newTagSet);
         
         return { tags: {...(tags ?? {lang: new Set(), skill: new Set(), topic: new Set()}), [tagType]: newTagSet } };
       }),
+
+
 
     setFilter: ({
       category,

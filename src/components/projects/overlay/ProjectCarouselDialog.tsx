@@ -7,10 +7,11 @@ import type { ProjectInfo } from "../types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { gsap } from 'gsap';
-import { Dialog, DialogContent, DialogHeader, DialogOverlay, DialogPortal, DialogTitle } from "./TransparentDialog";
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogOverlay, DialogPortal, DialogTitle } from "./TransparentDialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { XIcon } from "lucide-react";
-import { useBrowserContext } from "../filtering/common/browserContext";
+import { useBrowserContext, type ShowToastFn } from "../filtering/common/browserContext";
+import { ShareButton } from "../grid/items/sharing/ShareCard";
 
 type CarouselContentItem = {
     children?: ReactNode[],
@@ -20,10 +21,11 @@ type CarouselContentItem = {
 } & ReactNode;
 
 type ProjectCarouselProps = {
-    contentElements: CarouselContentItem[];
+    contentElements: CarouselContentItem[],
+    showToast: ShowToastFn,
 } & React.ComponentProps<"div">;
 
-export default function ProjectCarouselDialog({ contentElements }: ProjectCarouselProps) {
+export default function ProjectCarouselDialog({ contentElements, showToast }: ProjectCarouselProps) {
     // Get all state and actions from the store
     const open = useBrowserContext(s => s.carouselOpen);
     const setOpen = useBrowserContext(s => s.setCarouselOpen);
@@ -64,6 +66,9 @@ export default function ProjectCarouselDialog({ contentElements }: ProjectCarous
                     <CardTitle>Card Title</CardTitle>
                 </CardHeader>
                 <CardContent className="pointer-events-visible">
+                    <DialogClose data-slot="dialog-close"
+                        className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"><XIcon></XIcon></DialogClose>
+                    <ShareButton className="absolute top-4 right-8" showToast={showToast} openProjectId={slide.props["data-project-id"]}></ShareButton>
                     {slide}
                 </CardContent>
             </Card>
@@ -145,6 +150,7 @@ export default function ProjectCarouselDialog({ contentElements }: ProjectCarous
                 <DialogContent 
                     className="border-0 shadow-none p-0 m-0 items-center justify-center focus:outline-none z-50 flex w-full h-full inset-0 pointer-events-none" 
                     aria-describedby={undefined}
+                    showCloseButton={false}
                 >
                     <DialogOverlay 
                         id="carousel-dialog-overlay"
