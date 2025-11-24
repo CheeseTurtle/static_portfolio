@@ -1,23 +1,32 @@
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, type Dispatch, type ReactNode } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Dispatch, type ReactNode } from "react";
 import type { TagType } from "../FilterForm";
 import type { FilterSpec } from "../FilterSheet";
 import TagButton from "../common/TagButton";
 import TagButtons from "../common/TagButtons";
 import type { FilterAction, FilterRangeInfo, FilterState } from "../common/filterTypes";
 import type { ProjectInfo } from "../../types";
+import { useFilterContext, useFilterStore } from "../common/browserContext";
+import { shallow } from "zustand/shallow";
+import { Button } from "@/components/ui/button";
+import ResetButton from "../common/ResetButton";
+import { Toggle } from "@/components/ui/toggle";
+import { Switch } from "@/components/ui/switch";
+import { Ampersand } from "lucide-react";
+import BoolSwitch from "./BoolSwitch";
 
 
 
 type TagFilterSectionProps = {
     projects: ProjectInfo[],
     tagType: TagType,
-    state: FilterState,
-    dispatch: Dispatch<FilterAction>,
+    // state: FilterState,
+    // dispatch: Dispatch<FilterAction>,
     // filterSpec: FilterSpec,
     // availableTags: Set<string>,
     rangeInfo: FilterRangeInfo,
     registerReset: (resetFn: ()=>void) => ()=>void,
-    // setSelectedTags: (tags: string[] | undefined) => void
+    // setSelectedTags: (tags: string[] | undefined) => void,
+    reset: () => void,
 };
 
 
@@ -40,11 +49,11 @@ function getSectionWords(tt: TagType): [string, string] {
 function getSectionColors(tt: TagType): string {
     switch(tt) {
         case 'lang':
-            return 'bg-green-500 text-white hover:bg-green-600';
+            return 'bg-green-500 text-white hover:bg-green-600 disabled:bg-green-100';
         case 'skill':
-            return "bg-blue-500 text-white hover:bg-blue-600";
+            return "bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-100";
         case 'topic':
-            return "bg-gray-500 text-white hover:bg-gray-600";
+            return "bg-gray-500 text-white hover:bg-gray-600 disabled:bg-gray-100";
         // case 'concept':
         //     return "bg-red-500 text-white hover:bg-red-600";
         default:
@@ -60,66 +69,71 @@ interface TagFilterSectionHandle {
 
 const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProps>((props: TagFilterSectionProps, ref) => {
 
-    // const selectedTags = useMemo(()=>(
-    //     props.filterSpec[props.tagType]
-    // ), [props.filterSpec, props.tagType]);
-
     const [singular, plural] = getSectionWords(props.tagType);
-
     
     const sectionTitle = plural.slice(0,1).toUpperCase() + plural.slice(1);
     
     const colorClassName = getSectionColors(props.tagType);
-
+    
     const availableTags = useMemo(() => props.rangeInfo[props.tagType], [props.rangeInfo, props.tagType]);
     
-    const selectedTags = useMemo(()=>props.state.tags[props.tagType], [props.state.tags[props.tagType], props.tagType]);
+    const selectedTags = useFilterContext(s=>s.tags, (a_, b_) => {
+        const a = a_?.[props.tagType];
+        const b = b_?.[props.tagType];
+        // if(!((a && a.size) || (b && b.size)))
+        //     return true;
+        if(a?.size && b?.size) {
+            return a.size === b.size && Array.prototype.every.call(a, (x=>b.has(x)));
+        }
+        return !a?.size && !b?.size;
+    })?.[props.tagType];
 
-    // const toggleFilterStatus = useCallback((tagText: string, pressed?: boolean) => {
-    //     const newTags: string[] | undefined = (() => {
-    //         if(pressed === undefined) {
-    //             if(selectedTags && selectedTags.length > 0) {
-    //                 const idx = selectedTags.indexOf(tagText);
-    //                 if(idx > -1) {
-    //                     // if(selectedTags.length == 1)
-    //                     //     return undefined;
-    //                     selectedTags.splice(idx, 1);
-    //                 } else {
-    //                     selectedTags.push(tagText);
-    //                 }
-    //             } else {
-    //                 return [tagText];
-    //             }
-    //         } else if(pressed) {
-    //             if(selectedTags && selectedTags.length > 0)
-    //                 selectedTags.push(tagText);
-    //             else
-    //                 return [tagText];
-    //         } else if(selectedTags && selectedTags.length > 0) {
-    //             const idx = selectedTags.indexOf(tagText);
-    //             if(idx > -1) {
-    //                 // if(selectedTags.length == 1)
-    //                 //     return undefined;
-    //                 selectedTags.splice(idx, 1);
-    //             }
-    //         }
-    //         return selectedTags;
-    //     })();
-    //     props.setSelectedTags(newTags);
-    // }, [selectedTags, props.filterSpec, props.tagType, props.setSelectedTags]);
+    const canReset = Boolean(selectedTags?.size);
 
-    // const handleRef = useRef<TagFilterSectionHandle>({toggleFilterStatus});
+    //   useEffect(()=>{
+    //     console.log('Selected tags:', props.tagType, selectedTags);
+    // }, [selectedTags]);
+    // const selectedTags = useMemo(()=>props.filterSpec.tags[props.tagType], [props.filterSpec.tags[props.tagType], props.tagType]);
 
-    // useImperativeHandle(ref, () => handleRef.current, []);
+    const toggleTag_ = useFilterContext(s=>s.toggleTag, shallow);
+    const toggleTag = useCallback((tagText: string) => toggleTag_(props.tagType, tagText), [props.tagType]);
 
-    const toggleTag = useCallback((tagText: string) => {
-        props.dispatch({type: 'TOGGLE_TAG', payload: {tagType: props.tagType, tagText}})
-    }, [props.tagType, props.dispatch])
+    
+    // return <div data-role='tag-filter-section' data-tag-type={props.tagType}>    
+    //     <div className="inline-flex">
+    //         <h3>{sectionTitle}</h3>
+    //         <ResetButton onClick={()=>props.reset()}>Reset</ResetButton>
+    //     </div>
+    //     <TagButtons projects={props.projects} tagType={props.tagType} availableTags={availableTags} colorClassName={colorClassName} toggleTag={toggleTag} selectedTags={selectedTags} registerReset={props.registerReset}></TagButtons>
+    // </div>
+    //  return <div className={`filter-tag-section space-y-0 mb-5`}>
+    //     <div className="space-y-1 inline-flex">
+    //         <div role="heading" aria-level={4} className="text-sm font-semibold">{filterField[0].toLocaleUpperCase() + filterField.slice(1)}</div>
+    //         {headingExtra ?? null}
+    //         <ResetButton onClick={()=>resetFn()}>{resetLabel}</ResetButton>
+    //     </div>
+    //     {children}
+    // </div>   
 
-    return <div data-role='tag-filter-section' data-tag-type={props.tagType}>    
-        <h3>{sectionTitle}</h3>
+    const [useOr, setUseOr] = useState<boolean>(false);
+    const setTagMode = useFilterContext(s=>s.setTagMode);
+    useEffect(()=>{
+        setTagMode(props.tagType, Number(useOr));
+    }, [useOr, props.tagType, setTagMode]);
+
+    return <div role="group" aria-labelledby="languages-label" className="space-y-0 mb-5" data-role='tag-filter-section' data-tag-type={props.tagType}>
+        <div className="inline-flex items-baseline">
+            <span id="languages-label" className="text-xs font-semibold" role="heading" aria-level={4}>
+                {sectionTitle}
+            </span>
+            <ResetButton disabled={!canReset} onClick={()=>props.reset()}>Reset</ResetButton>
+            {/* <Toggle pressed={useOr} onPressedChange={setUseOr} className="text-xs h-[1em] m-0">
+                MATCH {useOr ? 'ANY' : 'ALL'}
+            </Toggle> */}
+            <BoolSwitch checked={useOr} onCheckedChange={setUseOr}></BoolSwitch>
+        </div>
         <TagButtons projects={props.projects} tagType={props.tagType} availableTags={availableTags} colorClassName={colorClassName} toggleTag={toggleTag} selectedTags={selectedTags} registerReset={props.registerReset}></TagButtons>
-    </div>
+    </div>;
 });
 
 export default TagFilterSection;

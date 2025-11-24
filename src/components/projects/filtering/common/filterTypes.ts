@@ -1,11 +1,11 @@
 import type React from "react";
-import type { ProjectInfo } from "../../types";
+import type { ProjectInfo, TagKey } from "../../types";
 import type { Dispatch, SetStateAction } from "react";
 
 export type TagType = ('lang' | 'topic' | 'skill');  // | 'concept');
 export const TAGTYPES: TagType[] = ['lang', 'skill', 'topic'];
 
-export function getProjectKeyFromTagType(tt: TagType): 'languages' | 'skills' | 'topics' {
+export function getProjectKeyFromTagType(tt: TagType): TagKey {
     switch(tt) {
         case 'lang':
             return 'languages';
@@ -17,6 +17,21 @@ export function getProjectKeyFromTagType(tt: TagType): 'languages' | 'skills' | 
             throw TypeError();
     }
 }
+
+
+export function getTagTypeFromTagKey(tt: TagKey): TagType {
+    switch(tt) {
+        case 'languages':
+            return 'lang';
+        case 'skills':
+            return 'skill';
+        case 'topics':
+            return 'topic';
+        default:
+            throw TypeError();
+    }
+}
+
 
 // type YearRange = [number, number] | [undefined, number] | [number, undefined]
 

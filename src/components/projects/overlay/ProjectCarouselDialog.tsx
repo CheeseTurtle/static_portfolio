@@ -1,241 +1,191 @@
 import { Carousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import useEmblaCarousel from "embla-carousel-react";
-import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type Dispatch, type MouseEvent as RMouseEvent, type PointerEvent as RPointerEvent, type ReactElement, type ReactNode, type SetStateAction } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type {EmblaCarouselType, EmblaOptionsType} from "embla-carousel";
-
-import {createPortal} from "react-dom";
-import type { ProjectData, ProjectInfo } from "../types";
+import { createPortal } from "react-dom";
+import type { ProjectInfo } from "../types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-import {Button} from "@/components/ui/button";
-
-import {gsap} from 'gsap';
-import { Dialog, DialogContent, DialogHeader, DialogOverlay, DialogPortal, DialogTitle } from "./TransparentDialog";
+import { Button } from "@/components/ui/button";
+import { gsap } from 'gsap';
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogOverlay, DialogPortal, DialogTitle } from "./TransparentDialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { XIcon } from "lucide-react";
-
-
+import { useBrowserContext, type ShowToastFn } from "../filtering/common/browserContext";
+import { ShareButton } from "../grid/items/sharing/ShareCard";
 
 type CarouselContentItem = {
-  children?: ReactNode[],
-  props: {
-    ['data-project-id']: string,
-  }
+    children?: ReactNode[],
+    props: {
+        ['data-project-id']: string,
+    }
 } & ReactNode;
 
 type ProjectCarouselProps = {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  startIndex?: number | undefined;
-//   slides: ReactNode[];
-//   setSlides: Dispatch<SetStateAction<ReactNode[]>>;
-  projects: ProjectInfo[];
-  activeProjectId: string | undefined;
-  activeProjectIndex: number | null;
-  setActiveProjectIndex: Dispatch<SetStateAction<number | null>>;
-
-    openedProjectId: string | null;
-    setOpenedProjectId: Dispatch<SetStateAction<string | null>>;
-
-  contentElements: CarouselContentItem[];
-//   items: (ReactElement | HTMLElement)[];
-//   initialIndex?: number;
+    contentElements: CarouselContentItem[],
+    showToast: ShowToastFn,
 } & React.ComponentProps<"div">;
 
-// type CarouselOptions = { 
-//     slides: (ReactElement)[];
-// }
+export default function ProjectCarouselDialog({ contentElements, showToast }: ProjectCarouselProps) {
+    // Get all state and actions from the store
+    const open = useBrowserContext(s => s.carouselOpen);
+    const setOpen = useBrowserContext(s => s.setCarouselOpen);
+    const onOpenChange = useBrowserContext(s=>s.setCarouselOpen);
+    const activeProjectIndex = useBrowserContext(s => s.activeProjectIndex);
+    const setActiveProjectIndex = useBrowserContext(s => s.setActiveProjectIndex);
+    // const visibleProjects = useBrowserContext(s => Array.from(s.visibleProjects.values()));
+    const visibleProjects = useBrowserContext(s=>s.visibleProjects);
+    
+    const overlayRef = useRef<HTMLDivElement>(null);
+    const prevRef = useRef<HTMLButtonElement>(null);
+    const nextRef = useRef<HTMLButtonElement>(null);
 
-// type CarouselContentRecord = Record<string, CarouselContentItem>;
+    // Embla setup
+    const containerRef = useRef<HTMLDivElement>(null);
+    const opts: EmblaOptionsType = useMemo(() => ({
+        container: containerRef.current ?? undefined,
+    }), [containerRef.current]);
+    
+    const [emblaRef, embla] = useEmblaCarousel(opts);
 
-// function renderCarouselSlide(data: ProjectData): ReactNode {
-// }
+    // Map content elements by project ID
+    const allSlides = useMemo(
+        () => Object.fromEntries(contentElements.map(elem => [elem.props["data-project-id"], elem])), 
+        [contentElements]
+    );
 
-export default function ProjectCarouselDialog({ startIndex, open, setOpen, activeProjectId, openedProjectId, setOpenedProjectId, projects: visibleProjects, contentElements, activeProjectIndex, setActiveProjectIndex}: ProjectCarouselProps) {
-  // console.log('Children:', children);
+    // Get slides for visible projects
+    const slides = useMemo(
+        () => visibleProjects.map((p) => allSlides[p.id]), 
+        [visibleProjects, allSlides]
+    );
 
-  // if (!open) return null;
+    const slideElems = slides.map((slide, i) => (
+        <CarouselItem key={i} id={`slide-${i}`} className="pointer-events-visible">
+            <Card className="relative w-full flex pointer-events-visible">
+                <CardHeader>
+                    <CardTitle>Card Title</CardTitle>
+                </CardHeader>
+                <CardContent className="pointer-events-visible">
+                    <DialogClose data-slot="dialog-close"
+                        className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"><XIcon></XIcon></DialogClose>
+                    <ShareButton className="absolute top-4 right-8" showToast={showToast} openProjectId={slide.props["data-project-id"]}></ShareButton>
+                    {slide}
+                </CardContent>
+            </Card>
+        </CarouselItem>
+    ));
 
-  const backdropRef = useRef<HTMLDivElement>(null);
-  const carouselRef = useRef<HTMLDivElement>(null);
+    // Handle carousel slide selection
+    const onSelect = useCallback((emblaApi: EmblaCarouselType | undefined) => {
+        if (!emblaApi) return;
+        
+        const index = emblaApi.selectedScrollSnap();
+        console.log('[Carousel] onSelect - scrolling to index:', index, 'current activeIndex:', activeProjectIndex);
+        
+        // Update the store's active project index
+        // This will trigger URL sync automatically if carousel is open
+        setActiveProjectIndex(index);
+    }, [setActiveProjectIndex, activeProjectIndex]);
 
-  const prevRef = useRef<HTMLButtonElement>(null);
-  const nextRef = useRef<HTMLButtonElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
+    // Handle embla reinitialization
+    const onEmblaReInit = useCallback((emblaApi: EmblaCarouselType | undefined) => {
+        if (!emblaApi) return;
+        
+        // console.log('[Carousel] onReInit - activeIndex:', activeProjectIndex, 'embla snap:', emblaApi.selectedScrollSnap());
+        
+        if (activeProjectIndex !== null && open) {
+            // console.log('[Carousel] (onReInit) Scrolling to index:', activeProjectIndex);
+            emblaApi.scrollTo(activeProjectIndex, true);
+        }
+    }, [activeProjectIndex, open]);
 
-  const [_api, _setApi] = useState<EmblaCarouselType | null>(null);
-
-
-  
-
-  // const [options, setOptions] = useState<EmblaOptionsType>({loop: false})
-  // const options = useMemo<EmblaOptionsType>(() => ({startIndex: activeProjectIndex ?? undefined}), [activeProjectIndex]);
-  // const options = useRef<EmblaOptionsType>({});
-  // const updateOptions = useCallback((newIndex: number | null) => {
-  //   const newIndex_ = newIndex ?? undefined;
-  //   if(options.current?.startIndex !== newIndex_)
-  //     options.current = {...options.current, startIndex: newIndex_};
-  // }, [options]);
-
-  // const options_current = useMemo(()=>options.current, [options.current, options]);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const opts: EmblaOptionsType = useMemo(()=>{
-    // console.log('Remaking options with new containerRef/.current:', containerRef, containerRef.current);
-    return ({
-    container: containerRef.current ?? undefined,
-  })}, [containerRef.current, containerRef]);
-  const [emblaRef, embla] = useEmblaCarousel(opts);
-
-  const handleOptionsChanged = useCallback((embla: EmblaCarouselType | undefined, options: EmblaOptionsType) => {
-    // console.log('embla:', embla, options);
-    embla?.reInit(options);
-  }, []);
-
-  useEffect(()=>handleOptionsChanged(embla, opts), [embla, opts]);
-
-  // console.log('contentElements:', contentElements)
-  const allSlides = useMemo(()=>Object.fromEntries(contentElements.map(elem=>[elem.props["data-project-id"], elem])), [contentElements]);
-  // const allSlides = Object.fromEntries(contentElements.map(elem=>[elem.props["data-project-id"], elem]));
-  // const [storedOpen, setStoredOpen] = useState<boolean>(false);
-
-
-  // console.log('allSlides:', allSlides);
-
-  const slides = useMemo(() => visibleProjects.map((p)=>allSlides[p.id]), [visibleProjects, allSlides]);
-
-
-  const slideElems = slides.map((slide, i) => (
-      <CarouselItem key={i} id={`slide-${i}`} className="pointer-events-visible">
-      {/* // <div className="p-1"> */}
-      <Card className="relative w-full flex pointer-events-visible">
-          {/* <Button
-            onClick={(evt) => {setOpen(false); evt.preventDefault(); }}
-          // className="absolute top-4 right-4 text-white text-2xl"
-          // >
-          // ✕
-          // </Button>
-            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-          >
-              <XIcon />
-              <span className="sr-only">Close</span>
-          </Button> */}
-          {/* <CardContent className="flex aspect-square items-center justify-center p-6"> */}
-          <CardHeader>
-          <CardTitle>Card Title</CardTitle>
-          </CardHeader>
-          <CardContent className="pointer-events-visible">
-          {slide}
-          </CardContent>
-      </Card>
-      {/* // </div> */}
-      </CarouselItem>
-  ));
-  // if (!open || !slides) return null;
-
-  const onSelect = useCallback((emblaApi: EmblaCarouselType | undefined) => {
-    console.log('onSelect (activeProjectIndex, openedProjectId, emblaApi):', activeProjectIndex, openedProjectId, emblaApi ? {
-      scrollSnap: emblaApi.selectedScrollSnap(),
-      prevSnap: emblaApi.previousScrollSnap(),
-      emblaApi
-    } : undefined);
-    if(!emblaApi) return;
-    const index = emblaApi.selectedScrollSnap();
-    console.log('Setting activeProjectIndex (index/activeProjectIndex/openedProjectId):', index, activeProjectIndex, openedProjectId);
-    setActiveProjectIndex(index);  // This should also update opened project id IF the carousel is already open -- TODO: streamline/unify?
-    if(activeProjectId !== null && activeProjectId !== undefined && openedProjectId !== activeProjectId)
-      setOpenedProjectId(activeProjectId);
-  }, [activeProjectIndex, setActiveProjectIndex, activeProjectId, openedProjectId, setOpenedProjectId]);  
+    // Subscribe to embla events
+    useEffect(() => {
+        if (!embla) return;
+        
+        embla.on('reInit', onEmblaReInit);
+        embla.on('select', onSelect);
+        
+        return () => { 
+            embla
+                .off('reInit', onEmblaReInit)
+                .off('select', onSelect);
+        };
+    }, [embla, onEmblaReInit, onSelect]);
 
 
-  
-  const onEmblaReInit = useCallback((emblaApi: EmblaCarouselType | undefined) => {
-    if(!emblaApi) return;
-    console.log('On reInit:', activeProjectIndex, emblaApi.selectedScrollSnap());
-    if(activeProjectIndex !== null) {
-      if(activeProjectIndex !== null && open) {
-        console.log('(onReInit) Scrolling to index:', activeProjectIndex);
-        emblaApi.scrollTo(activeProjectIndex, false);
-      }
-    }
+    const wasOpen = useRef<boolean>(false);
+    // Handle carousel open/close
+    useEffect(() => {
+        // console.log('[Carousel] open changed:', open, 'activeIndex:', activeProjectIndex, 'embla:', !!embla);
+        if (!embla) return;
+        
+        if (open && activeProjectIndex !== null) {
+            // console.log('[Carousel] Opening - reInit and scroll to:', activeProjectIndex);
+            if(!wasOpen.current) embla.reInit({ startIndex: activeProjectIndex });
+            else embla.scrollTo(activeProjectIndex, false);
+        }
+        wasOpen.current = open;
+    }, [open, embla, activeProjectIndex]);
 
-  }, [activeProjectIndex, embla]);
+    // // Handle options changes
+    // const handleOptionsChanged = useCallback((embla: EmblaCarouselType | undefined, options: EmblaOptionsType) => {
+    //     embla?.reInit(options);
+    // }, []);
 
-  
-  useEffect(() => {
-    // console.log('Using effect', embla, onSelect);
-    if(!embla) return;
-    // embla.on('init', onEmblaReInit);
-    embla.on('reInit', onEmblaReInit);
-    return () => { 
-      embla
-        // .off('init', onEmblaReInit)
-        .off('reInit', onEmblaReInit)
-        // .off('select', onSelect) 
+    // useEffect(() => {
+    //     handleOptionsChanged(embla, opts);
+    // }, [embla, opts, handleOptionsChanged]);
+
+    const noPropagate = (e: React.PointerEvent<HTMLButtonElement | HTMLDivElement>) => {
+        e.stopPropagation();
     };
-  }, [embla, onEmblaReInit]);
 
-  const handleOpenChange = useEffectEvent((open_: boolean, embla: EmblaCarouselType | undefined) => {
-    console.log('[ProjectCarouselDialog] carouselOpen changed (open_/open/activeIndex/embla):', open_, open, activeProjectIndex, embla); // , storedOpen);
-    // setStoredOpen(open_);
-    if(!embla) return;
-    if(open_ && activeProjectIndex !== null) {
-      // console.log('Calling reInit with slideNodes:', embla.slideNodes())
-      embla.reInit({startIndex: activeProjectIndex});
-      if(activeProjectIndex !== null) {
-        console.log('(handleOpenChange) Scrolling to index:', activeProjectIndex)
-        embla.scrollTo(activeProjectIndex, true);
-        // setOpenedProjectId(activeProjectId ?? null);
-      }
-    }
-  });
-
-  useEffect(()=> {
-    handleOpenChange(open, embla);
-  }, [open, embla]);
-
-
-  const noPropagate = (e: PointerEvent | RPointerEvent<HTMLButtonElement | HTMLDivElement>) => {
-    // console.log('No propagate:', e);
-    e.stopPropagation();
-    // e.preventDefault();
-  };
-
-
-  return <Dialog open={open} onOpenChange={setOpen} modal={true}>
-        <DialogPortal container={document.getElementById('modal-root')}>
-            {/* <div id='dialog-wrapper' className="fixed p-0 m-0 inset-0 z-40 bg-transparent border-none shadow-none w-full h-full"> */}
-            {/* Backdrop */}
-
-            {/* Carousel */}
-            <DialogContent className="border-0 shadow-none p-0 m-0 items-center justify-center focus:outline-none z-50 flex w-full h-full inset-0 pointer-events-none" 
-                        // className="bg-transparent border-0 shadow-none p-0 fixed inset-0 z-50 flex items-center justify-center focus:outline-none"
-                        aria-describedby={undefined} 
-                      // }}}
-            >
-                <DialogOverlay ref={overlayRef} className="fixed p-0 m-0 inset-0 z-40 bg-black/40 backdrop-blur-sm"
-                 onClick={()=>setOpen(false)} onPointerDownCapture={noPropagate} onPointerDown={noPropagate}></DialogOverlay>
-                <VisuallyHidden>
-                    <DialogHeader>
-                        <DialogTitle>Dialog Title</DialogTitle>
-                    </DialogHeader>
-                </VisuallyHidden>
-                {/* <div className="relative z-60 w-full max-w-3xl" onClick={(e) => e.stopPropagation()}> */}
-                <Carousel ref={emblaRef} externalCarouselRef={emblaRef} externalApi={embla} opts={opts} className="overflow-visible z-60 pointer-events-auto w-full max-w-2xl" onCarouselSelect={onSelect}>  
-                    {/* // className="w-full max-w-3xl h-[70vh]" */}
-                    <CarouselContent id="embla-container" className="overflow-visible pointer-events-visible w-full">
-                        {...slideElems}
-                    </CarouselContent>
-                    <CarouselPrevious ref={prevRef} className='disabled:pointer-events-auto'/> 
-                    {/* onPointerDownCapture={noPropagate} onMouseDownCapture={logEvent} onMouseDown={logEvent} onPointerDown={logEvent} onAuxClick={logEvent} onAuxClickCapture={logEvent} onClickCapture={logEvent} onClick={logEvent} onGotPointerCapture={logEvent} onGotPointerCaptureCapture={logEvent}/> */}
-                    <CarouselNext ref={nextRef} className='disabled:pointer-events-auto'/> 
-
-                    <CarouselDots></CarouselDots>
-                     {/* onPointerDownCapture={noPropagate} /> */}
-                </Carousel>
-                {/* </div> */}
-        </DialogContent>
-
-        {/* </div> */}
-        </DialogPortal>
-    </Dialog>;
+    return (
+        <Dialog open={open} onOpenChange={(open) => {
+            console.log('Open changed:', open);
+            onOpenChange(open);
+        }} modal={true}>
+            <DialogPortal container={document.getElementById('modal-root')}>
+                <DialogContent 
+                    className="border-0 shadow-none p-0 m-0 items-center justify-center focus:outline-none z-50 flex w-full h-full inset-0 pointer-events-none" 
+                    aria-describedby={undefined}
+                    showCloseButton={false}
+                >
+                    <DialogOverlay 
+                        id="carousel-dialog-overlay"
+                        ref={overlayRef} 
+                        className="fixed p-0 m-0 inset-0 z-40 bg-black/40 backdrop-blur-sm"
+                        onClick={(e) => {setOpen(false); e.preventDefault();}} 
+                        onPointerDownCapture={noPropagate} 
+                        onPointerDown={noPropagate}
+                    />
+                    <VisuallyHidden>
+                        <DialogHeader>
+                            <DialogTitle>Project Carousel</DialogTitle>
+                        </DialogHeader>
+                    </VisuallyHidden>
+                    
+                    <Carousel 
+                        ref={emblaRef} 
+                        externalCarouselRef={emblaRef} 
+                        externalApi={embla} 
+                        opts={opts} 
+                        className="overflow-visible z-60 pointer-events-auto w-full max-w-2xl"
+                        onCarouselSelect={onSelect}
+                    >
+                        <CarouselContent 
+                            id="embla-container" 
+                            className="overflow-visible pointer-events-visible w-full"
+                        >
+                            {...slideElems}
+                        </CarouselContent>
+                        <CarouselPrevious ref={prevRef} className='disabled:pointer-events-auto'/> 
+                        <CarouselNext ref={nextRef} className='disabled:pointer-events-auto'/> 
+                        <CarouselDots />
+                    </Carousel>
+                </DialogContent>
+            </DialogPortal>
+        </Dialog>
+    );
 }

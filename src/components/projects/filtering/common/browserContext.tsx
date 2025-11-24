@@ -1,11 +1,14 @@
-import type { ProjectInfo } from "@/components/projects/types";
+import type { ProjectInfo, TagKey } from "@/components/projects/types";
 import { subscribeWithSelector } from "zustand/middleware";
 import { useStoreWithEqualityFn } from "zustand/traditional";
-import { createFilterStore, type FilterDataProps, type FilterStore, type FilterStoreState, type SetFilterProps } from "./stores/filterStore";
-import { collectFilterRangeInfo, getProjectKeyFromTagType, TAGTYPES, type FilterRangeInfo } from "./filterTypes";
-import { createStore } from "zustand";
+import { createFilterStore, type FilterDataProps, type FilterStore, type FilterStoreState, type SetFilterProps, type TagFilterMode } from "./stores/filterStore";
+import { collectFilterRangeInfo, getProjectKeyFromTagType, TAGTYPES, type FilterRangeInfo, type TagType } from "./filterTypes";
+import { createStore, type StoreApi } from "zustand";
 import React from "react";
 import { useStore } from "zustand";
+import {shallow} from "zustand/shallow";
+import type { ValueOf } from "node_modules/astro/dist/type-utils";
+// import {createComputed} from "zustand-computed";
 
 export function findNewIndex(ids: Iterable<string>, id: string): number | null {
     let index = 0;
@@ -22,24 +25,35 @@ export interface BrowserStoreInitProps {
 }
 
 export interface BrowserStoreState {
-    // Primitives
-    allProjects: ProjectInfo[];
-    filterRangeInfo: FilterRangeInfo;
-    filterStore: FilterStore;
+    // Base
+    readonly allProjects: ProjectInfo[];
+    readonly filterRangeInfo: FilterRangeInfo;
+    readonly filterStore: FilterStore;
     
     visibleProjects: ProjectInfo[];
     activeProjectIndex: number | null;
     carouselOpen: boolean;
     sheetOpen: boolean;
+
+    readonly tagModes: Record<TagType, TagFilterMode>,
     
     // Derived (cheap to compute)
-    readonly visibleProjectIds: Set<string>;
-    readonly activeProjectId: string | null;
-    readonly openProjectId: string | null;
+    /*readonly*/ visibleProjectIds: Set<string>;
+    /*readonly*/ activeProjectId: string | null;
+    /*readonly*/ openProjectId: string | null;
     
+    getVisibleProjectIds: (visibleProjectsArg?: ProjectInfo[]) => Set<string>;
+
+    getActiveProjectId: (activeProjectIndexArg?: number | null) => string | null;
+
+    getOpenProjectId: (carouselOpenArg?: boolean, activeProjectIdArg?: string | null) => string | null;
+
     // Actions
     setActiveProjectIndex: (index: number | null) => void;
-    clickItem: (itemId: string, itemIndex: number) => void;
+    clickItem: (itemId: string, itemIndex: number, newState?: 'active' | 'open' | undefined) => void;
+
+    clearActiveItem: () => void;
+
     setCarouselOpen: (open: boolean) => void;
     setSheetOpen: (open: boolean) => void;
     handlePopState: (showToast: ShowToastFn) => void;
@@ -50,7 +64,7 @@ export interface BrowserStoreState {
     onSheetOpenChange: (open: boolean) => void,
     
     // Internal
-    _refilterProjects: (showToast?: ShowToastFn) => void;
+    _refilterProjects: (showToast?: ShowToastFn) => boolean;
     _syncUrlToState: () => void;
     
     // Utils
@@ -62,6 +76,17 @@ export interface BrowserStoreState {
 export type BrowserStore = ReturnType<typeof createBrowserStore>;
 export type ShowToastFn = (text: string) => void;
 export type ScrollToFn = (index: number, jump?: boolean) => void;
+
+
+export function clearURLProject(push?: boolean) {
+    const search = window.location.search;
+    if(!search) return;
+    const params = new URLSearchParams(search);
+    params.delete('project');
+    const newSearch = params.toString();
+    if(newSearch === search.slice(1)) return;
+}
+
 
 export function parseURL(rangeInfo: FilterRangeInfo, url: string): [Partial<SetFilterProps>, string | null] {
     const params = new URLSearchParams(url);
@@ -121,21 +146,29 @@ export const createBrowserStore = (
             sheetOpen: false,
             
             // Derived values
-            get visibleProjectIds() {
+            visibleProjectIds: new Set<string>(allProjects.map(x=>x.id)),
+            getVisibleProjectIds() {
                 // return new Set(get().visibleProjects.keys());
                 return new Set(get().visibleProjects.map(x=>x.id));
             },
             
-            get activeProjectId() {
-                const { activeProjectIndex } = get();
+            activeProjectId: null,
+            getActiveProjectId(activeProjectIndexArg?: number | null) {
+                const activeProjectIndex = activeProjectIndexArg ?? get().activeProjectIndex
                 return activeProjectIndex !== null 
                     ? get().getIdForIndex(activeProjectIndex)
                     : null;
             },
             
-            get openProjectId() {
+            openProjectId: null,
+            getOpenProjectId(carouselOpenArg?: boolean, activeProjectIdArg?: string | null) {
                 const { carouselOpen, activeProjectId } = get();
-                return carouselOpen ? activeProjectId : null;
+                return (carouselOpenArg ?? carouselOpen) ? (activeProjectIdArg ?? activeProjectId) : null;
+            },
+
+            get tagModes() {
+                const filterStore = get().filterStore;
+                return filterStore.getState().tagModes;
             },
             
             // Actions
@@ -149,19 +182,34 @@ export const createBrowserStore = (
                 }
             },
             
-            clickItem: (itemId, itemIndex) => {
-                console.log('ITEM CLICKED');
+            clickItem: (itemId, itemIndex, newState?: 'active' | 'open' | undefined) => {
                 const { activeProjectId, carouselOpen, setCarouselOpen, setActiveProjectIndex } = get();
-                
-                if (itemId === activeProjectId && activeProjectId !== null) {
-                    // Click on already-active item opens carousel
-                    // set({ carouselOpen: true });
-                    setCarouselOpen(true);
+                // console.log('ITEM CLICKED', activeProjectId, carouselOpen, itemId, itemIndex, newState);
+
+                if(newState === undefined) {
+                    if (itemId === activeProjectId && activeProjectId !== null) {
+                        // Click on already-active item opens carousel
+                        // set({ carouselOpen: true });
+                        setCarouselOpen(true);
+                    } else {
+                        // Click on different item activates it
+                        // set({ activeProjectIndex: itemIndex });
+                        setActiveProjectIndex(itemIndex);
+                    }
                 } else {
-                    // Click on different item activates it
-                    // set({ activeProjectIndex: itemIndex });
-                    setActiveProjectIndex(itemIndex);
+                    set({
+                        activeProjectIndex: itemIndex,
+                        activeProjectId: itemId
+                    });
+                    if(newState === 'open')
+                        setCarouselOpen(true);
                 }
+            },
+
+            clearActiveItem() {
+                // Assume the carousel is not open
+                set({activeProjectIndex: null/*, openProjectId: null*/});
+                // set({activeProjectId: null});
             },
             
             setCarouselOpen: (open) => {
@@ -180,8 +228,8 @@ export const createBrowserStore = (
                 } else {
                     // Closing carousel
                     set({ carouselOpen: false });
-                    // get()._syncUrlToState();
                 }
+                get()._syncUrlToState();
             },
 
             onCarouselOpenChange(open) {
@@ -229,7 +277,7 @@ export const createBrowserStore = (
                         scrollTo?.(index, false);
                     } else {
                         showToast(`Project '${projectId}' not found in current filter`);
-                        
+                        clearURLProject();
                         // If current active/open is the invalid ID, clear it
                         if (get().activeProjectId === projectId) {
                             set({
@@ -261,6 +309,7 @@ export const createBrowserStore = (
                         });
                     } else {
                         showToast(`Project '${projectId}' not found`);
+                        // clearURLProject();
                     }
                 }
             },
@@ -273,10 +322,11 @@ export const createBrowserStore = (
                 const newProjects = get().filterProjects({
                     categories: filterData.categories,
                     year: filterData.year,
-                    tags: filterData.tags
+                    tags: filterData.tags,
+                    tagModes: filterData.tagModes
                 });
                 
-                if (newProjects === null) return; // No change
+                if (newProjects === null) return false; // No change
                 
                 // const visibleProjects = new Map(newProjects.map(p => [p.id, p]));
                 const visibleProjects = newProjects;
@@ -299,6 +349,8 @@ export const createBrowserStore = (
                 
                 // Note: We don't automatically close carousel
                 // The user can still see it's filtered out
+
+                return true;
             },
             
             _syncUrlToState: () => {
@@ -313,10 +365,10 @@ export const createBrowserStore = (
                     params.delete('project');
                 }
                 
-                const query = params.toString();
-                const newUrl = query ? `?${query}` : window.location.pathname;
+                const newQuery = params.toString();
+                if (newQuery === window.location.search.slice(1)) return;
+                const newUrl = `${window.location.pathname}${newQuery ? `?${newQuery}` : ''}`;
                 
-                if (newUrl === window.location.href) return;
                 
                 // Determine push vs replace based on old/new state
                 const wasNull = oldProjectId === null;
@@ -352,7 +404,7 @@ export const createBrowserStore = (
                 return findNewIndex(get().visibleProjects.map(x=>x.id), id);
             },
             
-            filterProjects: ({ year, categories, tags }) => {
+            filterProjects: ({ year, categories, tags, tagModes }) => {
                 const { visibleProjects, visibleProjectIds } = get();
                 let anyChange = false;
                 
@@ -364,7 +416,11 @@ export const createBrowserStore = (
                     
                     for (const t of TAGTYPES) {
                         const k = getProjectKeyFromTagType(t);
-                        if (tags?.[t].size && ![...tags[t]].some(tag => p.tags[k]?.has(tag))) {
+                        if (tags?.[t].size && (
+                            !tagModes[t] ? [...tags[t]].some(tag => !p.tags[k]?.has(tag))
+                            // : ![...tags[t]].some(tag => p.tags[k]?.has(tag))
+                            : !Array.from(p.tags[k]).some(tag=>tags[t].has(tag))
+                        )) {
                             return false;
                         }
                     }
@@ -393,12 +449,69 @@ export const createBrowserStore = (
     // Subscribe to filter changes and refilter
     filterStore.subscribe(
         (state) => ({ categories: state.categories, year: state.year, tags: state.tags }),
-        () => {
+        ({categories, year, tags}) => {
             // Filter store updated, recompute visible projects
-            store.getState()._refilterProjects();
+            if(store.getState()._refilterProjects()) {
+                const params = new URLSearchParams();
+                    for(const tagType of TAGTYPES) {
+                        const tags_ = tags?.[tagType];
+                        if(tags_ && tags_?.size > 0)
+                            params.set(tagType, Array.from(tags_).join(","));
+                    }
+                    if (categories.size > 0) 
+                        params.set('category', Array.from(categories).join(','));
+                    if (year) {
+                        const yearArg = simplifyYearRange(filterRangeInfo, ...year);
+                        if(yearArg) {
+                            if(yearArg[0] === yearArg[1]) {
+                                if(yearArg[0] !== null)
+                                    params.set("year", String(yearArg[0]));
+                            } else {
+                                const minYearStr = year[0] === null ? '' : `${year[0]}`;
+                                const maxYearStr = year[1] === null ? '' : `${year[1]}`;
+                                params.set("year", `${minYearStr}-${maxYearStr}`);
+                            }
+                        }
+                    }
+                
+                    if(window.location.search) {
+                        const params0 = new URLSearchParams(window.location.search);
+                        const project = params0.get('project');
+                        if(project) {
+                            params.set('project', project);
+                        }
+                    }
+                
+                    const query = params.toString();
+                    const newUrl = query ? `?${query}` : location.pathname;
+                
+                    // pushState keeps history; replaceState overwrites it
+                    // window.history.replaceState(null, "", newUrl);
+                    if(newUrl === window.location.href)
+                        return;
+                    window.history.pushState(null, "", newUrl);
+            }
         },
         { fireImmediately: false }
     );
+
+    store.subscribe((s=>s.visibleProjects), (projects, prevProjects) => {
+        if(shallow(projects, prevProjects)) return;
+        store.setState({visibleProjectIds: new Set<string>(projects.map(x=>x.id))});
+    }, {fireImmediately: true});
+
+    store.subscribe(s=>s.activeProjectIndex, (index, prevIndex) => {
+        if(index === prevIndex) return;
+        const activeProjectId = store.getState().getActiveProjectId(index);
+        store.setState({activeProjectId});
+    }, {fireImmediately: true});
+
+    store.subscribe(s=>({carouselOpen: s.carouselOpen, activeProjectId: s.activeProjectId}), ({carouselOpen, activeProjectId}, {carouselOpen: prevCarouselOpen, activeProjectId: prevActiveProjectId}) => {
+        if(carouselOpen === prevCarouselOpen && activeProjectId === prevActiveProjectId) return;
+        
+        const openProjectId = store.getState().getOpenProjectId(carouselOpen, activeProjectId);
+        store.setState({openProjectId});
+    }, {fireImmediately: true});
     
     return store;
 };
@@ -423,22 +536,22 @@ function BrowserStoreContextInner({
     // Initialize from URL on mount
     const hasInitialized = React.useRef(false);
     
-    // React.useEffect(() => {
-    //     if (hasInitialized.current) return;
-    //     hasInitialized.current = true;
+    React.useEffect(() => {
+        if (hasInitialized.current) return;
+        hasInitialized.current = true;
         
-    //     store.getState().initFromUrl(window.location.search, showToast);
-    // }, [showToast]);
+        store.getState().initFromUrl(window.location.search, showToast);
+    }, [showToast]);
     
-    // // Handle browser back/forward
-    // React.useEffect(() => {
-    //     const handlePopState = () => {
-    //         store.getState().handlePopState(showToast);
-    //     };
+    // Handle browser back/forward
+    React.useEffect(() => {
+        const handlePopState = () => {
+            store.getState().handlePopState(showToast);
+        };
         
-    //     window.addEventListener('popstate', handlePopState);
-    //     return () => window.removeEventListener('popstate', handlePopState);
-    // }, [showToast]);
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [showToast]);
     
     return <>{children}</>;
 }
@@ -468,6 +581,94 @@ export function BrowserStoreProvider({
 export const doubleEq =(a: any, b: any) => (a==b);
 export const tripleEq =(a: any, b: any) => (a===b);
 
+
+
+
+
+export function useBrowserStore() {
+    const store = React.useContext(BrowserStoreContext);
+    if (!store) throw new Error('Missing BrowserStoreContext.Provider in the tree');
+    return store;
+}
+
+
+// type UseBrowserContext = (<T>(
+//     selector: (state: BrowserStoreState) => T,
+//     equalityFn?: (left: T, right: T) => boolean,
+// ) => T) & BrowserStore;
+
+// export const useBrowserContext: UseBrowserContext =  Object.assign(
+//     ((selector: (state: BrowserStoreState) => any, equalityFn?: (left: any, right: any) => boolean) => {
+//         const store = React.useContext(BrowserStoreContext);
+//         if (!store) throw new Error('Missing BrowserStoreContext.Provider in the tree');
+//         // return useStoreWithEqualityFn(store, selector, (a: any, b: any) => {
+//         //     const result = a === b;
+//         //     console.log('COMPARING:', a, b, result);
+//         //     return result;
+//         // });
+//         // return useStoreWithEqualityFn(store, selector, equalityFn);
+//         // return useStore(store, selector);
+//         // console.log(selector);
+//         return equalityFn 
+//             ? useStoreWithEqualityFn(store, selector, equalityFn) 
+//             : useStore(store, selector);
+//     }) as (<T>(
+//         selector: (state: BrowserStoreState) => T,
+//         equalityFn?: (left: T, right: T) => boolean,
+//     ) => T), {
+//         get getInitialState() {
+//             return useBrowserStore().getInitialState;
+//         },
+//         get setState() {
+//             return useBrowserStore().setState;
+//         },
+//         get getState() {
+//             return useBrowserStore().getState;
+//         },
+//         get subscribe() {
+//             return useBrowserStore().subscribe;
+//         }
+//     });
+
+// type UseFilterContext = (<T>(
+//     selector: (state: FilterStoreState) => T,
+//     equalityFn?: (left: T, right: T) => boolean,
+// ) => T) & FilterStore;
+
+
+
+export function useFilterStore() {
+    const store = useBrowserContext(state=>state.filterStore);
+    return store;
+}
+
+// export const useFilterContext: UseFilterContext = Object.assign(((
+//     selector: (state: FilterStoreState) => any,
+//     equalityFn?: (left: any, right: any) => boolean,
+// ) => {
+//     const filterStore = useBrowserContext(state => state.filterStore);
+//     // return useStoreWithEqualityFn(filterStore, selector, equalityFn);
+//     // return useStore(filterStore, selector);
+//     return equalityFn
+//         ? useStoreWithEqualityFn(filterStore, selector, equalityFn)
+//         : useStore(filterStore, selector);
+// }) as (<T>(selector: (state: FilterStoreState) => T, equalityFn?: (a: T, b: T) => boolean) => T), {
+//     get getInitialState() {
+//         return useFilterStore().getInitialState;
+//     },
+//     get setState() {
+//         return useFilterStore().setState;
+//     },
+//     get getState() {
+//         return useFilterStore().getState;
+//     },
+//     get subscribe() {
+//         return useFilterStore().subscribe;
+//     } 
+// });
+
+
+
 export function useBrowserContext<T>(
     selector: (state: BrowserStoreState) => T,
     equalityFn?: (left: T, right: T) => boolean,
@@ -496,4 +697,38 @@ export function useFilterContext<T>(
     return equalityFn
         ? useStoreWithEqualityFn(filterStore, selector, equalityFn)
         : useStore(filterStore, selector);
+}
+
+
+
+// type MappedTypeWithNewProperties<Type> = {
+//     [Property in keyof Type as Exclude<Property, "hello">]: Type[Property]
+// }
+
+
+type ValueFor<T, K extends keyof T> = T[K];
+type EntryFor<T, K extends keyof T> = (
+    (T extends {[P in K]: infer V}
+    ?
+    [K, V]
+    : 
+    never
+));
+// type x = EntryFor<FilterStoreState, "allProjects" | "categories">;
+
+type KeyOf<T> = T extends any ? keyof T : never;
+// type EntryOf<T> = T extends any ? (T extends {[P in keyof T]: (infer V extends T[P])} ? [keyof T,V] : never) : never;
+type EntryOf<T> = ValueOf<{[K in keyof T]: [K, T[K]]}>;
+// type EntryOf<T> = T extends Map<infer K, infer V> ? [K, V] : (T extends Record<infer K, infer V> ? [K, V] : never);
+
+type EntriesOf<T> = EntryOf<T>[];
+
+type x = EntryOf<FilterStoreState>; // | ValueOf<FilterStoreState>;
+
+export function useFilterContextItems<K extends (keyof FilterStoreState)>(keys: K[], equalityFn?: (left: Pick<FilterStoreState, K>, right: Pick<FilterStoreState, K>) => boolean): Pick<FilterStoreState, K> {
+    return useFilterContext(state=>Object.fromEntries(keys.map(k=>[k, state[k]]) as EntriesOf<FilterStoreState>), equalityFn);
+}
+
+export function useBrowserContextItems<K extends (keyof BrowserStoreState)>(keys: K[], equalityFn?: (left: Pick<BrowserStoreState, K>, right: Pick<BrowserStoreState, K>) => boolean): Pick<BrowserStoreState, K> {
+    return useBrowserContext(state=>Object.fromEntries(keys.map(k=>[k, state[k]]) as EntriesOf<BrowserStoreState>), equalityFn);
 }

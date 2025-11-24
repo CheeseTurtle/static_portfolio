@@ -1,178 +1,176 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Dispatch, type ReactElement, type RefAttributes, type SetStateAction } from "react";
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, type MouseEvent, type MouseEventHandler, type PointerEventHandler, type ReactElement, type RefAttributes } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import type { ProjectInfo } from "../../types";
 import { BadgeRows } from "./badges/BadgeRows";
 import { convertToBadgeType, type BadgeType } from "./badges/badgeTypes";
 import ExpandedPart from "./expansion/ExpandedPart";
-import {gsap} from "gsap";
-import {ImageRow} from './expansion/ImageRow';
-
-import type {EmblaCarouselType, EmblaEventType, EmblaOptionsType} from "embla-carousel";
-
-
+import { gsap } from "gsap";
+import { ImageRow } from './expansion/ImageRow';
+import { useBrowserContext } from "../../filtering/common/browserContext";
 
 export interface ProjectItemHandle {
-    // setExpanded: (value: boolean) => void;
-    // toggleExpanded: () => void;
-    // isExpanded: () => boolean;
-
-    onClick: () => void;
-
-};
+    onClick: (evt: MouseEvent<HTMLDivElement>) => void;
+}
 
 type ProjectItemProps = {
-    project: ProjectInfo,
-    activeProjectIndex: number | null,
-
-    openedProjectId: string | null;
-    setOpenedProjectId: Dispatch<SetStateAction<string | null>>;
-    // onProjectOpen: Dispatch<SetStateAction<ProjectItemInfo | null>> | ((info: ProjectItemInfo | null) => void),
-    activeProjectId: string | undefined,
-    // onProjectHover: Dispatch<SetStateAction<ProjectItemInfo | null>>,
-      setActiveProjectItem:  ((item: string | ProjectInfo | null) => void), // Dispatch<SetStateAction<ProjectItemInfo | null>> |
-      // setHoveredProjectItem: Dispatch<SetStateAction<ProjectItemInfo | null>>,
-    
-      carouselOpen: boolean,
-    
-      setCarouselOpen: Dispatch<SetStateAction<boolean>>,
-
-      activeProject: ProjectInfo | null,
-
-      // onClick: () => void;
+    project: ProjectInfo;
+    projectIndex: number; // Index in the visible projects array
+    activeProject: ProjectInfo | null;
+    activeProjectId: string | null;
+    activeProjectIndex: number | null;
+    openProjectId: string | null;
+    carouselOpen: boolean;
+    clickItem: (itemId: string, itemIndex: number, newState?: 'active' | 'open' | undefined) => void;
+    setCarouselOpen: (open: boolean) => void;
+    extraRef?: React.RefObject<HTMLDivElement | null>,
 };
 
 export type ProjectItemElement = ReactElement<ProjectItemProps & RefAttributes<ProjectItemHandle>>;
-export type ProjectItemInfo = {
-    elem: HTMLDivElement,
-    data: ProjectInfo
-};
 
-const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({ openedProjectId, setOpenedProjectId, activeProject, activeProjectIndex, activeProjectId, setActiveProjectItem, project, carouselOpen, setCarouselOpen }: ProjectItemProps, ref) => {
-    // console.log('projectInfo:', project);
-  const { id, images, title, date, summary, description, tags, contentHtml } = project;
-  // const [expanded, setExpanded] = useState(false);
+const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({ 
+    project,
+    projectIndex,
+    activeProject,
+    activeProjectId, 
+    activeProjectIndex,
+    openProjectId,
+    carouselOpen,
+    clickItem,
+    setCarouselOpen,
+    extraRef: extraRef_,
+}: ProjectItemProps, ref) => {
+    const { id, images, title, date, summary, description, tags } = project;
 
+    const clearActiveItem = useBrowserContext(s=>s.clearActiveItem);
 
-  const year = useMemo(()=>(date.explicitDate?.year ?? date.getFullYear()), [date]);
-  const selfRef = useRef<HTMLDivElement>(null);
-  const extraRef = useRef<HTMLDivElement>(null);
+    const year = useMemo(() => (date.explicitDate?.year ?? date.getFullYear()), [date]);
+    const selfRef = useRef<HTMLDivElement>(null);
+    const localExtraRef = useRef<HTMLDivElement>(null);
 
-  const newEntries = useMemo(() => Object.entries(tags || {}).map(([k, vs]) => {
-    const newKey = convertToBadgeType(k);
-    return [newKey, vs];
-  }), [tags]);
-  const badgeRows = useMemo(()=>(newEntries.length > 0 ? Object.fromEntries(newEntries) : {}) as Record<BadgeType, Set<string>>, [newEntries]);
+    const extraRef = useMemo(()=>extraRef_ ?? localExtraRef, [extraRef_]);
 
-  const expanded = useMemo(() => {
-    // console.log(id, activeProjectId, id == activeProjectId);
-    return (id == activeProjectId);
-  }, [id, activeProjectId]);
-  
-  const onClick = useCallback(() => {
-      console.log('%cItem clicked:', 'color: black; background-color: yellow;', id, window.location.search);
-      // console.log('ONCLICK -- id:', id, activeProject, activeProjectIndex, openedProjectId);
-      // console.log('onClick expanded:', expanded);
-      if(id === activeProjectId) {
-        // // if(carouselOpen) return;
-        // console.log('Setting carouselOpen');
-        // // setOpened(true);
-        // console.log(`Setting activeProjectId to ${id} -- prev:`, activeProjectId);
-        // setActiveProjectItem(id);
-        console.log('Setting opened project id:', id);
-        setOpenedProjectId(id);
-        console.log('Setting carousel open');
-        // // if(!carouselOpen) 
-        setCarouselOpen(true);
-      } else {
-        // // console.log('Setted activeProjectId to:', activeProjectId)
-        // // setCarouselOpen(false);
-        console.log(`Setting activeProjectId to ${id} -- prev:`, activeProjectId);
-        setActiveProjectItem(id);
-      }
-    }, [id, activeProjectId, setCarouselOpen, setActiveProjectItem, setOpenedProjectId]);
+    const newEntries = useMemo(() => Object.entries(tags || {}).map(([k, vs]) => {
+        const newKey = convertToBadgeType(k);
+        return [newKey, vs];
+    }), [tags]);
+    
+    const badgeRows = useMemo(
+        () => (newEntries.length > 0 ? Object.fromEntries(newEntries) : {}) as Record<BadgeType, Set<string>>, 
+        [newEntries]
+    );
 
-  useImperativeHandle(ref, () => ({onClick}), [onClick]);  // [activeProject, activeProjectId, setActiveProjectItem, setCarouselOpen]);
+    // Item is expanded if it's the active project
+    const expanded = useMemo(() => {
+        return id === activeProjectId;
+    }, [id, activeProjectId]);
 
-  useEffect(() => {
-      const el = extraRef.current;
-      if (!el) return;
+    const onClick: MouseEventHandler<HTMLDivElement> = useCallback((evt) => {
+        evt.stopPropagation();
+        evt.preventDefault();
+        const pointerType = (evt.nativeEvent as PointerEvent).pointerType;
+        const isMouse = pointerType === 'mouse';
+        console.log('%cItem clicked:', 'color: black; background-color: yellow;', id, projectIndex, window.location.search);
+        
+        // Use the clickItem action from the store
+        // This handles both:
+        // 1. Clicking an already-active item (opens carousel)
+        // 2. Clicking a different item (makes it active)
+        clickItem(id, projectIndex, isMouse ? 'open' : undefined);
+    }, [id, projectIndex, clickItem]);
 
-    //   console.log('EL:', el, el.clientHeight, el.offsetHeight, el.scrollHeight, el.style.height, el.style.maxHeight, el.style.minHeight)
+    useImperativeHandle(ref, () => ({ onClick }), [onClick]);
 
-      if (expanded) {
-        // Expand: animate from current height 0 to scrollHeight
-        gsap.killTweensOf(el);
-        gsap.fromTo(
-          el,
-          { height: 0, opacity: 0 },
-          {
-            height: el.scrollHeight,
-            opacity: 1,
-            duration: 0.3,
-            ease: "power1.out",
-            onComplete: () => { 
-                gsap.set(el, { height: "auto" });
-                // console.log('el after expand:', el)
-            },
-          }
-        );
-      } else if (el.clientHeight !== 0) {  // if(el.style.height == 'auto') {
-        // Collapse: animate from current numeric height to 0
-        gsap.killTweensOf(el);
-        const currentHeight = el.clientHeight;
-        gsap.fromTo(
-          el,
-          { height: currentHeight, opacity: 1 },
-          { height: 0, opacity: 0, duration: 0.3, ease: "power1.in",
-            // onComplete: () => {
-            //     console.log('el after collapse:', el)
-            // }
-           }
-        );
-      }
+    // Handle expand/collapse animation
+    useEffect(() => {
+        const el = extraRef.current;
+        if (!el) return;
+
+        if (expanded) {
+            // Expand: animate from 0 to scrollHeight
+            gsap.killTweensOf(el);
+            gsap.fromTo(
+                el,
+                { height: el.clientHeight, opacity: el.style.opacity },
+                {
+                    height: el.scrollHeight,
+                    opacity: 1,
+                    duration: 0.3,
+                    ease: "power1.out",
+                    onComplete: () => { 
+                        gsap.set(el, { height: "auto" });
+                    },
+                }
+            );
+        } else if (el.clientHeight !== 0) {
+            // Collapse: animate from current height to 0
+            gsap.killTweensOf(el);
+            const currentHeight = el.clientHeight;
+            gsap.fromTo(
+                el,
+                { height: currentHeight, opacity: el.style.opacity },
+                { height: 0, opacity: 0, duration: 0.3, ease: "power1.in" }
+            );
+        }
     }, [id, expanded]);
 
+    const onHover: PointerEventHandler<HTMLDivElement> = useCallback((evt) => {
+        if(carouselOpen) return;
+        const pointerType = evt.pointerType;
+        const isMouse = pointerType === 'mouse';
+        if(!isMouse) return;
+        clickItem(id, projectIndex, 'active');
+    }, [clickItem, carouselOpen, projectIndex, id]);
 
-  return (
-    <Card ref={selfRef}
-      onClick={() => onClick()}
-      className={`
-        relative cursor-pointer overflow-hidden transition-all
-        hover:shadow-lg
-        ${expanded ? "ring-2 ring-primary" : ""}
-      `}
-    >
-      {/* Header */}
-      <CardHeader className="pb-2">
-        <CardTitle className="flex justify-between items-baseline">
-          <span className="text-lg font-semibold">{title}</span>
-          <span className="text-sm text-muted-foreground">{year}</span>
-        </CardTitle>
-      </CardHeader>
+    const onUnhover: PointerEventHandler<HTMLDivElement> =  useCallback((evt) => {
+        if(carouselOpen) return;
+        const pointerType = evt.pointerType;
+        const isMouse = pointerType === 'mouse';
+        if(!isMouse) return;
+        // clickItem(id, projectIndex, 'active');
+        clearActiveItem();
+    }, [clearActiveItem, carouselOpen, projectIndex, id]);
 
-      {/* Content */}
-      <CardContent
-        className='space-y-2'
-      >
-        {/* Description */}
-        <p className="text-sm text-muted-foreground">{description}</p>
+    return (
+        <Card 
+            ref={selfRef}
+            onClick={onClick}
+            onPointerEnter={onHover}
+            onPointerLeave={onUnhover}
+            className={`
+                relative cursor-pointer overflow-hidden transition-all
+                hover:shadow-lg
+                ${expanded ? "ring-2 ring-primary" : ""}
+            `}
+        >
+            {/* Header */}
+            <CardHeader className="pb-2">
+                <CardTitle className="flex justify-between items-baseline">
+                    <span className="text-lg font-semibold">{title}</span>
+                    <span className="text-sm text-muted-foreground">{year}</span>
+                </CardTitle>
+                <div>{project.category.toUpperCase()}</div>
+            </CardHeader>
 
-        {/* Category-based tags */}
-        <BadgeRows badgeRows={badgeRows}></BadgeRows>
+            {/* Content */}
+            <CardContent className='space-y-2'>
+                {/* Description */}
+                <p className="text-sm text-muted-foreground">{description}</p>
 
-        {/* Expanded content */}
-        {
-            summary && (
-                <ExpandedPart ref={extraRef}>
-                    {summary}
-                    {images && images.length > 0 && (<ImageRow images={images}></ImageRow>)}
-                </ExpandedPart>
-            )
-        }
-      </CardContent>
-    </Card>
-  );
+                {/* Category-based tags */}
+                <BadgeRows badgeRows={badgeRows} />
+
+                {/* Expanded content */}
+                {summary && (
+                    <ExpandedPart ref={extraRef}>
+                        {summary}
+                        {images && images.length > 0 && (
+                            <ImageRow images={images} />
+                        )}
+                    </ExpandedPart>
+                )}
+            </CardContent>
+        </Card>
+    );
 });
 
 export default ProjectItem;

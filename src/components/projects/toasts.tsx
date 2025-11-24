@@ -11,7 +11,7 @@ export default function AlertToast() {
             position="top-center"
             richColors 
         />
-        <ButtonGroup>
+        {/* <ButtonGroup>
             <ButtonGroupText>
             Button group text
             </ButtonGroupText>
@@ -66,6 +66,6 @@ export default function AlertToast() {
             >
                 Promise
             </Button>
-        </ButtonGroup>
+        </ButtonGroup> */}
     </>;
 }

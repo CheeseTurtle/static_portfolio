@@ -97,7 +97,9 @@
 			"**/node_modules/**",
 			"**/.hg/**",
 			"**/.svn/**",
-			"**/dist/**"
+			"**/dist/**",
+			"**/src/components/ui/**"
 		],
+		"omlet.showUnusedPropsWarnings": false,
 	},
 }

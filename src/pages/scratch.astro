@@ -5,7 +5,9 @@ import StoryDrawer from "../components/story/StoryDrawer";
 // import MantineDrawer from "../components/story/MantineDrawer";
 
 import ProjectBrowser from "../components/projects/ProjectBrowser.astro";
-import ProjectDialog from "../components/projects/overlay/dialog";
+// import ProjectDialog from "../components/projects/overlay/dialog";
+
+import ZustandTest from "../components/projects/ZustandTest";
 
 export const ssr = false;
 
@@ -15,9 +17,11 @@ import "../styles/carousel.css";
 
 
 <!-- <div id="modal-root"></div> -->
-<Layout pageTitle="Turtle" description="Turtles turtles" storyPage="true">
+<Layout pageTitle="Turtle" description="Turtles turtles" storyPage="true" overflowHidden="true">
     
   <ProjectBrowser/>
+
+  <!-- <ZustandTest client:only="react"></ZustandTest> -->
 
     <!-- <div class="container mx-auto px-4 py-12">
       <ProjectGrid projects={items} client:visible />
@@ -31,9 +35,7 @@ import "../styles/carousel.css";
     <!-- <img height="auto" width="auto"/> -->
     
 </Layout>
-<!-- <ProjectDialog client:load></ProjectDialog> -->
-<StoryDrawer client:load></StoryDrawer>
-<!-- <StoryFilterSheet client:load></StoryFilterSheet> -->
+<!-- <StoryDrawer client:load></StoryDrawer> -->
 
 
 <!-- <script>

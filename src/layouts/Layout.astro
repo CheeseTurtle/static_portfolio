@@ -13,6 +13,7 @@ const {
     alt: "Default image of Stan Soo",
   },
   storyPage = false,
+  overflowHidden = true,
 } = Astro.props;
 
 const siteUrl = new URL(Astro.url).origin;
@@ -101,8 +102,10 @@ src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/GSDevTools.min.js"
   </head>
   <body
     class:list={[
-      "overflow-hidden", // 'overflow-x-hidden',
-      { "story-layout": storyPage },
+      // "overflow-hidden", // 'overflow-x-hidden',
+      { "story-layout": storyPage,
+        'overflow-hidden': overflowHidden
+      },
     ]}></body>
     <!--<SpeedInsights />-->
   <div class="background blur-circle"></div>

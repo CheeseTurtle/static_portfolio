@@ -219,6 +219,14 @@ function parseDateValue(value: Date | string | number): [Date, string | undefine
     }
 }
 
+function compareDates(a: Date, b: Date): number {
+    return (
+        a === b ? 0 : (
+            a < b ? -1 : 1
+        )
+    );
+}
+
 
 const factories: Record<string, AstroComponentFactory> = {};
 // console.log('Projects:', items)
@@ -241,12 +249,11 @@ const projects: ProjectInfo[] = items.map((data: ProjectDataWithFactory): Projec
         contentHtml: data.contentHtml,
         contentMdx: data.contentMdx,
         images: data.images,
-
         tags: Object.fromEntries(
             Object.entries(data.tags as Record<TagKey, string[]>).map(([tagType, tagArr]) => [tagType, new Set<string>(tagArr)])
         ) as Record<TagKey, Set<string>>
     };
-});
+}).sort((a,b)=>compareDates(a.date, b.date));
 
 // console.log('Factories:', factories);
 

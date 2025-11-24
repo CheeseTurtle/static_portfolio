@@ -28,7 +28,7 @@
         "./src/components/story/util/types",
       ],
       "jsx": "react-jsx",
-      "jsxImportSource": "react",
+      "jsxImportSource": "reac",
       "checkJs": false,
       "diagnostics": true,
       "noErrorTruncation": false,
