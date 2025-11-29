@@ -28,6 +28,7 @@ export function useCopyToClipboard(delay = 2000): [CopyFn, boolean] {
       throw new Error("The 'text' argument is required.")
     }
 
+    // eslint-disable-next-line no-control-regex
     const isPlainText = /^[\x00-\x7F]*$/.test(text)
     const isHtmlText = /<[^>]+>/.test(text)
     const isMarkdownText = /^#+\s/.test(text)

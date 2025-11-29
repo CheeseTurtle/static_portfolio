@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useRef } from "react"
 import { useFilter } from "./common/filterContext";
-import { TAGTYPES, type FilterRangeInfo, type FilterState, type InitFromURL } from "./common/filterTypes";
+import { TAGTYPES, type FilterRangeInfo, /*type FilterState,*/ type InitFromURL } from "./common/filterTypes";
 
 
 export function simplifyYearRange(rangeInfo: FilterRangeInfo, minYear_: number | undefined, maxYear_: number | undefined): [number | undefined, number | undefined] | undefined {
@@ -142,6 +144,7 @@ export function ProjectURLSync() {
     });
     const params = new URLSearchParams(window.location.search);
     const oldProject = params.get('project');
+    // eslint-disable-next-line no-extra-boolean-cast
     const replace = !!!oldProject === !!!state.openProjectId;
     if(oldProject != null || (state.openProjectId != null && state.openProjectId !== undefined))
       if(state._urlReplace !== undefined) console.assert(replace === state._urlReplace, `${replace} !== ${state._urlReplace} (${oldProject}, ${state.openProjectId})`);

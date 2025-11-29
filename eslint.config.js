@@ -6,17 +6,31 @@ import json from "@eslint/json";
 import markdown from "@eslint/markdown";
 import css from "@eslint/css";
 import pluginAstro from "eslint-plugin-astro";
-import pluginAstroParser from '@typescript-eslint/parser';
-// import pluginAstroParser from 'astro-eslint-parser';
+import pluginAstroParser from 'astro-eslint-parser';
+import pluginTSeslintParser from '@typescript-eslint/parser';
 import eslint from "@eslint/js";
 
+import pluginReactHooks from "eslint-plugin-react-hooks";
+
 import { defineConfig } from "eslint/config";
+
+import path from 'path';
+import {fileURLToPath} from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+
+// 👇️ "/home/john/Desktop/javascript"
+const __dirname = path.dirname(__filename);
+// console.log('directory-name 👉️', __dirname);
+
+// 👇️ "/home/borislav/Desktop/javascript/dist/index.html"
+// console.log(path.join(__dirname, '/dist', 'index.html'));
 
 
 export default defineConfig([
   eslint.configs.recommended,
   tseslint.configs.eslintRecommended,
-  tseslint.configs.recommendedTypeChecked,
+  ...tseslint.configs.recommendedTypeChecked,
   // // @ts-expect-error Incompatibility
   // tseslint.configs.stylisticTypeChecked,
   {
@@ -27,24 +41,44 @@ export default defineConfig([
           // allowDefaultProject: ["*.js"],
           projectFolderIgnoreList:  ["**/node_modules/**", "**/dist/**"],
         },
-        tsconfigRootDir: import.meta.dirname,
+        tsconfigRootDir: __dirname ?? import.meta.dirname,
       },
     },
   },
   {
     ...js.configs.recommended,
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
-    plugins: { js },
+    // plugins: { js },
+  },
+  {
+    files: ["**/*.{js,ts,jsx,tsx}"],
+    plugins: {
+      "react-hooks": pluginReactHooks
+    },
+    rules: {
+      "react-hooks/exhaustive-deps": "warn",
+      "@typescript-eslint/no-unused-vars": "warn",
+    }
   },
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     languageOptions: { globals: globals.node },
   },
   {
-    files: ["**/*.{js,mjs,cjs,mts,cts,ts,jsx,tsx,.d.ts,mdx,astro}"],
+    files: ["**/*.{ts,tsx,d.ts,cts}"],
     rules: {
-      "no-undef": "off",
-      "no-unused-vars": "off",
+      "no-redeclare": "off",
+    }
+  },
+  {
+    // files: ["**/*.{js,mjs,cjs,mts,cts,ts,jsx,tsx,d.ts,mdx}"],
+    files: ["**/*.{mts,cts,ts,tsx,d.ts,mdx}"],
+    parserOptions: {
+      extraFileExtensions: ['.mdx']
+    },
+    rules: {
+      "no-undef": "off",  // Not supported for Typescript
+      "no-unused-vars": "off",  // Use Typescript check instead
       "@typescript-eslint/no-explicit-any": "off",
       "prefer-const": "warn",
       "@typescript-eslint/only-throw-error": "warn",
@@ -53,11 +87,15 @@ export default defineConfig([
         {
           args: 'all',
           argsIgnorePattern: '^_',
+          vars: 'local', // or after-used?
           varsIgnorePattern: '^_',
           caughtErrors: 'all',
           caughtErrorsIgnorePattern: '^_',
           destructuredArrayIgnorePattern: '^_',
           ignoreRestSiblings: true,
+          // ignoreClassWithStaticInitBlock: true,
+          // ignoreUsingDeclarations: true,
+
         },
     ],
       "@typescript-eslint/no-unsafe-member-access": "warn",
@@ -124,9 +162,16 @@ export default defineConfig([
     languageOptions: {
       parser: pluginAstroParser,
       parserOptions: {
-        parser: "@typescript/eslint-parser",
-        extraFileExtensions: [".astro"],
-        project: "./tsconfig.json",
+        // project: "./tsconfig.json",
+        // parser: "@typescript/eslint-parser",
+        // parser: "@typescript-eslint/parser",
+        parser: pluginTSeslintParser,
+        extraFileExtensions: [".astro", ".mdx"],
+        projectService: {
+          allowDefaultProject: ["*.astro"],
+          projectFolderIgnoreList: ["**/node_modules/**", "**/dist/**"]
+        },
+        // project: "./tsconfig.json",
         tsconfigRootDir: __dirname,
         ecmaVersion: "latest",
         ecmaFeatures: {

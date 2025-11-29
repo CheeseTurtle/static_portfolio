@@ -15,7 +15,7 @@ export const BadgeRows = ({badgeRows, ...props}: BadgeRowsProps) => {
             (Object.keys(badgeRows) as BadgeType[]).map(badgeType => {
                 const badgeItems = badgeRows[badgeType];
                 if(badgeItems.size === 0) return null;
-                return <BadgeRow key={badgeType} badgeType={badgeType} badgeItems={badgeItems}/>;
+                return <BadgeRow key={badgeType} badgeType={badgeType} badgeItems={badgeItems} {...props}/>;
             })
         }
     </>

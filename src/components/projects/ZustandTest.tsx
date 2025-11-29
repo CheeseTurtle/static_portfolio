@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {createStore, useStore, create} from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import { useStoreWithEqualityFn, createWithEqualityFn } from "zustand/traditional";
@@ -63,7 +64,7 @@ const createBearStoreInitializer: InitializerFnCreator<BearState, BearProps> = (
         addBear(name) {
             const names = get().bear_names;
             if(names.has(name))
-                throw 'Bear name "' + name + "' is already taken."
+                throw Error('Bear name "' + name + "' is already taken.")
             const names1 = names.add(name);
             const num_bears = get().num_bears;
             set({bear_names: names1, num_bears: num_bears + 1});
@@ -75,12 +76,12 @@ const createBearStoreInitializer: InitializerFnCreator<BearState, BearProps> = (
                 const val = bear_names.values().next();
                 name = val.value;
                 if(name === undefined)
-                    throw 'There are no bears to remove.';
+                    throw Error('There are no bears to remove.');
             } else if(!bear_names.has(name)) {
-                throw `There is no bear named "${name}".`;
+                throw Error(`There is no bear named "${name}".`);
             }
             if(!bear_names.delete(name))
-                throw `Deletion of bear name "${name}" failed.`;
+                throw Error(`Deletion of bear name "${name}" failed.`);
             set({bear_names, num_bears: num_bears - 1});
             return name;
         }
@@ -146,7 +147,7 @@ const createComputedBearStoreInitializer: InitializerFnCreator<ComputedBearState
         addBear(name) {
             const names = get().bear_names;
             if(names.includes(name))
-                throw 'ComputedBear name "' + name + "' is already taken."
+                throw Error('ComputedBear name "' + name + "' is already taken.");
             set({bear_names: [...names, name]});
         },
 
@@ -154,10 +155,10 @@ const createComputedBearStoreInitializer: InitializerFnCreator<ComputedBearState
             const {bear_names} = get();
             if(name === undefined) {
                 if(!bear_names.length)
-                    throw 'There are no bears to remove.';
+                    throw Error('There are no bears to remove.');
                 name = bear_names[0];
             } else if(!bear_names.includes(name)) {
-                throw `There is no bear named "${name}".`;
+                throw Error(`There is no bear named "${name}".`);
             }
             set({bear_names: bear_names.filter(x=>x!==name)});
             return name;
@@ -245,18 +246,24 @@ const ZustandTest = () => {
     // useDebugValue(numBears, (value)=>`Number of bears: ${value}`);
     const numBearsComputed = useComputedBearStore_create(s=>s.num_bears);
 
-    const canDeleteBear = useMemo(()=>selectRef.current && selectRef.current.selectedOptions.length, [selectRef.current, selectRef.current?.selectedOptions.length]);
-    const canAddBear = useMemo(()=>inputRef.current, [inputRef.current])
+
+    const select = selectRef.current;
+    const input = inputRef.current;
+
+    // const canDeleteBear = useMemo(()=>select && select.selectedOptions.length, [select, select?.selectedOptions.length]);
+    const canDeleteBear = select && select.selectedOptions.length;
+    const canAddBear = input && Boolean(input.value) && input.value.trim().length > 0
+    // const canAddBear = useMemo(()=>input, [input])
 
     return <div id="zustand-test" className="flex-col">
         <div><label>Num bears: {numBears}</label></div>
         <div><label>Num bears (computed): {numBearsComputed}</label></div>
         <div className="flex-col">
             <BearList selectRef={selectRef}></BearList>
-            <button className="hover:bg-amber-700 active:bg-amber-500 disabled:bg-gray-600 bg-amber-900" onClick={deleteBear}>Delete bear</button>
+            <button className="hover:bg-amber-700 active:bg-amber-500 disabled:bg-gray-600 bg-amber-900" onClick={deleteBear} disabled={!canDeleteBear}>Delete bear</button>
             <div className="flex-row">
                 <label>Bear name: </label><input ref={inputRef} className="border-accent-foreground bg-accent"></input>
-                <button className="hover:bg-amber-700 active:bg-amber-500 disabled:bg-gray-600 bg-amber-900" onClick={addBear}>Add bear</button>
+                <button className="hover:bg-amber-700 active:bg-amber-500 disabled:bg-gray-600 bg-amber-900" onClick={addBear} disabled={!canAddBear}>Add bear</button>
             </div>
         </div>
     </div>;

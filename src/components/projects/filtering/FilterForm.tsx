@@ -1,18 +1,17 @@
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode } from "react";
+import { forwardRef, useCallback, useMemo, type ReactNode } from "react";
 import type { FilterSheetProps } from "./FilterSheet";
 // import { Accordion, AccordionContent, AccordionHeader, AccordionItem, AccordionTrigger } from "@radix-ui/react-accordion";
 import TagFilterSection from "./sections/TagFilterSection";
 // import {Slider} from "@/components/ui/slider";
 import YearSlider from "@/components/projects/filtering/sections/YearSlider";
 import { cn } from "@/lib/utils";
-import type { FilterAction, FilterRangeInfo, FilterState } from "./common/filterTypes";
-import type { ProjectData, ProjectInfo } from "../types";
-import { doubleEq, tripleEq, useBrowserContext, useBrowserStore, useFilterContext, useFilterContextItems, type BrowserStore } from "./common/browserContext";
-import { Button } from "@/components/ui/button";
+import type { ProjectInfo } from "../types";
+import { useBrowserContext, useFilterContext } from "./common/browserContext";
 import { FilterField } from "./common/stores/filterStore";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import ResetButton from "./common/ResetButton";
-import { Toggle } from "@/components/ui/toggle";
+import YearValue from "./sections/YearValue";
+import { URLSyncFlag } from "./common/stores/browserStore";
 
 // type SliderProps = React.ComponentProps<typeof Slider>;
 
@@ -26,6 +25,7 @@ type FilterFormProps = {
     // browserStore: BrowserStore,
 } & FilterSheetProps;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface FilterFormHandle {};
 
 // type CompareYearRanges = {
@@ -36,7 +36,9 @@ export interface FilterFormHandle {};
         
 // };
 
-const compareYearRanges = (minYear: number, maxYear: number, a: [number | null, number | null] | null, b: [number | null, number | null] | null): boolean => {
+
+// TODO: Move to comparison file
+export const compareYearRanges = (minYear: number, maxYear: number, a: [number | null, number | null] | null, b: [number | null, number | null] | null): boolean => {
      if(!(a || b)) return true;
     const [aHasMin, aHasMax] = a ? [
         a[0] === null || a[0] === undefined || a[0] <= minYear,
@@ -76,18 +78,18 @@ type FilterFormSectionProps = {
 
 function FilterFormSection({filterField, headingExtra, children, resetFn, canReset}: FilterFormSectionProps) {
     const resetLabel = "Reset " + filterField;
-    return <div className={`filter-${filterField} space-y-0 mb-5`}>
-        <div className="space-y-1 inline-flex">
-            <div role="heading" aria-level={3} className="text-sm font-semibold">{filterField[0].toLocaleUpperCase() + filterField.slice(1)}</div>
+    return <section className={`filter-${filterField} space-y-0 mb-5`} aria-labelledby={`filter-${filterField}-heading`}>
+        <div className="space-y-1 inline-flex items-center gap-3">
+            <h3 id={`filter-${filterField}-heading`} className="text-sm font-semibold">{filterField[0].toLocaleUpperCase() + filterField.slice(1)}</h3>
             {headingExtra ?? null}
             <ResetButton disabled={!canReset} onClick={()=>resetFn()}>{resetLabel}</ResetButton>
         </div>
         {children}
-    </div>   
-}
+    </section>
+ }
 
 
-const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, ref) => {
+const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, _ref) => {
     
     // #region Set/Reset
     const setYear = useFilterContext(s=>s.setYear);
@@ -96,8 +98,11 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, ref) =>
     const resetFilter = useFilterContext(s=>s.resetFilter);
     const resetYear = useCallback((resetMin: boolean = true, resetMax: boolean = true)=>{
         const mask = (resetMin ? (resetMax ? FilterField.ALL_YEAR : FilterField.MIN_YEAR) : (resetMax ? FilterField.MAX_YEAR : null));
-        (mask !== null) && resetFilter({mask});
+        if (mask !== null) resetFilter({mask});
     }, [resetFilter]);
+
+    const setURLSyncFlag = useBrowserContext(s=>s.setURLSyncFlag);
+    // const getURLSyncFlag = useBrowserContext(s=>s.getURLSyncFlag);
     const resetCategories = useCallback(()=>resetFilter({mask: FilterField.CATEGORY}), [resetFilter]);
     const resetTags = useCallback((tagTypes?: TagType | TagType[]) => {
         resetFilter({mask: FilterField.TAG, tagTypes});
@@ -126,8 +131,15 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, ref) =>
     // #region Year slider
     const yearSlider = <YearSlider value={yearValue} min={props.rangeInfo.minYear} max={props.rangeInfo.maxYear} defaultValue={[props.rangeInfo.minYear, props.rangeInfo.maxYear]}
         // onValueChange={(value: [number, number]) => props.dispatch({type: 'SET_YEAR', payload: value})}
-        onValueChange={(value: [number, number])=> setYear(value)}
-        onValueCommit={(value: [number, number]) => console.log(value)}
+        onValueChange={(value: [number, number])=>{
+            console.log('value change:', value);
+            setURLSyncFlag(URLSyncFlag.SUSPEND, true);
+            setYear(value);
+        }}
+        onValueCommit={(value: [number, number]) => {
+            console.log('value commit:', value);
+            setURLSyncFlag(URLSyncFlag.DEFER, true);   
+        }}
         // vocab=""
         color='green'
         // minStepsBetweenThumbs={1}
@@ -151,7 +163,10 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, ref) =>
 
 
     return <>
-        <FilterFormSection filterField="year" resetFn={resetYear} canReset={canResetYear} headingExtra={<span>{year0 ?? props.rangeInfo.minYear} - {year1 ?? props.rangeInfo.maxYear}</span>}>
+
+        <FilterFormSection filterField="year" resetFn={resetYear} canReset={canResetYear} 
+            headingExtra={<YearValue minYear={year0} maxYear={year1} rangeMinYear={props.rangeInfo.minYear} rangeMaxYear={props.rangeInfo.maxYear}/>}
+        >
             {yearSlider}
         </FilterFormSection>
 

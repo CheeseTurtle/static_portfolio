@@ -6,12 +6,12 @@ import { useStoreWithEqualityFn } from "zustand/traditional";
 
 const CountStoreContext = React.createContext<CountStore | null>(null);
 
-export function CountStoreProvider({children}: React.PropsWithChildren<{}>) {
-    const browserStore = useBrowserStore();
-    const allProjects = useStore(browserStore, s=>s.allProjects);
+export function CountStoreProvider({children, ...props}: React.PropsWithChildren<Partial<CountStoreInitProps>>) {
+    const browserStore = props.browserStore ?? useBrowserStore();
+    const allProjects = props.allProjects ?? useStore(browserStore, s=>s.allProjects);
     const storeRef = React.useRef<CountStore>(null);
     if(!storeRef.current)
-        storeRef.current = createCountStore({allProjects, browserStore});
+        storeRef.current = createCountStore({browserStore, allProjects});
     return <CountStoreContext.Provider value={storeRef.current}>{children}</CountStoreContext.Provider>
 }
 

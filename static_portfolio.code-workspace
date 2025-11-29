@@ -91,7 +91,7 @@
 		"eslint.run": "onSave",
 		"emmet.showAbbreviationSuggestions": false,
 		"eslint.codeActionsOnSave.mode": "problems",
-		"eslint.enable": false,
+		"eslint.enable": true,
 		"tailwindCSS.files.exclude": [
 			"**/.git/**",
 			"**/node_modules/**",
@@ -101,5 +101,6 @@
 			"**/src/components/ui/**"
 		],
 		"omlet.showUnusedPropsWarnings": false,
+		"eslint.rules.customizations": [],
 	},
 }

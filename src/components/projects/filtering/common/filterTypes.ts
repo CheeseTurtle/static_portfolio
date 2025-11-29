@@ -1,9 +1,10 @@
 import type React from "react";
 import type { ProjectInfo, TagKey } from "../../types";
-import type { Dispatch, SetStateAction } from "react";
 
 export type TagType = ('lang' | 'topic' | 'skill');  // | 'concept');
 export const TAGTYPES: TagType[] = ['lang', 'skill', 'topic'];
+
+export const TAGKEYS: TagKey[] = ['languages','skills','topics'];
 
 export function getProjectKeyFromTagType(tt: TagType): TagKey {
     switch(tt) {
@@ -70,6 +71,7 @@ export type FilterAction =
   //   | { type: 'OPEN_PROJECT'; payload: { id?: string | undefined, changeCarouselState?: boolean }}
   | { type: 'INIT_FROM_URL'; payload: InitFromURL & {project?: string | null} }
   | { type: 'UPDATE_URL_PROJECT', payload: {projectId?: string | null, replace?: boolean} }
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   | { type: 'CLEAR_URL_PROJECT', payload?: {} }
 
 
@@ -90,7 +92,7 @@ export type FilterRangeInfo = {
 
 
 export function collectFilterRangeInfo(allProjects: ProjectInfo[]): FilterRangeInfo {
-    const langs: Set<string> = new Set(), topics: Set<string> = new Set(), concepts: Set<string> = new Set(), skills: Set<string> = new Set();
+    const langs: Set<string> = new Set(), topics: Set<string> = new Set(), /*concepts: Set<string> = new Set(),*/ skills: Set<string> = new Set();
     const categories: Set<string> = new Set();  //, audiences: Set<string> = new Set();
     let minYear: number | undefined;
     let maxYear: number | undefined;
@@ -109,7 +111,7 @@ export function collectFilterRangeInfo(allProjects: ProjectInfo[]): FilterRangeI
     });
 
     if(minYear === undefined || maxYear === undefined)
-        throw 'No projects, or no projects with years';
+        throw Error('No projects, or no projects with years');
 
     return {
         lang: langs, topic: topics, skill: skills, minYear, maxYear, categories, count
@@ -125,13 +127,13 @@ export function createFilterReducer(rangeInfo: FilterRangeInfo): FilterReducer {
         console.log('[filterReducer] Action:', action.type, action.payload);
         console.log('[filterReducer] Current state:', state);
         switch (action.type) {
-            case 'SET_YEAR':
+            case 'SET_YEAR': {
                 const minYear = (action.payload[0] > rangeInfo.minYear) ? action.payload[0] : undefined;
                 const maxYear = (action.payload[1] < rangeInfo.maxYear) ? action.payload[1] : undefined;
                 // console.log('payload:', action.payload, [minYear, maxYear]);
                     
                 return { ...state, year: (minYear === undefined && maxYear === undefined) ? undefined : [minYear, maxYear] };
-
+            }
             case 'TOGGLE_CATEGORY': {
                 const categories = new Set(state.categories);
                 if (categories.has(action.payload)) categories.delete(action.payload);
@@ -223,6 +225,7 @@ export function createFilterReducer(rangeInfo: FilterRangeInfo): FilterReducer {
                     urlProjectId: undefined,
                 };
                 console.log('[filterReducer] CLEAR_URL_PROJECT new state:', newState);
+                return newState;
             }
 
             // case 'OPEN_PROJECT': {
@@ -240,3 +243,6 @@ export function createFilterReducer(rangeInfo: FilterRangeInfo): FilterReducer {
 
 
 
+
+export type ShowToastFn = (text: string) => void;
+export type ScrollToFn = (index: number, jump?: boolean) => void;

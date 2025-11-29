@@ -1,4 +1,4 @@
-import { SliderTooltip, type SliderTooltipProps, SliderTooltipContent, type SliderTooltipContentProps } from "./SliderTooltip";
+import { SliderTooltip, type SliderTooltipProps } from "./SliderTooltip";
 // import { Slider } from "@/components/ui/slider";
 
 
@@ -17,7 +17,7 @@ type YearSliderThumbProps = {
   tooltipRef?: React.RefObject<React.JSX.Element & React.ReactElement<SliderTooltipProps, typeof SliderTooltip>>
 };
 
-const YearSliderThumb = React.forwardRef(({ children, index, value, thumbRef, tooltipRef }: React.PropsWithChildren<YearSliderThumbProps>, ref) => {
+const YearSliderThumb = React.forwardRef(({ children, index, value: _value, thumbRef, tooltipRef }: React.PropsWithChildren<YearSliderThumbProps>, _ref) => {
 
   // const localTooltipRef = React.useRef<React.JSX.Element & React.ReactElement<SliderTooltipProps, typeof SliderTooltip>>(null);
   // const tooltipRef_ = React.useMemo(()=>tooltipRef ?? localTooltipRef, [tooltipRef, localTooltipRef]);
@@ -26,43 +26,6 @@ const YearSliderThumb = React.forwardRef(({ children, index, value, thumbRef, to
   const thumbRef_ = thumbRef ?? localThumbRef;
 
   const [tooltipOpen, setTooltipOpen] = React.useState<boolean | undefined>(undefined); // thumbRef_.current?.isSameNode(document.activeElement));
-
-  // const onFocusChange = React.useCallback((evt: FocusEvent, capture?: boolean)=>{
-  //   // const tooltip = tooltipRef_.current;
-  //   // if(!tooltip) return;
-  //   console.log(`Focus change (index: ${index}, capture: ${capture ?? false})`, evt, tooltip, thumbRef_.current);
-  // }, [index, thumbRef_, setTooltipOpen]);
-
-  // const onFocusChangeCapture = React.useCallback((evt: FocusEvent) => onFocusChange(evt, true), [onFocusChange]);
-
-
-  // React.useEffect(()=>{
-  //   const thumb = thumbRef_.current;
-  //   if(!thumb) return;
-  //   const opts: AddEventListenerOptions = {
-  //     passive: true,
-  //   }
-
-  //   thumb.addEventListener('focus', onFocusChange, opts);
-  //   for(const evtType of ['focus', 'focusin', 'focusout']) {
-  //   }
-  // }, [onFocusChange, onFocusChangeCapture, thumbRef_.current]);
-
-
-  // console.log(onFocusChange);
-
-  // React.useEffect(()=>{
-  //   const thumb = thumbRef_.current;
-  //   if(!thumb) return;
-  //   const activeElem = document.activeElement;
-  //   if(!activeElem) return;
-  //   if(activeElem.isSameNode(thumb))
-  //     setTooltipOpen(true)
-  //   else
-  //     setTooltipOpen(false);
-  // }, []);
-
-  // console.log('Slider tooltip', index, tooltipOpen);
 
   const [hasFocus, setHasFocus] = React.useState<boolean | undefined>(undefined);
   const [hasMouseFocus, setHasMouseFocus] = React.useState<boolean | undefined>(undefined);
@@ -80,14 +43,14 @@ const YearSliderThumb = React.forwardRef(({ children, index, value, thumbRef, to
       ref={thumbRef_}
       data-slot="slider-thumb"
       key={index}
-      onMouseEnter={(evt)=>{
+      onMouseEnter={(_evt)=>{
         setHasMouseFocus(true);
       }}
-      onMouseLeave={(evt)=>{
+      onMouseLeave={(_evt)=>{
         setHasMouseFocus(false);
         setHasFocus(false);
       }}
-      onFocus={evt => {
+      onFocus={_evt => {
         // console.log('Focused', evt);
         setHasFocus(true);
         setTooltipOpen(true);
@@ -128,28 +91,33 @@ function YearSlider({
     [value, defaultValue, min, max]
   )
 
+  const descId = "year-slider-desc";
+
   return (
     <div className="min-w-1.5 w-full flex flex-col grow space-y-2 data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-1.5 ">
       {/* Min/Max Labels Row */}
-      <div className="flex justify-between text-sm text-muted-foreground px-0.5 w-[60%] pointer-events-none select-none">
-        <span className="pointer-events-none select-none">{min}</span>
-        <span className="pointer-events-none select-none">{max}</span>
+      <div id={descId} className="flex justify-between text-sm text-muted-foreground px-0.5 w-[60%] pointer-events-none select-none">
+        <span className="pointer-events-none select-none" aria-hidden="true">{min}</span>
+        <span className="pointer-events-none select-none" aria-hidden="true">{max}</span>
       </div>
-
+ 
       {/* Slider row */}
       <SliderPrimitive.Root
-        data-slot="slider"
-        defaultValue={defaultValue}
-        value={value}
-        min={min}
-        max={max}
-        className={cn(
-          "relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col",
-          "grid-row-2",
-          className
-        )}
-        {...props}
-      >
+        role="group"
+        aria-label="Year range"
+        aria-describedby={descId}
+         data-slot="slider"
+         defaultValue={defaultValue}
+         value={value}
+         min={min}
+         max={max}
+         className={cn(
+           "relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col",
+           "grid-row-2",
+           className
+         )}
+         {...props}
+       >
         <SliderPrimitive.Track
           data-slot="slider-track"
           className={cn(
@@ -164,14 +132,13 @@ function YearSlider({
           />
         </SliderPrimitive.Track>
         {Array.from({ length: _values.length }, (_, index) => (
-          <YearSliderThumb key={index} value={value} index={index}>{value?.[index]}</YearSliderThumb>
+          <YearSliderThumb key={index} value={value} index={index} aria-label={`Year ${index === 0 ? 'minimum' : 'maximum'}`}>{value?.[index]}</YearSliderThumb>
         ))}
-      </SliderPrimitive.Root>
-    </div>
-  )
-}
-
-
+       </SliderPrimitive.Root>
+     </div>
+   )
+ }
+ 
 type YearSliderProps = React.CustomComponentPropsWithRef<typeof YearSlider>;
 
 export { YearSlider, type YearSliderProps };

@@ -9,7 +9,7 @@ import {
   type TagType,
 } from "../filterTypes";
 import type { ProjectInfo, TagKey } from "@/components/projects/types";
-import { Value } from "@radix-ui/react-select";
+// import { Value } from "@radix-ui/react-select";
 
 
 export enum FilterField {
@@ -128,7 +128,7 @@ export function canApplyFilter(spec: Partial<FilterDataProps> & Pick<FilterDataP
     }
     if(spec.categories?.size && !spec.categories.has(p.category)) return false;
     if(spec.tags) {
-      if(Object.entries(spec.tags).some(([tagType, tags]) => tags?.size && [...tags].some(tag=>!((p.tags as Record<TagKey, Set<string>>)[(tagType as TagKey)] as Set<string>).has(tag))))
+      if(Object.entries(spec.tags).some(([tagType, tags]) => tags?.size && [...tags].some(tag=>!((p.tags)[(tagType as TagKey)]).has(tag))))
         return false;
     }
     return true;
@@ -163,11 +163,12 @@ export const createFilterStore = (
     // addBear: () => set((state) => ({ bears: ++state.bears })),
 
     setTagMode(tagType, mode) {
-      console.log(`Setting ${tagType} mode to:`, mode);
+      // console.log(`Setting ${tagType} mode to:`, mode);
       set({tagModes: {...get().tagModes, [tagType]: mode}});
     },
+    
     setYear: (value) =>
-      set((state) => {
+      set((_state) => {
         if (value === undefined) return {};
         if (value === null) return { year: null };
         const minYear =
@@ -186,8 +187,6 @@ export const createFilterStore = (
               : [minYear, maxYear],
         };
       }),
-
-
 
     setCategories: (value: string[]) => set(state=>{
       const oldSize = state.categories.size;
@@ -218,19 +217,6 @@ export const createFilterStore = (
           ...spec
         }, projects
       );
-      // return projects.filter(p=>{
-      //   if(spec.year && (spec.year[0] !== null || spec.year[1] !== null)) {
-      //     const year = p.date.getFullYear();
-      //     const [minYear, maxYear] = spec.year;
-      //     if((minYear !== null && year < minYear) || (maxYear !== null && year > maxYear)) return false;
-      //   }
-      //   if(spec.categories?.size && !spec.categories.has(p.category)) return false;
-      //   if(spec.tags) {
-      //     if(Object.entries(spec.tags).some(([tagType, tags]) => tags?.size && [...tags].some(tag=>!((p.tags as Record<TagKey, Set<string>>)[(tagType as TagKey)] as Set<string>).has(tag))))
-      //       return false;
-      //   }
-      //   return true;
-      // });
     },
 
     canApplyFilter(spec, projects): boolean {
@@ -242,7 +228,7 @@ export const createFilterStore = (
         }
         if(spec.categories?.size && !spec.categories.has(p.category)) return false;
         if(spec.tags) {
-          if(Object.entries(spec.tags).some(([tagType, tags]) => tags?.size && [...tags].some(tag=>!((p.tags as Record<TagKey, Set<string> | undefined>)[(tagType as TagKey)] as Set<string> | undefined)?.has(tag))))
+          if(Object.entries(spec.tags).some(([tagType, tags]) => tags?.size && [...tags].some(tag=>!((p.tags as Record<TagKey, Set<string> | undefined>)[(tagType as TagKey)])?.has(tag))))
             return false;
         }
         return true;
@@ -276,7 +262,7 @@ export const createFilterStore = (
         // const tags = { ...state.tags, [tagType]: new Set(state.tags?.[tagType] ?? []) };
         const tags = state.tags;
         const tagSet = tags?.[tagType];
-        let newTagSet = new Set<string>(tagSet);
+        const newTagSet = new Set<string>(tagSet);
         if (tagSet !== undefined && tagSet.has(tagText)) {
           if (active === true) return {};
           newTagSet.delete(tagText);
@@ -291,7 +277,7 @@ export const createFilterStore = (
         // //   tags[tagType] = new Set<string>([tagText]);
         else newTagSet.add(tagText);
 
-        console.log(`Setting ${tagType} tags to:`, newTagSet);
+        // console.log(`Setting ${tagType} tags to:`, newTagSet);
         
         return { tags: {...(tags ?? {lang: new Set(), skill: new Set(), topic: new Set()}), [tagType]: newTagSet } };
       }),

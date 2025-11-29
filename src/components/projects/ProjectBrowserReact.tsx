@@ -1,32 +1,31 @@
-import React, { forwardRef, StrictMode, useCallback, useEffect, useEffectEvent, useImperativeHandle, useInsertionEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react"
-import ProjectGrid from "./grid/ProjectGrid";
+import React, { forwardRef, StrictMode, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type RefObject } from "react"
+import ProjectGrid, { type ProjectGridHandle } from "./grid/ProjectGrid";
 // import ProjectCarousel from "./overlay/ProjectCarousel";
 import ProjectCarouselDialog from "./overlay/ProjectCarouselDialog";
-import type { ProjectInfo, TagKey } from "./types";
-import FilterSheet, { type FilterSpec } from "./filtering/FilterSheet";
+import type { ProjectInfo } from "./types";
 import parse from "html-react-parser";
 // import { FilterProvider, useFilter } from "./filtering/common/filterContext";
-import { collectFilterRangeInfo, getProjectKeyFromTagType, TAGTYPES, type FilterRangeInfo, type FilterState, type TagType } from "./filtering/common/filterTypes";
+import { collectFilterRangeInfo, TAGKEYS, TAGTYPES, type FilterRangeInfo, type FilterState, type ScrollToFn, type ShowToastFn } from "./filtering/common/filterTypes";
 // import { FilterURLSync, parseURL, ProjectURLSync, useInitializeFilterFromURL, useInitializeFromURL } from "./filtering/sync";
 import AlertToast from "./toasts";
 
-import {shallow} from "zustand/shallow";
-import { BrowserStoreProvider, doubleEq, useBrowserContext, useFilterContext, type ScrollToFn, type ShowToastFn } from "./filtering/common/browserContext";
+import { BrowserStoreProvider, useBrowserContext, useFilterStore } from "./filtering/common/browserContext";
 import { toast } from "sonner";
 import FilterForm from "./filtering/FilterForm";
 import {useScrollSentinel, useValueChangeWatcher} from "./scrolling";
-import { Accordion } from "../ui/accordion";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CountStoreProvider } from "./filtering/common/stores/countStoreContext";
+import { CountStoreProvider, useCountContext } from "./filtering/common/stores/countStoreContext";
+import ErrorBoundary from "@/hooks/ErrorBoundary";
+import { useDomReady } from "@/hooks/use-dom-ready";
+import type { FilterStoreState } from "./filtering/common/stores/filterStore";
 
 
 type ProjectBrowserProps = {
     projects: ProjectInfo[],
     contentString?: string,
     children?: {props?: {value: string}},
-    showToast: ShowToastFn,
 } & React.ComponentProps<'div'>;
 
 
@@ -49,7 +48,7 @@ function isEquivalentSet(s1: Set<any>, s2: Set<any>): boolean {
     return (s1.size === s2.size) && [...s1].every(x=>s2.has(x));
 }
 
-function isEquivalentFilterState(s1: FilterState, s2: FilterState, includeOpenProject: boolean = false): boolean {
+export function isEquivalentFilterState(s1: FilterState, s2: FilterState, includeOpenProject: boolean = false): boolean {
     if(includeOpenProject && (s1.openProjectId !== s2.openProjectId)) return false;
 
     if((s1.year === undefined) || (s1.year[0] === undefined && s1.year[1] === undefined)) {
@@ -72,9 +71,17 @@ function isEquivalentFilterState(s1: FilterState, s2: FilterState, includeOpenPr
     return true;
 }
 
+function anyFilter(){
+    const params = new URLSearchParams(window.location.search);
+    if(!params.size) return false;
+    return ['year','category',...TAGTYPES].some((k)=>params.has(k));
+}
+
 const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps & {
-    filterRangeInfo: FilterRangeInfo
-}>(({ children, filterRangeInfo, contentString, showToast }, ref) => {
+    filterRangeInfo: FilterRangeInfo, scrollToRef: RefObject<ScrollToFn | undefined>, scrollTo: ScrollToFn, scrollContainer: RefObject<any>,
+    showToast: ShowToastFn,
+
+}>(({ children, projects, filterRangeInfo, contentString, showToast, scrollToRef, scrollTo, scrollContainer }, _ref) => {
     console.log('[ProjectBrowserInner] Render start', {
         url: window.location.href,
         search: window.location.search,
@@ -99,12 +106,12 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
     // const sheetOpen = useBrowserContext(s => s.sheetOpen);
     
     // Get actions from stores
-    const setActiveProjectIndex = useBrowserContext(s => s.setActiveProjectIndex);
+    // const setActiveProjectIndex = useBrowserContext(s => s.setActiveProjectIndex);
     // const clickItem = useBrowserContext(s => s.clickItem);
-    const setCarouselOpen = useBrowserContext(s => s.setCarouselOpen);
+    // const setCarouselOpen = useBrowserContext(s => s.setCarouselOpen);
     // const onCarouselOpenChange = useBrowserContext(s=>s.onCarouselOpenChange);
     // const setSheetOpen = useBrowserContext(s => s.setSheetOpen);
-    const getIndexForId = useBrowserContext(s => s.getIndexForId);
+    // const getIndexForId = useBrowserContext(s => s.getIndexForId);
 
     // // useEffect(()=>{
     // console.log('[ProjectBrowserInner] State:', {
@@ -161,6 +168,10 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
 
 
     const clearActiveItem = useBrowserContext(s=>s.clearActiveItem);
+
+    // const {current} = useAutoScroll(true, [], {});
+
+    // const [scrollState, scrollToFn] = useWindowScroll();
 
     useEffect(()=>{
         const handler = (evt: MouseEvent) => {
@@ -236,38 +247,57 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
     });
 
 
-    // const scrollHandler = useCallback((evt: Event) => {
-    //     // explicitOriginalTarget = originalTarget = target = srcElement = div#root
-    //     if(!(evt?.target instanceof HTMLDivElement && evt.target.id === "root")) return;
-    //     // console.log(evt);
-    //     // console.log(window.screenTop, window.scrollY);
-    //     console.log(evt.target.scrollTop, evt.target.clientTop, evt.target.offsetTop);
-    //     console.log(evt.target.scrollTop + evt.target.scrollHeight, window.innerHeight, window.screenTop)
-    // }, []);
-
-    // useEffect(()=>{
-    //     const opts: AddEventListenerOptions = {capture: true};
-    //     window.addEventListener('scroll', scrollHandler, opts);
-
-    //     return () => window.removeEventListener('scroll', scrollHandler, opts);
-    // }, []);
-
     
-    // const container = document.getElementById('root');
-    const {inView, sentinelRef} = useScrollSentinel(null, 0, true, '-15% 0px 0px 0px');
+    // const {inView, sentinelRef} = useScrollSentinel(null, 0, true, '-15% 0px 0px 0px');
 
-    const formRef = useRef<HTMLDivElement>(null);
-    // const sheetContentRef = useRef<HTMLDivElement>(null);
-    // const sheetTriggerRef = useRef<HTMLButtonElement>(null);
-    const onInViewChange = useCallback((value: boolean, prev: boolean)=> {
-        console.log('In view change:', prev, value);
-    }, []);
+    // // const sheetContentRef = useRef<HTMLDivElement>(null);
+    // // const sheetTriggerRef = useRef<HTMLButtonElement>(null);
+    // const onInViewChange = useCallback((value: boolean, prev: boolean)=> {
+        //     console.log('In view change:', prev, value);
+        // }, []);
+        
+        // useValueChangeWatcher<boolean, boolean>(inView, onInViewChange, {});
+        
+        const formRef = useRef<HTMLDivElement>(null);
+    const gridRef = useRef<ProjectGridHandle>(null);
+    
 
-    useValueChangeWatcher<boolean, boolean>(inView, onInViewChange, {});
+    useEffect(()=>{
+        scrollToRef.current = gridRef.current?.scrollToItem;
+        // console.log(gridRef, scrollToRef);
+    });
 
-    const [filterExpanded, setFilterExpanded] = useState<boolean>(false);
 
-     return <>
+    const initiallyHasFilter = useMemo(()=>anyFilter(), []);
+    const [filterExpanded, setFilterExpanded] = useState<boolean>(initiallyHasFilter);
+    const [domReady, setDomReady] = useState<boolean>(false);
+    useDomReady(()=>{
+        setDomReady(true);
+    });
+    
+    
+    const _updateCounts = useCountContext(s=>s._updateCounts);
+    const updateCounts = useEffectEvent((filterState: FilterStoreState)=>{
+        _updateCounts(visibleProjects, filterState.tagModes, filterState);
+    });
+    const countsUpdated = useRef<boolean>(false);
+    const filterStore = useFilterStore();
+    // const initiallyVisibleProjects = useMemo(()=>visibleProjects, []);
+    // const allProjects = useBrowserContext(s=>s.allProjects);
+    useEffect(()=>{
+        if(domReady && initiallyHasFilter && !countsUpdated.current) {
+            // useBrowserContext(s=>s._refilterProjects)
+            console.log('UPDATING COUNTS');
+            const filterState = filterStore.getState();
+            // updateCounts(initiallyVisibleProjects, filterState.tagModes, filterState);
+            updateCounts(filterState);
+            countsUpdated.current = true;
+        }
+    }, [initiallyHasFilter, domReady, filterStore]);
+
+
+    // throw Error('help');
+    return <>
         {/* <FilterSheet 
             contentRef={sheetContentRef}
             triggerRef={sheetTriggerRef}
@@ -278,16 +308,18 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
             registeredResets={registeredResets}
             // browserStore={store}
             /> */}
-            <h1 className="text-3xl font-black align-middle self-center justify-self-center justify-center text-center w-full p-10 ">Projects</h1>
+            <h1 className="text-3xl font-black align-middle self-center justify-self-center justify-center text-center w-full xl:p-10 md:p-2 sm:p-1 p-0">Projects</h1>
             <Collapsible open={filterExpanded} onOpenChange={setFilterExpanded} ref={formRef} asChild>
-                <div className="flex-col flex ml-30 mr-30 bg-linear-to-tr from-gray-900 to-gray-800 rounded-lg p-0">
+                <div className="flex-col flex max-w-2xl min-w-xl mx-auto  bg-linear-to-tr from-gray-900 to-gray-800 rounded-lg p-0"> 
+                    {/* xl:mx-30 lg:mx-20 md:mx-10 sm:mx-5 mx-2 */}
                     <CollapsibleTrigger asChild>
-                        <div className="text-popover-foreground text-lg font-bold justify-center w-full items-center content-center align-middle text-center p-10 select-none cursor-pointer">
+                        <div className="text-popover-foreground text-lg font-bold justify-center w-full items-center content-center align-middle text-center p-10 select-none cursor-pointer relative">
                             <div role="heading" aria-level={2}>Filters</div>
+                            {/* <FilterShareButton className="right-0 top-0 absolute cursor-pointer"/> */}
                         </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent asChild>
-                        <div className="pt-0 p-10 w-full CollapsibleContent">
+                        <div className="pt-0 p-10 w-full CollapsibleContent relative">
                             <FilterForm inSheet={false} projects={visibleProjects} rangeInfo={filterRangeInfo} registerReset={registerReset} registeredResets={registeredResets} resetAll={resetAll}></FilterForm>
                         </div>
                     </CollapsibleContent>
@@ -296,17 +328,18 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
                             <ChevronDown size={40} className={cn("relative flex tansition-all duration-300", filterExpanded ? 'rotate-180' : 'rotate-0')}></ChevronDown>
                         </div>
                     </CollapsibleTrigger>
-                    <div ref={sentinelRef} className="h-0 w-full"></div>
+                    {/* <div ref={sentinelRef} className="h-0 w-full"></div> */}
                 </div>
             </Collapsible>
-            <div className="mt-5">
-                <div>
+            <div className="mt-5 overflow-y-visible">
+                <div className="pl-4 pr-4">
                     Showing {visibleProjects.length} project(s) matching the current filter.
                 </div>
-                <ProjectGrid />
+                <ProjectGrid ref={gridRef} scrollContainer={scrollContainer} />
             </div>
         <ProjectCarouselDialog 
             showToast={showToast}
+            scrollTo={scrollTo}
             contentElements={contentElements}
         />
     </>;
@@ -326,8 +359,9 @@ export default function ProjectBrowser({children, projects, contentString}: Proj
         // setTimeout(() => setToastMessage(null), 5000);
     }, []);
 
+
     const scrollTo = React.useCallback<ScrollToFn>((index: number, jump?: boolean) => {
-        console.log('[ScrollTo]', index, jump);
+        console.log('[ScrollTo]', index, jump, scrollToRef);
         // Implement your scroll logic here
         // This might involve scrolling the grid to bring the item at `index` into view
         scrollToRef.current?.(index, jump);
@@ -340,23 +374,30 @@ export default function ProjectBrowser({children, projects, contentString}: Proj
         {/* <StrictMode> */}
             <AlertToast></AlertToast>
             {/* <AlertToast message={toastMessage} onClose={() => setToastMessage(null)} /> */}
-            <BrowserStoreProvider 
-                allProjects={projects}
-                filterRangeInfo={filterRangeInfo}
-                showToast={showToast}
-                scrollTo={scrollTo}
-            >
-                <CountStoreProvider>
-                    <ProjectBrowserInner 
-                        filterRangeInfo={filterRangeInfo} 
-                        projects={projects} 
-                        contentString={contentString}
-                        showToast={showToast}
-                    >
-                        {children}
-                    </ProjectBrowserInner>
-                </CountStoreProvider>
-            </BrowserStoreProvider>
+            <ErrorBoundary displayName="myBoundary" callback={(err: Error) => {
+                console.error(err, err.cause, err.message, err.name, err.stack);
+            }}>
+                <BrowserStoreProvider 
+                    allProjects={projects}
+                    filterRangeInfo={filterRangeInfo}
+                    showToast={showToast}
+                    scrollTo={scrollTo}
+                >
+                    <CountStoreProvider>
+                        <ProjectBrowserInner 
+                            filterRangeInfo={filterRangeInfo} 
+                            projects={projects} 
+                            contentString={contentString}
+                            showToast={showToast}
+                            scrollTo={scrollTo}
+                            scrollToRef={scrollToRef}
+                            scrollContainer={scrollContainer}
+                        >
+                            {children}
+                        </ProjectBrowserInner>
+                    </CountStoreProvider>
+                </BrowserStoreProvider>
+            </ErrorBoundary>
         {/* </StrictMode> */}
         </div>
     </>;

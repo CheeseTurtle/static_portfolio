@@ -1,5 +1,5 @@
-import { useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { SkillBadge, ConceptBadge, LangBadge, TopicBadge, type BadgeType, getBadgeConstructor } from "./badgeTypes";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { /*SkillBadge, ConceptBadge, LangBadge, TopicBadge,*/ type BadgeType, getBadgeConstructor } from "./badgeTypes";
 type BadgeRowProps = React.ComponentProps<"div"> & {badgeType: BadgeType, badgeItems: Set<string>}
 
 export const BadgeRow = ({badgeType, badgeItems, ...props}: BadgeRowProps) => {

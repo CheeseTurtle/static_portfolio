@@ -1,14 +1,14 @@
 // import { Tooltip } from "@/components/ui/tooltip";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
-import React, { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+// import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
+import React, { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
-import { ClipboardCopyIcon, CopyCheckIcon, CopyIcon, FunnelIcon } from "lucide-react";
+import { /*ClipboardCopyIcon,*/ CopyCheckIcon, CopyIcon, FunnelIcon } from "lucide-react";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Button } from "@/components/ui/button";
-import { useFilterContext, type ShowToastFn } from "@/components/projects/filtering/common/browserContext";
+import type { ShowToastFn } from "@/components/projects/filtering/common/filterTypes";
 // import { useMediaQuery } from "@/hooks/use-media-query";
 
 
@@ -67,16 +67,16 @@ export function ShareButton({showToast, openProjectId, hovercardProps, triggerPr
     const [urlChanged, setURLChanged] = useState<boolean>(false);
 
     const doCopy = useCallback(()=>{
-        copy(URLtoCopy.current).then(v=>{
-            if(v) {
-                setURLChanged(false);
-                showToast('Copied to clipboard.');
-                // setTimeout(()=>{
-                //     setURLChanged(true);
-                // }, 1000);
-            } else showToast('Failed to copy to clipboard!');
+        void copy(URLtoCopy.current).then(()=>{
+            setURLChanged(false);
+            showToast('Copied to clipboard.');
+            // setTimeout(()=>{
+            //     setURLChanged(true);
+            // }, 1000);
+        }).catch((reason)=>{
+            showToast(`Failed to copy to clipboard! (reason: ${reason})`);
         });
-    }, [showToast]);
+    }, [showToast, copy]);
 
 
 
@@ -107,9 +107,11 @@ function ShareCard({children, contentProps, triggerProps, copy, isCopied, showTo
         return true;
     });
 
+    const setURLChanged_ = useEffectEvent(setURLChanged);
+
     useEffect(()=>{
         if(handleURLParamsChange(includeFilters, openProjectId)) {
-            setURLChanged(true);
+            setURLChanged_(true);
         }
     }, [includeFilters, openProjectId]);
 
@@ -121,7 +123,7 @@ function ShareCard({children, contentProps, triggerProps, copy, isCopied, showTo
         <HoverCardTrigger {...triggerProps} asChild>{children}</HoverCardTrigger>
         <HoverCardContent {...contentProps} className="w-max">
             <ButtonGroup>
-                <Button onClick={doCopy}>
+                <Button onClick={doCopy} ref={buttonRef}>
                     {(isCopied && !urlChanged) ? <CopyCheckIcon/> : <CopyIcon/>}
                 </Button>
                 <InputGroup className="w-max">
@@ -131,6 +133,7 @@ function ShareCard({children, contentProps, triggerProps, copy, isCopied, showTo
                     <InputGroupInput readOnly value={URLtoCopy.current}/>
                     <InputGroupAddon align="inline-end">
                         <InputGroupButton
+                            ref={toggleRef}
                             disabled={!anyFilters}
                             onClick={() => setIncludeFilters(!includeFilters)}
                             size="icon-xs"

@@ -1,9 +1,9 @@
 // src/content/config.ts
 import { defineCollection, z } from 'astro:content';
 import LazyTextFileInstance from '../utils/textloader';
-import type { Loader, DefaultObjectPromise } from '../components/story/util/types/types';
-import type { ImageInputFormat } from 'astro';
-import { glob } from 'astro/loaders';
+// import type { Loader, DefaultObjectPromise } from '../components/story/util/types/types';
+// import type { ImageInputFormat } from 'astro';
+// import { glob } from 'astro/loaders';
 // import { imageMetadata } from 'astro/assets/utils';
 
 
@@ -59,12 +59,13 @@ const fileNameExtractionRegex = /(?<=\/|^)[^/.]+(?=\.(?:txt|md)$)/;
 function extractFileName(filePath: string): string {
   const match = fileNameExtractionRegex.exec(filePath)
   if(match === null)
-    throw `Invalid filepath/name: '${filePath}'`;
+    throw Error(`Invalid filepath/name: '${filePath}'`);
   return match[0];
 }
 
 const loremIpsumCollection = defineCollection({
   type: 'content_layer',
+  // eslint-disable-next-line @typescript-eslint/require-await
   async loader(): Promise<Record<string, LazyTextFileInstance>> {
     const files = import.meta.glob<Record<string,any>>('/dev/lorem_ipsum/*.txt');
     const obj = Object.fromEntries(
@@ -89,39 +90,41 @@ const loremIpsumCollection = defineCollection({
     })
 });
 
-const imageInputFormats = z.union(
-  [z.literal<string>("svg"), z.literal<string>("jpeg"),
-  z.literal<string>("jpg"),z.literal<string>("png"),z.literal<string>("tiff"),z.literal<string>("webp"),
-  z.literal<string>("gif"),z.literal<string>("avif")]);
 
-const imageLoaderSchema = z.function(
-  z.tuple([]),
-  z.promise(
-    z.object({
-      default: z.object({
-        src: z.string(),
-        width: z.number(),
-        height: z.number(),
-        format: imageInputFormats,
-        orientation: z.optional(z.string()),
-      }),
-    })
-  )
-  // z.instanceof <typeof Promise<DefaultObjectPromise<ImageMetadata>>>(
-  //     Promise<DefaultObjectPromise<ImageMetadata>>
-  // )
-);
 
-// const backdropImageCollection = defineCollection({
-//   schema: z.object({
-//     id: z.string(),
-//     imageLoaderSchema,
-//   loader(): Record<string, ()=>Promise<{default:ImageMetadata}>> {
-//     const obj = Object.fromEntries(Object.entries(import.meta.glob<{default: ImageMetadata}>('/public/images/story/backdrop/*.{jpg,jpeg,png,gif}')));
-//     console.log(obj);
-//     return obj;
-//   },
-// });
+// const imageInputFormats = z.union(
+//   [z.literal<string>("svg"), z.literal<string>("jpeg"),
+//   z.literal<string>("jpg"),z.literal<string>("png"),z.literal<string>("tiff"),z.literal<string>("webp"),
+//   z.literal<string>("gif"),z.literal<string>("avif")]);
+
+// const imageLoaderSchema = z.function(
+//   z.tuple([]),
+//   z.promise(
+//     z.object({
+//       default: z.object({
+//         src: z.string(),
+//         width: z.number(),
+//         height: z.number(),
+//         format: imageInputFormats,
+//         orientation: z.optional(z.string()),
+//       }),
+//     })
+//   )
+//   // z.instanceof <typeof Promise<DefaultObjectPromise<ImageMetadata>>>(
+//   //     Promise<DefaultObjectPromise<ImageMetadata>>
+//   // )
+// );
+
+// // const backdropImageCollection = defineCollection({
+// //   schema: z.object({
+// //     id: z.string(),
+// //     imageLoaderSchema,
+// //   loader(): Record<string, ()=>Promise<{default:ImageMetadata}>> {
+// //     const obj = Object.fromEntries(Object.entries(import.meta.glob<{default: ImageMetadata}>('/public/images/story/backdrop/*.{jpg,jpeg,png,gif}')));
+// //     console.log(obj);
+// //     return obj;
+// //   },
+// // });
 
 
 
@@ -131,8 +134,8 @@ const projectCollection = defineCollection({
     title: z.string(),
     date: z.union([z.string(), z.number(), z.date()]),
 
-    description: z.string().optional(),
-    summary: z.string().optional(),
+    description: z.string(),
+    summary: z.string(),
     
     category: z.string(),
     audience: z.string().optional(),
@@ -141,7 +144,10 @@ const projectCollection = defineCollection({
       skills: z.array(z.string()).optional(),
       topics: z.array(z.string()).optional(),
     }),
-    images: z.array(z.string()).optional(),
+    images: z.array(z.union([z.string(), z.tuple([z.string()]), z.tuple([z.string(), z.nullable(z.string()).optional()]), z.object({
+      path: z.string(),
+      caption: z.string().optional(),      
+    })])).optional()
   }),
 })
 

@@ -6,7 +6,7 @@ import "../../styles/projects.css";
 // import ProjectDialog from "./overlay/dialog";
 
 import ProjectBrowserReact from "./ProjectBrowserReact";
-import { ProjectInfo } from "./types";
+import type { ProjectInfo } from "./types";
 
 
 const props = Astro.props as {projects: ProjectInfo[]};
@@ -17,7 +17,7 @@ const html = rp ? await rp : undefined;
 // console.log(html);
 ---
 
-<ProjectBrowserReact projects={props.projects} contentString={html} client:only><slot/></ProjectBrowserReact>
+<ProjectBrowserReact projects={props.projects} contentString={html} client:only="react"><slot/></ProjectBrowserReact>
 
 <!-- <ProjectGrid projects={items} client:load/>
 <ProjectDialog client:only></ProjectDialog> -->

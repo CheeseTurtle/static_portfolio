@@ -1,17 +1,12 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Dispatch, type ReactNode } from "react";
+import { forwardRef, useCallback, useEffect, useMemo, useState } from "react";
 import type { TagType } from "../FilterForm";
-import type { FilterSpec } from "../FilterSheet";
-import TagButton from "../common/TagButton";
 import TagButtons from "../common/TagButtons";
-import type { FilterAction, FilterRangeInfo, FilterState } from "../common/filterTypes";
+import type { FilterRangeInfo } from "../common/filterTypes";
 import type { ProjectInfo } from "../../types";
-import { useFilterContext, useFilterStore } from "../common/browserContext";
+import { useFilterContext } from "../common/browserContext";
 import { shallow } from "zustand/shallow";
-import { Button } from "@/components/ui/button";
 import ResetButton from "../common/ResetButton";
-import { Toggle } from "@/components/ui/toggle";
-import { Switch } from "@/components/ui/switch";
-import { Ampersand } from "lucide-react";
+// import { Ampersand } from "lucide-react";
 import BoolSwitch from "./BoolSwitch";
 
 
@@ -67,9 +62,9 @@ interface TagFilterSectionHandle {
 
 
 
-const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProps>((props: TagFilterSectionProps, ref) => {
+const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProps>((props: TagFilterSectionProps, _ref) => {
 
-    const [singular, plural] = getSectionWords(props.tagType);
+    const [_singular, plural] = getSectionWords(props.tagType);
     
     const sectionTitle = plural.slice(0,1).toUpperCase() + plural.slice(1);
     
@@ -83,7 +78,7 @@ const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProp
         // if(!((a && a.size) || (b && b.size)))
         //     return true;
         if(a?.size && b?.size) {
-            return a.size === b.size && Array.prototype.every.call(a, (x=>b.has(x)));
+            return a.size === b.size && [...a].every(x=>b.has(x));
         }
         return !a?.size && !b?.size;
     })?.[props.tagType];
@@ -96,7 +91,7 @@ const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProp
     // const selectedTags = useMemo(()=>props.filterSpec.tags[props.tagType], [props.filterSpec.tags[props.tagType], props.tagType]);
 
     const toggleTag_ = useFilterContext(s=>s.toggleTag, shallow);
-    const toggleTag = useCallback((tagText: string) => toggleTag_(props.tagType, tagText), [props.tagType]);
+    const toggleTag = useCallback((tagText: string) => toggleTag_(props.tagType, tagText), [props.tagType, toggleTag_]);
 
     
     // return <div data-role='tag-filter-section' data-tag-type={props.tagType}>    

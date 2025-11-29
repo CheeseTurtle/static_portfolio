@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Button } from "@/components/ui/button";
 import {Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogFooter, DialogPortal, DialogTitle, DialogTrigger, DialogOverlay} from "@/components/ui/dialog";
 import { useState, type Dispatch, type ReactElement, type SetStateAction } from "react";

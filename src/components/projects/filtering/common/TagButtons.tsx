@@ -1,13 +1,17 @@
-import React, { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, type Dispatch, type ReactElement, type ReactNode, type Ref, type RefObject, type SetStateAction } from "react";
+import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import TagButton, { type TagButtonProps } from "./TagButton";
 import type { TagType } from "../FilterForm";
-import type { ProjectData, ProjectInfo } from "../../types";
+import type { ProjectInfo } from "../../types";
 import { getProjectKeyFromTagType } from "./filterTypes";
-import { useBrowserContext, useFilterContext } from "./browserContext";
 import { useCountContext } from "./stores/countStoreContext";
 
 import { Flip } from "gsap/Flip";
 import {gsap} from "gsap";
+import { useFlipAnimation } from "@/hooks/useFlip";
+import { useDomReady } from "@/hooks/use-dom-ready";
+import { useDebounceCallback } from "@/hooks/use-debounce-callback";
+import { useMounted } from "@/hooks/use-mounted";
+import { useIsFirstRender } from "@/hooks/use-is-first-render";
 
 type TagButtonsProps = {
     colorClassName?: string,
@@ -20,69 +24,71 @@ type TagButtonsProps = {
 };
 
 
-function moveToEnd(arr: string[], item: string): string[] {
-    const idx = arr.indexOf(item);
-    if(idx === -1 || idx === arr.length - 1) 
-        return arr; // No change!
-    arr.splice(idx, 1)
-    return arr.concat([item]);
-}
+// function moveToEnd(arr: string[], item: string): string[] {
+//     const idx = arr.indexOf(item);
+//     if(idx === -1 || idx === arr.length - 1) 
+//         return arr; // No change!
+//     arr.splice(idx, 1)
+//     return arr.concat([item]);
+// }
 
 
-function markSelected(pair: [string[], string[]], item: string): [string[], string[]] {
-    const [selected, unselected] = pair;
-    const idx = unselected.indexOf(item);
-    if(idx === -1) {
-        if(selected.includes(item)) // No change
-            return pair;
-        return [[...selected, item], unselected];
-    } else { // No change to selected
-        const arr = (idx > 0 ? unselected.slice(0, idx) : []);
-        const idx1 = idx + 1;
-        return [(selected.includes(item) ? selected : [...selected, item]), ((idx1 < unselected.length) ? arr.concat(unselected.slice(idx1)) : arr)];
-    }
-}
+// function markSelected(pair: [string[], string[]], item: string): [string[], string[]] {
+//     const [selected, unselected] = pair;
+//     const idx = unselected.indexOf(item);
+//     if(idx === -1) {
+//         if(selected.includes(item)) // No change
+//             return pair;
+//         return [[...selected, item], unselected];
+//     } else { // No change to selected
+//         const arr = (idx > 0 ? unselected.slice(0, idx) : []);
+//         const idx1 = idx + 1;
+//         return [(selected.includes(item) ? selected : [...selected, item]), ((idx1 < unselected.length) ? arr.concat(unselected.slice(idx1)) : arr)];
+//     }
+// }
 
 
-function* insertInSelectedBlock(tagBlock: string[], newTag: string, selectedTags?: Set<string> | undefined) {
-    if(!tagBlock.length) {
-        yield newTag;
-        return;
-    } else if(!selectedTags?.size) {
-        yield newTag;
-        for(const tag of tagBlock) {
-            if(tag !== newTag) yield tag;
-        }
-        return;
-    }
-    let yieldedNew: boolean = false; 
-    for(const tag of tagBlock) {
-        if(!yieldedNew) {
-            if(tag === newTag) {
-                yieldedNew = true;
-            } else if(!selectedTags.has(tag)) {
-                yield newTag;
-                yieldedNew = true;
-            }
-        } else if(tag === newTag)
-            continue;
-        yield tag;
-    }
-    if(!yieldedNew) yield newTag;
-}
+// function* insertInSelectedBlock(tagBlock: string[], newTag: string, selectedTags?: Set<string>) {
+//     if(!tagBlock.length) {
+//         yield newTag;
+//         return;
+//     } else if(!selectedTags?.size) {
+//         yield newTag;
+//         for(const tag of tagBlock) {
+//             if(tag !== newTag) yield tag;
+//         }
+//         return;
+//     }
+//     let yieldedNew: boolean = false; 
+//     for(const tag of tagBlock) {
+//         if(!yieldedNew) {
+//             if(tag === newTag) {
+//                 yieldedNew = true;
+//             } else if(!selectedTags.has(tag)) {
+//                 yield newTag;
+//                 yieldedNew = true;
+//             }
+//         } else if(tag === newTag)
+//             continue;
+//         yield tag;
+//     }
+//     if(!yieldedNew) yield newTag;
+// }
 
 
 
-export default function TagButtons(props: TagButtonsProps) {    
-    const tagKey = useMemo(()=>getProjectKeyFromTagType(props.tagType), [props.tagType]);
-    const availableTags = useMemo(() => Array.from(props.availableTags.values()), [props.availableTags]);
+export default function TagButtons({toggleTag: propsToggleTag, availableTags: availableTagsSet, selectedTags, tagType, registerReset, colorClassName}: TagButtonsProps) {    
+    const tagKey = useMemo(()=>getProjectKeyFromTagType(tagType), [tagType]);
+    const availableTags = useMemo(() => Array.from(availableTagsSet.values()), [availableTagsSet]);
 
-    gsap.registerPlugin(Flip);
+    useEffect(()=>{
+        gsap.registerPlugin(Flip);
+    }, []);
 
     // [selected tags, unselected tags]
     const [visualOrder, setVisualOrder] = useState<[string[],string[]]>([[],availableTags]);
 
-    const visibleProjects = useBrowserContext(s=>s.visibleProjects);
+    // const visibleProjects = useBrowserContext(s=>s.visibleProjects);
 
     const counts = useCountContext(s=>s.current.tagCounts[tagKey], (a,b)=>{
         const bKeys = new Set<string>(Object.keys(b));
@@ -92,12 +98,13 @@ export default function TagButtons(props: TagButtonsProps) {
             return false;
         return true;
     });
-    const computeTagOrders = useCountContext(s=>s.computeTagOrders);
+    const computeTagOrders_ = useCountContext(s=>s.computeTagOrders);
+    const computeTagOrders = useCallback((tags: string[], inPlace?: boolean) => {
+        // console.log('Using counts to compute new tag orders:', counts);
+        return computeTagOrders_(tags, counts, inPlace);
+    }, [counts, computeTagOrders_]);
     
-    const computeTagOrdersSafe = useCallback((tags: string[], inPlace?: boolean) => {
-        console.log('Using counts to compute new tag orders:', counts);
-        return computeTagOrders(tags, counts, inPlace);
-    }, [counts, computeTagOrders]);
+    const computeTagOrdersSafe = useEffectEvent(computeTagOrders);
 
 
     // useEffect(()=>{
@@ -107,42 +114,28 @@ export default function TagButtons(props: TagButtonsProps) {
     // update visualOrder on mount or when availableTags changes
     useEffect(() =>
         setVisualOrder(([selected, _unselected]) => {
-            const newUnselected = computeTagOrdersSafe(availableTags.filter(x=>!selected.includes(x)), true)[1];
-            console.log('(On mount / availableTags changed) Setting visual order (updating newUnselected):', [selected, newUnselected]);
-            return [selected, newUnselected];
-    }), [availableTags]);
-
-    // useEffect(()=>
-    //       setVisualOrder(([selected, unselected]) => {
-    //         const newUnselected = computeTagOrdersSafe(unselected.filter(x=>!props.selectedTags?.has(x)), true)[1];
-    //         const newSelected = props.selectedTags ? [...props.selectedTags] : [];
-    //         return [computeTagOrdersSafe(newSelected, true)[1], computeTagOrdersSafe(newUnselected, true)[1]];
-    // }), [props.selectedTags]);
-
+            const newUnselected = computeTagOrders(availableTags.filter(x=>!selected.includes(x)), true)[1];
+            // console.log('(On mount / availableTags changed) Setting visual order (updating newUnselected):', [selected, newUnselected]);
+            return [selected.filter(x=>availableTags.includes(x)), newUnselected] as [string[], string[]];
+    }), [availableTags, computeTagOrders]);
 
     const toggleTag = useCallback((tagText: string, isPressed: boolean) => {
         if (isPressed) {
-            // setVisualOrder(([selected, unselected]) => {
-            //     const newUnselected = unselected.filter(t => t !== tagText);
-            //     const newSelected = Array.from(insertInSelectedBlock(selected, tagText, props.selectedTags));
-            //     console.log(`(toggleTag :: "${tagText}" is now ${isPressed ? 'pressed' : 'unpressed'}) Setting visual order:`, [newSelected, newUnselected]);
-            //     return [newSelected, newUnselected];
-            // });
             setVisualOrder(([selected, unselected]) => {
-                const newSelected = selected.filter(x=>props.selectedTags?.has(x));
-                const moveToUnselected = (newSelected.length ? ((newSelected.length === selected.length) ? [] : selected.filter(x=>x!==tagText && !props.selectedTags?.has(x))) : Array.from(selected.filter(x=>x!==tagText)));
-                const newUnselected = computeTagOrdersSafe([...(moveToUnselected as string[]), ...unselected.filter(x=>x!==tagText),], true)[1];
-                console.log(`(toggleTag :: "${tagText}" is now ${isPressed ? 'pressed' : 'unpressed'}) Setting visual order:`, [[...newSelected, tagText], newUnselected], {selected, newSelected, moveToUnselected, unselected});
+                const newSelected = selected.filter(x=>selectedTags?.has(x));
+                const moveToUnselected = (newSelected.length ? ((newSelected.length === selected.length) ? [] : selected.filter(x=>x!==tagText && !selectedTags?.has(x))) : Array.from(selected.filter(x=>x!==tagText)));
+                const newUnselected = computeTagOrders([...moveToUnselected, ...unselected.filter(x=>x!==tagText),], true)[1];
+                // console.log(`(toggleTag :: "${tagText}" is now ${isPressed ? 'pressed' : 'unpressed'}) Setting visual order:`, [[...newSelected, tagText], newUnselected], {selected, newSelected, moveToUnselected, unselected});
                 return [[...newSelected, tagText], newUnselected];
             });
         } else {
             setVisualOrder(([selected, unselected]) => {
-                const newUnselected = unselected.includes(tagText) ? unselected : computeTagOrdersSafe([tagText, ...unselected], true)[1];
+                const newUnselected = unselected.includes(tagText) ? unselected : computeTagOrders([tagText, ...unselected], true)[1];
                 return [selected.filter(x=>x!==tagText), newUnselected];
             })
         }
-        props.toggleTag(tagText);
-    }, [props.toggleTag, props.selectedTags]);
+        propsToggleTag(tagText);
+    }, [propsToggleTag, selectedTags, computeTagOrders]);
 
     // const canToggleTag_ = useFilterContext(s=>s.canToggleTag);
     // const canToggleTag = useCallback((tagText: string, currentlyActive: boolean)  => canToggleTag_(tagKey, tagText, currentlyActive, visibleProjects), [visibleProjects, canToggleTag_]);
@@ -160,31 +153,31 @@ export default function TagButtons(props: TagButtonsProps) {
         // if (!props.projects) return unselected;
 
         // return sortTags(unselected, true);
-        const ret = computeTagOrdersSafe(unselected, false)[1];
-        console.log('Updating memoed unselectedOrdered', unselected, ret);
+        const ret = computeTagOrders(unselected, false)[1];
+        // console.log('Updating memoed unselectedOrdered', unselected, ret);
         return ret;
-    }, [visualOrder[1], computeTagOrdersSafe]);
+    }, [visualOrder, computeTagOrders]);
 
     // final render order = selected first, then unselected (dynamically ordered)
     const renderOrder = useMemo(() => {
         const ret = [...visualOrder[0], ...unselectedOrdered];
-        console.log('Updating memoed renderOrder from visualOrder',  ret, {visualOrder, unselectedOrdered});
+        // console.log('Updating memoed renderOrder from visualOrder',  ret, {visualOrder, unselectedOrdered});
         return ret;
-    }, [visualOrder[0], unselectedOrdered]);
+    }, [visualOrder, unselectedOrdered]);
 
 
     const availableChildren: Record<string, ReactElement<TagButtonProps>> = useMemo(()=>Object.fromEntries(
         availableTags.map(
             tagText => {
-                const isPressed = props.selectedTags ? props.selectedTags.has(tagText) : false;
+                const isPressed = selectedTags?.size ? selectedTags.has(tagText) : false;
                 // const matchCount = visibleProjects.filter(p=>p.tags[tagKey].has(tagText)).length;
                 const matchCount = counts[tagText] ?? 0;
                 return [tagText,
-                    <TagButton id={CSS.escape(`tag-${tagKey}-${tagText}`)} matchCount={matchCount} disabled={!canToggleTag(tagText, isPressed)} key={tagText} colorClassName={props.colorClassName} isPressed={isPressed} tagText={tagText} toggleTag={toggleTag}></TagButton>
+                    <TagButton id={CSS.escape(`tag-${tagKey}-${tagText}`)} matchCount={matchCount} disabled={!canToggleTag(tagText, isPressed)} key={tagText} colorClassName={colorClassName} isPressed={isPressed} tagText={tagText} toggleTag={toggleTag}></TagButton>
                 ];
             }
         )
-    ), [availableTags, toggleTag, props.selectedTags, counts, tagKey]);
+    ), [availableTags, selectedTags, colorClassName, counts, tagKey, canToggleTag, toggleTag]);
 
     const renderedChildren = useMemo(() => renderOrder.map(tagText => availableChildren[tagText]), [renderOrder, availableChildren]);
     
@@ -193,34 +186,76 @@ export default function TagButtons(props: TagButtonsProps) {
     const flipTargetIDs = useMemo(()=>{
         return Object.values(availableChildren).map(
             x=>{
-                // return x.props.id;
                 return CSS.escape(`tag-${tagKey}-${x.key}`)
-                // const elem = document.getElementById(x.props.id!);
-                // // console.log(x.key, x.props.id, elem ?? x);
-                // return elem;
             }
-        )// .filter(x=>x !== undefined);
-    }, [availableChildren]);
+        );
+    }, [availableChildren, tagKey]);
 
+    // useDomReady(() => {
+
+    // });
+
+    const flipCleanupPending = useRef<boolean>(false);
+
+    const [flipProps, _setFlipProps] = useState<string|undefined>('x,scaleX,opacity' + 'width,background-color,background');
+
+    const updatePrevState = useCallback(()=>{
+        const flipTargets = flipTargetIDs.map((id) => document.getElementById(id));
+        prevState.current = Flip.getState(flipTargets, {simple: true, props: flipProps}); //, props: 'scaleX,left,x,background-color,background,width,opacity'});
+    }, [flipTargetIDs, flipProps]);
+    
+    const onEndFlip = useCallback(()=>{
+        if(!flipCleanupPending.current) return;
+        updatePrevState();
+    }, [updatePrevState]);
+
+    const { isFlipping, isFlippingRef, startFlip, endFlip } = useFlipAnimation({onFlipEnd: onEndFlip});
+
+    // const debouncedUpdatePrevState = useDebounceCallback(updatePrevState, 500);
 
     // console.log('TARGETS:', flipTargets);
     const timeoutHandle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     useEffect(()=>{
-        const root = document.getElementById('project-browser-wrapper')!;
+        if(isFlippingRef.current) return;
         function callback() {
-            // console.log('callback');
+            if(isFlippingRef.current) {
+                console.log('Flipping')
+                flipCleanupPending.current = true;
+                return;
+            }
+
             clearTimeout(timeoutHandle.current);
             timeoutHandle.current = setTimeout(()=>{
                 const flipTargets = flipTargetIDs.map((id) => document.getElementById(id));
-                prevState.current = Flip.getState(flipTargets, {simple: true, props: 'x,scaleX,width,background-color,background,opacity'}); //, props: 'scaleX,left,x,background-color,background,width,opacity'});
+                prevState.current = Flip.getState(flipTargets, {simple: true, props: flipProps}); //, props: 'scaleX,left,x,background-color,background,width,opacity'});
+                flipCleanupPending.current = false;
             }, 500);
         }
+        
+        // if(!isFlippingRef.current) {
+        //     clearTimeout(timeoutHandle.current);
+        //     const flipTargets = flipTargetIDs.map((id) => document.getElementById(id));
+        //     prevState.current = Flip.getState(flipTargets, {simple: true, props: flipProps}); //, props: 'scaleX,left,x,background-color,background,width,opacity'});
+        // }
+
+        const root = document.getElementById('project-browser-wrapper');
+        if(!root) return;
         root.addEventListener('scroll', callback, {passive: true, capture: false});
         return () => {
             root.removeEventListener('scroll', callback, {capture: false});
             clearTimeout(timeoutHandle.current);
         };
-    }, []);
+    }, [flipTargetIDs, isFlippingRef, flipProps]);
+
+    const updatePrevState_ = useEffectEvent(updatePrevState);
+    useEffect(()=>{
+        if(isFlipping) return;
+        if(flipCleanupPending.current) {
+            updatePrevState_();
+            flipCleanupPending.current = false;
+        }
+    }, [isFlipping]);
+
 
     useEffect(()=>{
         const prev = prevRenderedChildren.current;
@@ -228,69 +263,90 @@ export default function TagButtons(props: TagButtonsProps) {
         if(prev) {
             // console.log('TARGETS:', flipTargets);
             if(!prevState.current) {
-                prevState.current = Flip.getState(flipTargets, {simple: true, props: 'x,scaleX,width,background-color,background,opacity'}); //, props: 'scaleX,left,x,background-color,background,width,opacity'});
+                prevState.current = Flip.getState(flipTargets, {simple: true, props: flipProps}); //, props: 'scaleX,left,x,background-color,background,width,opacity'});
             } else if(
                 (prev.length !== renderedChildren.length)
                 ||
                 (prev.length && prev.some((x,i)=>renderedChildren[i].key !== x.key))
             ) {
                 // Transition with GSAP Flip
-                console.log('Rendered children changed order:', renderedChildren, prev);
+                // console.log('Rendered children changed order:', renderedChildren, prev);
 
-                // const newState = Flip.getState(renderedChildren.map(x=>x.props.id!), {simple: false});
-                // const newState = Flip.getState(renderedChildren.map(x=>CSS.escape(`tag-${tagKey}-${x.key}`)));
-                const newState = Flip.getState(flipTargets, {simple: true, props: 'x,scaleX,width,background-color,background,opacity'}); // , props: 'scaleX,left,x,background-color,background,width,opacity'});
+                startFlip();
+
+                const newState = Flip.getState(flipTargets, {simple: true, props: flipProps}); // , props: 'scaleX,left,x,background-color,background,width,opacity'});
                 const prevState_ = prevState.current;
-                // requestAnimationFrame(()=>Flip.from(prevState_, {duration: 0.5}));
 
                 // gsap.killTweensOf(flipTargets);
-                Flip.from(prevState_, {duration: 0.2, ease: 'power2.inOut', simple: true,
+                Flip.from(prevState_, {duration: 0.2, ease: 'power2.inOut', 
+                    simple: true,
                     nested: true,
-                    // props: 'x,width,scaleX,opacity,background-color,background', 
-                    props: 'x,scaleX,width,background-color,background,opacity',
-                    absolute: false});
-                // Flip.to(newState, {
-                //     duration: 0.5,
-                // });
-                console.log('FLIP:', prevState.current, newState);
-                prevState.current = newState; // Flip.getState(renderedChildren.map(x=>x.props.id!));
+                    props: flipProps,
+                    absolute: false,
+                    onComplete: () => endFlip(),
+                    onInterrupt: () => endFlip()
+                });
+                // console.log('FLIP:', prevState.current, newState);
+                prevState.current = newState;
             }
         }
         prevRenderedChildren.current = renderedChildren;
-        return ()=>{
-            gsap.killTweensOf(flipTargets);
-        }
-    }, [renderedChildren, renderOrder]);
+        // return ()=>{
+        //     // Flip.killFlipsOf(flipTargets, true);
+        //     // gsap.killTweensOf(flipTargets);
+        //     endFlip();
+        // }
+    }, [renderedChildren, renderOrder, flipTargetIDs, startFlip, endFlip, flipProps]);
 
+    const mounted = useMounted();
+    // const isFirstRender = useIsFirstRender();
+    const initOrderChecked = useRef<boolean>(false);
+
+
+    const checkLayout = useEffectEvent(()=>{
+        if(selectedTags?.size) {
+            // console.log(selectedTags);
+            setVisualOrder(([_selected, unselected]) => [computeTagOrders([...selectedTags])[1],unselected.filter(x=>selectedTags.has(x))] as [string[], string[]]);
+        }
+    });
+    useLayoutEffect(()=>{
+        // console.log(mounted, initOrderChecked.current);
+        if(!mounted || initOrderChecked.current) return;
+        checkLayout();
+        // if(selectedTags?.size)
+        //     setVisualOrder(([selected, unselected]) => [computeTagOrders([...selectedTags])[1],unselected.filter(x=>!selectedTags.has(x))] as [string[], string[]]);
+        initOrderChecked.current = true;
+
+    }, [mounted, setVisualOrder, computeTagOrders]);
 
     useEffect(() => {
-        const unregister = props.registerReset(()=>{
+        const unregister = registerReset(()=>{
             setVisualOrder(vOrder => {
                 const [selected, unselected] = vOrder;
                 if(!selected.length) {
-                    console.log('(in registered reset) No change to visual order:', vOrder);
+                    // console.log('(in registered reset) No change to visual order:', vOrder);
                     return vOrder;
                 }
                 if(!unselected.length) {
                     const ret: [string[], string[]] = [computeTagOrdersSafe(selected)[1], unselected];
-                    console.log('(in registered reset) Setting visual order:', ret);
+                    // console.log('(in registered reset) Setting visual order:', ret);
                     return ret;
                 }
 
-                const newUnselected = [...unselected.filter(x=>!props.selectedTags?.has(x))];
+                const newUnselected = [...unselected.filter(x=>!selectedTags?.has(x))];
                 const newSelected = selected.filter(tag=>{
-                    if(props.selectedTags?.has(tag))
+                    if(selectedTags?.has(tag))
                         return true;
                     if(!newUnselected.includes(tag)) newUnselected.push(tag);
                     return false;
                 });
                 const ret: [string[], string[]] = [computeTagOrdersSafe(newSelected, true)[1], computeTagOrdersSafe(newUnselected, true)[1]];
-                console.log('(in registered reset) Setting visual order:', ret);
+                // console.log('(in registered reset) Setting visual order:', ret);
                 return ret;
             });
         });
         return unregister;
-    }, [props.selectedTags, props.availableTags, setVisualOrder]);
+    }, [selectedTags, setVisualOrder, registerReset]);
 
     return <div data-role='tag-buttons'>
         {renderedChildren}

@@ -4,6 +4,10 @@
     "compiler": "typescript",
     "scopeDir": "First of: `tsconfig.json` \"rootDir\" if specified, directory containing `tsconfig.json`, or cwd if no `tsconfig.json` is loaded.",
     "typeCheck": true,
+    "ignoreDiagnostics": [],
+    "pretty": false,
+    "skipIgnore": false,
+    "transpiler": null,
     "compilerOptions": {
       "baseUrl": ".",
       "paths": {
@@ -80,8 +84,9 @@
     "src/**/*.d.ts",
     // "src/**/*.js",
     // "src/**/*.jsx",
-    // "eslint.config.js",
-    // "astro.config.mjs",
+    "src/**/*.astro",
+    "eslint.config.js",
+    "astro.config.mjs",
   ],
   "exclude": [
     "node_modules",
@@ -144,5 +149,5 @@
     // "importHelpers": false,
     // "watch": true,
     // "assumeChangesOnlyAffectDirectDependencies": false,
-  }
+  },
 }

@@ -47,9 +47,11 @@
     "embla-carousel": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
     "estree-util-visit": "^2.0.0",
+    "fslightbox-react": "^2.0.0",
     "gray-matter": "^4.0.3",
     "gsap": "^3.13.0",
     "html-react-parser": "^5.2.8",
+    "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.553.0",
     "next-themes": "^0.4.6",
     "prismjs": "^1.30.0",
@@ -80,6 +82,8 @@
     "@eslint/json": "^0.14.0",
     "@eslint/markdown": "^7.5.1",
     "@preact/preset-vite": "^2.10.2",
+    "@types/fslightbox-react": "^1.8.0",
+    "@types/lodash.debounce": "^4.0.9",
     "@types/mdast": "^4.0.4",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.4",
@@ -91,6 +95,7 @@
     "eslint": "^9.39.1",
     "eslint-plugin-astro": "^1.5.0",
     "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^16.5.0",
     "mdast-util-gfm": "^3.1.0",
     "mdast-util-mdx": "^3.0.0",
@@ -108,5 +113,14 @@
       "postcss-import": {}
     }
   },
-  "overrides": {}
+  "eslintConfig": {
+    "extends": [
+      "./eslint.config.js"
+    ]
+  },
+  "files": [
+    "src",
+    "public",
+    "dev"
+  ]
 }

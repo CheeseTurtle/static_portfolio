@@ -1,7 +1,7 @@
 ---
 
-import ProjectGrid from "./grid/ProjectGrid";
-import ProjectDialog from "./overlay/dialog";
+// import ProjectGrid from "./grid/ProjectGrid";
+// import ProjectDialog from "./overlay/dialog";
 
 import ProjectBrowserInner from "./ProjectBrowserInner.astro";
 import { getImagePath } from "../story/util/loadImages";
@@ -9,21 +9,22 @@ import { getImagePath } from "../story/util/loadImages";
 
 // import {render} from 'astro:content';
 
-import { getCollection, render } from "astro:content";
+import { getCollection/*, render*/ } from "astro:content";
 
-import type {ProjectData, ProjectInfo, ProjectEntry, ProjectFrontmatter, ProjectDataWithFactory, TagKey} from "./types";
-import { MDXInstance } from "astro";
+import type { ProjectInfo, ProjectEntry, ProjectFrontmatter, ProjectDataWithFactory, TagKey} from "./types";
+import type { MDXInstance } from "astro";
 
-import { compile } from "@mdx-js/mdx";
-import * as runtime from 'react/jsx-runtime';
-import { runSync, run } from '@mdx-js/mdx';
+// import { compile } from "@mdx-js/mdx";
+// import * as runtime from 'react/jsx-runtime';
+// import { runSync, run } from '@mdx-js/mdx';
 
-// import {importFromString} from 'react/jsx-runtime';
-import { AstroComponentInstance, renderToString } from "astro/dist/runtime/server";
-import { renderComponentToString } from "astro/dist/runtime/server/render";
-import { ReactElement } from "react";
-import type { AstroComponentFactory } from "astro/dist/runtime/server/render/astro";
+// // import {importFromString} from 'react/jsx-runtime';
+// import { AstroComponentInstance, renderToString } from "astro/dist/runtime/server";
+// import { renderComponentToString } from "astro/dist/runtime/server/render";
+// import { type ReactElement } from "react";
+// import type { AstroComponentFactory } from "astro/dist/runtime/server/render/astro";
 import parseDate from "../story/util/parseDate";
+import type { AstroComponentFactory } from "astro/runtime/server/index.js";
 
 // import { unified } from "unified";
 // import remarkParse from "remark-parse";
@@ -110,6 +111,13 @@ const contentRecord = import.meta.glob<MDXInstance<ProjectFrontmatter>>(
 //     return run(String(compiled), runtime).then((result)=>result?.default) as Promise<React.FC>;
 // };
 
+
+function trimID(id: string): string {
+    const m = id.match(/^(.+)\.[Mm][Dd][Xx]?$/);
+    // console.log(m ?? id);
+    if(m === null || m.length < 2) return id;
+    return m[1] || id;
+}
 async function processProjectItems(imagePaths: Set<string>, prepath: string | string[], entries: ProjectEntry[]): Promise<ProjectDataWithFactory[]> {
     // console.log('Entries:', [...entries.values()])
     return await Promise.all(
@@ -119,7 +127,7 @@ async function processProjectItems(imagePaths: Set<string>, prepath: string | st
 
 async function processProjectItem(imagePaths: Set<string>, prepath: string | string[], entry: ProjectEntry): Promise<ProjectDataWithFactory> {
     // console.log('Processing entry:', entry);
-    let entryPath: string = entry.filePath;
+    let entryPath: string = entry.filePath!;
     
     const contentLoader = ((entryPath in contentRecord) || (!entryPath.startsWith('/') && ((entryPath='/'+entryPath) in contentRecord))) ? contentRecord[entryPath] : undefined;    
     
@@ -128,23 +136,12 @@ async function processProjectItem(imagePaths: Set<string>, prepath: string | str
     // const contentElem = contentInstance ? <contentInstance.Content/> : null;
     // const factory = (
     //     contentInstance ? contentInstance.Content : 
-    const rp = (undefined === contentInstance) ? (entry as ProjectEntry).render() : null;
+    const rp = (undefined === contentInstance) ? entry.render() : null;
 
     // const contentHtml = contentElem && await renderComponentToString(contentElem, 'turtle');
 
     // const rp = (entry as ProjectEntry).render();
     // const rp = render(entry as ProjectEntry);
-
-
-    const fullPaths: string[] = entry.data.images?.map((fn: string): string | undefined => {
-        const result = getImagePath(imagePaths, prepath, fn);
-        if(!result) {
-            console.warn('Could not expand path:', fn);
-        }
-        return result;
-    }).filter((x: string | undefined)=>undefined !== x);
-
-
     const rr = rp ? await rp : null;
 
     const Factory: AstroComponentFactory = contentInstance?.Content || rr!.Content;
@@ -166,9 +163,8 @@ async function processProjectItem(imagePaths: Set<string>, prepath: string | str
     // const contentHtml = await renderComponentToString(Factory, {});
     
     // console.log(contentHtml);
-    
     return {
-        id: entry.id,
+        id: trimID(entry.id),
         category: entry.data.category,
         title: entry.data.title,
         date: entry.data.date,
@@ -176,7 +172,7 @@ async function processProjectItem(imagePaths: Set<string>, prepath: string | str
         summary: entry.data.summary,
         tags: entry.data.tags,
         contentMdx: contentMdx,
-        images: fullPaths,
+        images: entry.data.images,
         factory: Factory,
         // contentElem: contentElem,
         // contentHtml: contentHtml
@@ -215,6 +211,7 @@ function parseDateValue(value: Date | string | number): [Date, string | undefine
         case 'object':
             return [value, undefined];
         default:
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             throw TypeError(`Expected Date, string, or number; got ${typeof value}: ${value}`);
     }
 }
@@ -228,16 +225,62 @@ function compareDates(a: Date, b: Date): number {
 }
 
 
+type ImageEntry = string | [string, string | undefined | null] | [string] | {path: string, caption?: string};
+
+function extractFnAndCaption(x: ImageEntry): [string | null, string | null] {
+    if(typeof x === 'string') {
+        return [x ?? null, null];
+    } else if(Array.isArray(x)) {
+        return [x[0] ?? null, x[1] || null];
+    } else {
+        return [x.path ?? null, x.caption || null];
+    }
+}
+
 const factories: Record<string, AstroComponentFactory> = {};
 // console.log('Projects:', items)
 const projects: ProjectInfo[] = items.map((data: ProjectDataWithFactory): ProjectInfo => {
     const factory = data.factory;
-    factories[data.id] = factory;
+    factories[trimID(data.id)] = factory;
     // data.factory = undefined;
     // console.log(data);
     const [date, dateStr] = parseDateValue(data.date);
+
+
+
+    
+
+    const pairs: [string, (string | null)][] | undefined = data.images?.map((x: string | [string, string | undefined | null] | [string] | {path: string, caption?: string}): [string, string | null] | undefined => {
+        // const fn = typeof x === 'string' ? x : x.path;
+        // const caption = (typeof x === 'string' ? null : x.caption || null);
+        const [fn, caption] = extractFnAndCaption(x);
+        if(!fn) {
+            if(caption) console.warn('Null or empty filepath given with non-null caption');
+            return undefined;
+        }
+        const result = getImagePath(imagePaths, prepath, fn);
+        if(!result) {
+            console.warn('Could not expand path:', fn);
+            return undefined;
+        }
+        return [result, caption];
+    }).filter((x)=>undefined !== x);
+
+    const fullPaths: string[] = [], imageCaptions: (string | null)[] = [];
+    
+    pairs?.forEach(([fn,caption])=>{
+        fullPaths.push(fn);
+        imageCaptions.push(caption);
+    })
+
+    const lightboxData = pairs && fullPaths.length ? {
+        lightboxSources: fullPaths,
+        lightboxCaptions: imageCaptions
+    } : undefined;
+
+
     return {
-        id: data.id,
+        id: trimID(data.id),
         category: data.category,
         description: data.description,
         summary: data.summary,
@@ -249,6 +292,7 @@ const projects: ProjectInfo[] = items.map((data: ProjectDataWithFactory): Projec
         contentHtml: data.contentHtml,
         contentMdx: data.contentMdx,
         images: data.images,
+        lightboxData,
         tags: Object.fromEntries(
             Object.entries(data.tags as Record<TagKey, string[]>).map(([tagType, tagArr]) => [tagType, new Set<string>(tagArr)])
         ) as Record<TagKey, Set<string>>

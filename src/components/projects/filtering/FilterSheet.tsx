@@ -1,20 +1,19 @@
 import {
     Sheet,
-    SheetClose,
+    // SheetClose,
     SheetContent,
     SheetDescription,
-    SheetFooter,
+    // SheetFooter,
     SheetHeader,
     SheetTitle,
     SheetTrigger
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { useCallback, useEffectEvent, useRef, useState, type Dispatch, type ReactElement, type RefObject, type SetStateAction } from "react";
-import type { ProjectData, ProjectInfo } from "../types";
+// import { Button } from "@/components/ui/button";
+import { type RefObject } from "react";
+import type { ProjectInfo } from "../types";
 import FilterForm from "./FilterForm";
 import type { FilterRangeInfo } from "./common/filterTypes";
-import { useFilter } from "./common/filterContext";
-import { useBrowserContext, type BrowserStore } from "./common/browserContext";
+// import { useBrowserContext } from "./common/browserContext";
 
 
 export type FilterSheetProps = {
@@ -56,8 +55,6 @@ export default function FilterSheet({contentRef, triggerRef, resetAll, registere
 
     // const open = useBrowserContext(s=>s.sheetOpen);
     // const setOpen = useBrowserContext(s=>s.setSheetOpen);
-
-
 
 
     return <Sheet onOpenChange={

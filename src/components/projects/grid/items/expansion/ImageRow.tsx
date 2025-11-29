@@ -1,6 +1,6 @@
-import { isImageLoader } from "@/components/story/util/typeCheck";
+// import { isImageLoader } from "@/components/story/util/typeCheck";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {type ImageLoader, getImageLoader} from "@/components/story/util/loadImages";
+// import {type ImageLoader, getImageLoader} from "@/components/story/util/loadImages";
 
 interface ImageGalleryProps {
   images: string[]; // array of image URLs

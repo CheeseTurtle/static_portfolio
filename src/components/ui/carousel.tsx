@@ -8,7 +8,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-import type {EmblaCarouselType, EmblaEventType, EmblaOptionsType} from "embla-carousel";
+import type {EmblaCarouselType, EmblaEventType } from "embla-carousel";
 
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
@@ -263,7 +263,7 @@ function Carousel({ orientation = "horizontal",
 function CarouselContent({ children, className, ...props }: React.ComponentProps<"div">) {
   // const { orientation, api } = useCarousel();
   const obj = useCarousel()
-  const { carouselRef, orientation, api }  = obj;
+  const { carouselRef, orientation, api: _api }  = obj;
 
   // React.useEffect(()=>{
   //   console.log('(CONTENT) API:', api, obj);
@@ -293,8 +293,8 @@ function CarouselContent({ children, className, ...props }: React.ComponentProps
 }
 
 function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
-  const obj = useCarousel()
-  const { orientation, api }  = obj;
+  // const obj = useCarousel()
+  // const { orientation, api }  = obj;
 
   // React.useEffect(()=>{
   //   console.log('(ITEM) API:', api, obj);
@@ -307,7 +307,7 @@ function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
       data-slot="carousel-item"
       className={cn(
         "min-w-0 shrink-0 grow-0 basis-full",
-        orientation === "horizontal" ? "pl-4" : "pt-4",
+        // orientation === "horizontal" ? "pl-4" : "pt-4",
         className
       )}
       {...props}
@@ -418,7 +418,7 @@ function CarouselDots() {
   return <div 
     data-role='carousel-dot-buttons' 
     // className="flex flex-wrap justify-end items-center mr-[calc((2.6rem-1.4rem)/(-2))]"
-    className="flex w-full relative justify-items-center justify-center"
+    className="flex w-full relative justify-items-center justify-center pointer-events-auto"
     >
     {slideIndices.map(index=>
       <CarouselDotButton

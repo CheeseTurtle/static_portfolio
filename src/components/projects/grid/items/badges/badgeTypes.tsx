@@ -1,3 +1,4 @@
+import type { TagKey } from "@/components/projects/types";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import type { VariantProps } from "class-variance-authority";
 import type React from "react";
@@ -25,7 +26,7 @@ export const TopicBadge = (props: BadgeProps) => {
     return <Badge {...props} className="bg-gray-500 text-white hover:bg-gray-600"/>
 }
 
-export function convertToBadgeType(tagKey: string): BadgeType {
+export function convertToBadgeType(tagKey: TagKey): BadgeType {
     switch(tagKey) {
         case 'languages':
             return 'lang';
@@ -33,10 +34,11 @@ export function convertToBadgeType(tagKey: string): BadgeType {
             return 'skill';
         case 'topics':
             return 'topic';
-        case 'concepts':
-            return 'concept';
+        // case 'concepts':
+        //     return 'concept';
         default:
-            throw TypeError
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            throw TypeError(`Invalid tagKey: '${tagKey}'`);
     }
 }
 
@@ -51,6 +53,7 @@ export function getBadgeConstructor(badgeType: BadgeType) {
         case 'topic':
             return TopicBadge
         default:
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             throw TypeError(`Invalid badge type: '${badgeType}'`)
     }
 }
