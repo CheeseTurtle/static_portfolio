@@ -316,3 +316,64 @@ type _PropsWithPropType<Props, K extends string, V1, V0 = unknown, Optional exte
 export type PropsWithPropType<Props, K extends string, V1, V0 = unknown> = _PropsWithPropType<Props,K,V1,V0,false>;
 export type PropsWithOptionalPropType<Props, K extends string, V1, V0 = unknown> = _PropsWithPropType<Props,K,V1,V0,true>;
 export type OneChildOrNoChildren = Exclude<React.ReactNode, Iterable<React.ReactNode>>;
+
+
+// /**
+//  * Obtain the parameters of a function type in a tuple
+//  */
+// type Parameters<T extends (...args: any) => any> = T extends (...args: infer P) => any ? P : never;
+
+// /**
+//  * Obtain the parameters of a constructor function type in a tuple
+//  */
+// type ConstructorParameters<T extends abstract new (...args: any) => any> = T extends abstract new (...args: infer P) => any ? P : never;
+
+// /**
+//  * Obtain the return type of a constructor function type
+//  */
+// type InstanceType<T extends abstract new (...args: any) => any> = T extends abstract new (...args: any) => infer R ? R : any;
+
+
+export type ConstructorFn<P extends any[] = any, R = any> = abstract new (...args: P) => R;
+
+
+
+
+// type FirstArg<F extends Function> = F extends ((arg: infer A, ...args: any) => any) ? A : never;
+
+
+
+// type x = {
+//     (a: string): string,
+//     (a: number, b: any): boolean,
+// };
+
+// function fy(a: string): string;
+// function fy(a: number, b: any): boolean;
+// function fy(a: number | string, b?: any): boolean | string {
+//     if(typeof a === 'string') return a;
+//     return a == b;
+// }
+// type y = typeof fy;
+
+// type FunctionOverloads<F> = F extends Function ? _FunctionOverloads<F> : never;
+
+
+// type _FunctionOverloads<F extends Function> = F extends {
+//     (...args: infer Args): infer Return,
+// } & infer K extends Function ? 
+//     [[Args, Return], ..._FunctionOverloads<K>]
+// : never;
+// type k = x extends {
+//     (...args: infer Args): infer R
+// } ? [ R] : never;
+
+
+
+// type OverloadToUnion<T> =
+// T extends (...args: infer A) => infer R
+// ? (...args: A) => R
+// : never;
+
+
+// type z = OverloadToUnion<y>;

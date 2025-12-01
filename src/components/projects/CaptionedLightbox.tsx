@@ -13,17 +13,17 @@ import useThrottledDebounce from "@/hooks/useThrottledDebounce";
 import { cn } from "@/lib/utils";
 import type { WithRequired } from "node_modules/astro/dist/type-utils";
 
-type CaptionedLightboxProps = {
-    initialSlide: number,
-    sources: LightboxSources;
-    captions?: LightboxCaptions; // Array<string | React.ReactNode>; // HTML or JSX
-    open: boolean;
-    onClose?: () => void;
-};
 
 export function CaptionedLightboxProvider({children, onClose}: {children: React.ReactNode, onClose?: () => void}) {
     const [state, dispatch] = useReducer(lightboxReducer, {captions: [], initialSlide: 0, open: false, sources: [] });
-    // const {captions, sources, open} = state;
+
+    const setOpen = useCallback((open: boolean) => {
+        if(open) {
+            dispatch({type: 'ENSURE_OPEN'});
+        } else {
+            dispatch({type: 'CLOSE'});
+        }
+    }, [dispatch]);
 
     const onClose_ = useCallback(()=>{
         dispatch({type: 'CLOSE'});
@@ -39,13 +39,8 @@ export function CaptionedLightboxProvider({children, onClose}: {children: React.
 }
 
 
-interface CaptionedLightboxHandle {
-    func?: () => void
-}
-
-
 function useLightboxSlideObserver(snRef: React.RefObject<HTMLSpanElement | null>, captionSlide: number | undefined, setCaptionSlide: React.Dispatch<React.SetStateAction<number | undefined>>, overlayRef: React.RefObject<LightboxCaptionsOverlayHandle | null>) {
-    // div.fslightbox-container.fslightbox-full-dimension
+    /* div.fslightbox-container.fslightbox-full-dimension
     //   div.flightbox-nav
     //     div.fslightbox-toolbar
     //     div.fslightbox-sn
@@ -56,6 +51,7 @@ function useLightboxSlideObserver(snRef: React.RefObject<HTMLSpanElement | null>
     //     div.fslightbox-absoluted.fslightbox-full-dimension.fslightbox-flex-centered(style="transform: translateX(...);")
     //       (div.class="fslightbox-fade-in")
     //         img.fslightbox-source.fslightbox-opacity-1(src="...")
+    */
 
     const captionSlideRef = React.useRef<number | undefined>(captionSlide);
     const setCaptionSlideRef = React.useRef<React.Dispatch<React.SetStateAction<number | undefined>>>(setCaptionSlide);
@@ -88,7 +84,7 @@ function useLightboxSlideObserver(snRef: React.RefObject<HTMLSpanElement | null>
     }, []);
 
     // console.log('snRef:', snRef);
-    if(snRef.current) console.log(captionSlide, captionSlideRef.current);
+    // if(snRef.current) console.log(captionSlide, captionSlideRef.current);
 
     useMutationObserver(snRef, callback, {characterData: false, characterDataOldValue: false, attributes: false, childList: true, subtree: false});
 }
@@ -183,82 +179,94 @@ type LightboxCaptionsOverlayProps = {
     sources: HTMLElement[],
     captions: LightboxCaptions,
     toggler: boolean,
-    container: HTMLElement | null
+    container: HTMLElement | null,
+    activeIndex: number | undefined
 };
 
 type LightboxCaptionsOverlayHandle = {
-    activateCaption: (index: number | undefined) => void,
-    activateCaptionDebounced: ReturnType<typeof useThrottledDebounce<(index: number | undefined) => void>>,    
+    // activateCaption: (index: number | undefined) => void,
+    // activateCaptionDebounced: ReturnType<typeof useThrottledDebounce<(index: number | undefined) => void>>,    
 };
 
 // type JSXElement = React.JSX.Element;
 
 type LightboxCaptionHandle = /*React.Ref<HTMLDivElement>*/ & {
-    fitToElement: (elem: HTMLElement) => void,
-    setActive: (active: boolean) => void,
+    setFocused: (active: boolean) => void,
+    // setActive: (active: boolean) => void,
 };
 
 type LightboxCaptionProps = React.ComponentPropsWithoutRef<'div'> & {
     index: number,
-    // active: boolean,
-    // sourceRef: React.RefObject<HTMLDivElement | null>,
+    activeIndex: number | undefined,
     sourceElem: HTMLElement,
     divRef: React.RefObject<HTMLDivElement | null>,
 } & WithRequired<React.RefAttributes<LightboxCaptionHandle>, 'ref'>;
 
-function LightboxCaption({ref, children, divRef, sourceElem, className, ...props}: LightboxCaptionProps) {
-    const [active, setActive] = React.useState<boolean>(false);
+function LightboxCaption({ref, children, divRef, sourceElem, className, index, activeIndex, ...props}: LightboxCaptionProps) {
+    const [focused, setFocused] = React.useState<boolean>(false);
+    const active = React.useMemo(()=>index===activeIndex, [activeIndex, index]);
+    // const [active, setActive] = React.useState<boolean>(false);
 
-    const fitToElement = React.useCallback((elem: HTMLElement) => {
-        // const div = divRef.current;
-        // if(!div) return;
-        // gsap.killTweensOf(div);
-        // const fit = Flip.fit(div, elem, {
-        //     immediateRender: false,
-        //     // absolute: true,
-        //     // getVars: false,
-        //     duration: 0,
-        //     // delay: undefined,
-        //     // ease: undefined,
-        //     simple: true,
-        //     // fitChild: undefined
-        //     // snap: false,
-        //     // stagger: false,
-        //     // callbackScope: undefined,
-        //     // enableBackground: false,
-        //     // inertia: undefined
-        
-        // });
-    }, [divRef]);
     React.useImperativeHandle(ref, () => ({
-        fitToElement, setActive
-    }), [fitToElement]);
+        setFocused//, setActive
+    }), []);
 
-    const fitToSource = React.useCallback(()=>{
-        if(sourceElem?.isConnected) {
-            fitToElement(sourceElem);
-            return true;
+    // console.log(index, activeIndex, active);
+
+    const activated = React.useRef<boolean | undefined>(false);
+    React.useEffect(()=>{
+        const div = divRef.current;
+        if(!div) return;
+        if(active === activated.current) return;
+        gsap.killTweensOf(div);
+        const quickSet = gsap.quickSetter(div, "visibility");
+        if(active) {
+            quickSet('visible');
+            activated.current = undefined;
+            gsap.to(div, {
+                opacity: 70,
+                delay: 0.5,
+                duration: 0.8,
+                // onStart: ()=>{
+                //     quickSet('visible');
+                //     activated.current = undefined;
+                // },
+                onComplete: ()=>{
+                    activated.current = true;
+                }
+            });
+        } else {
+            activated.current = undefined;
+            gsap.to(div, {
+                opacity: 0,
+                delay: 0,
+                duration: 0.5,
+                onStart: () => {
+                },
+                onComplete: ()=>{
+                    quickSet('hidden');
+                    activated.current = false;
+                }
+            });
         }
-        return false;
-    }, [sourceElem, fitToElement]);
+        // return ()=>gsap.killTweensOf(div);
+    }, [active]);
 
-
-    React.useEffect(()=>{if(active) fitToSource()}, [active, fitToSource]);
 
     return <div ref={divRef} className={cn(
-        'absolute w-full bottom-0 max-h-[30%] hover:max-h-min text-muted-foreground hover:text-foreground pointer-events-auto bg-background opacity-70 hover:opacity-100 transition-all duration-75',
-        active ? 'current-caption overflow-y-scroll' : 'overflow-y-hidden',
+        'absolute w-full bottom-0 max-h-[30%] hover:max-h-min text-muted-foreground hover:text-foreground pointer-events-auto bg-background active:opacity-70 hover:opacity-100 transition-all duration-75',
+        focused ? 'current-caption overflow-y-scroll' : 'overflow-y-hidden',
         className,
-    )} {...props}>
+        )} {...props}
+        data-item-active={active}
+        data-item-focused={focused}    
+    >
         {children}
     </div>;
 }
 
-
-
-
 type LightboxCaptionElem = React.ReactElement<LightboxCaptionProps, typeof LightboxCaption>;
-const LightboxCaptionsOverlay = (({sources, captions, toggler, ref, container}: LightboxCaptionsOverlayProps & React.RefAttributes<LightboxCaptionsOverlayHandle>) => {
+const LightboxCaptionsOverlay = (({sources, captions, toggler, ref, activeIndex, container}: LightboxCaptionsOverlayProps & React.RefAttributes<LightboxCaptionsOverlayHandle>) => {
 
     const captionElemRefs = React.useRef<React.RefObject<HTMLDivElement | null>[]>([]);
     captionElemRefs.current = sources.map((el,i)=>captionElemRefs.current[i] ?? React.createRef());
@@ -266,61 +274,87 @@ const LightboxCaptionsOverlay = (({sources, captions, toggler, ref, container}: 
     const captionHandleRefs = React.useRef<React.RefObject<LightboxCaptionHandle | null>[]>([]);
     captionHandleRefs.current = sources.map((el, i) => captionHandleRefs.current[i] ?? React.createRef());
 
-    const captionElemMap: Record<number, LightboxCaptionElem | null> = useMemo(()=>{
-        const pairs: [number, LightboxCaptionElem | null][] = sources.map((elem, i) => {
-            const caption = captions[i];
-            if(!caption) {
-                captionElemRefs.current[i].current = null;
-                captionHandleRefs.current[i].current = null;
-                return null;
-            }
-            const inner = (typeof caption === 'string') ? <p>{caption}</p> : caption;
-            // return [i, <div ref={captionElemRefs.current[i]} className="lb-caption" key={i}>{inner}</div>];
-            return [i, <LightboxCaption index={i} key={i} divRef={captionElemRefs.current[i]} sourceElem={elem} ref={captionHandleRefs.current[i]}>{inner}</LightboxCaption>]
-        }) as [number, LightboxCaptionElem | null][];/*.filter(x=>x!==null) as [number, JSXElement][];*/
-        return Object.fromEntries(pairs);
-    }, [sources, captions]);
+    // const captionElemMap: Record<number, LightboxCaptionElem | null> = useMemo(()=>{
+    //     const pairs: [number, LightboxCaptionElem | null][] = sources.map((elem, i) => {
+    //         const caption = captions[i];
+    //         if(!caption) {
+    //             captionElemRefs.current[i].current = null;
+    //             captionHandleRefs.current[i].current = null;
+    //             return null;
+    //         }
+    //         const inner = (typeof caption === 'string') ? <p>{caption}</p> : caption;
+    //         return [i, <LightboxCaption index={i} key={i} activeIndex={activeIndex} divRef={captionElemRefs.current[i]} sourceElem={elem} ref={captionHandleRefs.current[i]}>{inner}</LightboxCaption>]
+    //     }) as [number, LightboxCaptionElem | null][];
+    //     return Object.fromEntries(pairs);
+    // }, [sources, captions]);
 
-    const captionElems = useMemo(()=>Object.values(captionElemMap)/*.filter(x => x !== null)*/, [captionElemMap]);
+    // const captionElems = useMemo(()=>Object.values(captionElemMap)/*.filter(x => x !== null)*/, [captionElemMap]);
 
-    const activeCaptionElemRef = React.useRef<HTMLDivElement | null>(null);
-    const activeCaptionHandleRef = React.useRef<LightboxCaptionHandle | null>(null);
-    const activateCaption = React.useCallback((index: number | undefined) => {
-        const nextElem = undefined === index ? null : (captionElemRefs.current[index - 1]?.current ?? null);
-        const prevElem = activeCaptionElemRef.current === nextElem ? null : activeCaptionElemRef.current;
-        
-        console.log('Activate caption:', index??0 - 1, prevElem, nextElem);
-        if(!(prevElem || nextElem)) return; // TODO: Don't reset throttle/debounce timeouts?
-        
-        if(prevElem) {
-            const prevHandle = activeCaptionHandleRef.current; // ?? captionHandleRefs.current[prevElem.props.index];
-            if(prevHandle)
-                prevHandle.setActive(false);
+    // const captionElems = React.useMemo(
+    //     ()=>sources.map((elem,i)=>{
+    //         const caption = captions[i];
+    //         if(!caption) {
+    //             captionElemRefs.current[i].current = null;
+    //             captionHandleRefs.current[i].current = null;
+    //             return null;
+    //         }
+    //         const inner = (typeof caption === 'string') ? <p>{caption}</p> : caption;
+    //         return <LightboxCaption index={i} key={i} activeIndex={activeIndex} divRef={captionElemRefs.current[i]} sourceElem={elem} ref={captionHandleRefs.current[i]}>{inner}</LightboxCaption>;
+    //     }), [sources]);
+
+     const captionElems = sources.map((elem,i)=>{
+        const caption = captions[i];
+        if(!caption) {
+            captionElemRefs.current[i].current = null;
+            captionHandleRefs.current[i].current = null;
+            return null;
         }
+        const inner = (typeof caption === 'string') ? <p>{caption}</p> : caption;
+        return <LightboxCaption index={i} key={i} activeIndex={activeIndex} divRef={captionElemRefs.current[i]} sourceElem={elem} ref={captionHandleRefs.current[i]}>{inner}</LightboxCaption>;
+    });
 
-        if(nextElem) {
-            const nextHandle = captionHandleRefs.current[index! - 1]?.current;
-            if(nextHandle) {
-                nextHandle.setActive(true); // TODO: Batch with prevHandle deactivate?
-                activeCaptionElemRef.current = nextElem;
-                activeCaptionHandleRef.current = nextHandle;
-            }
-        }
-        activeCaptionElemRef.current = null;
-        activeCaptionHandleRef.current = null;
-    }, []);
+    // const activeCaptionElemRef = React.useRef<HTMLDivElement | null>(null);
+    // const activeCaptionHandleRef = React.useRef<LightboxCaptionHandle | null>(null);
+    // const activateCaption = React.useCallback((index: number | undefined) => {
+    //     const nextElem = undefined === index ? null : (captionElemRefs.current[index - 1]?.current ?? null);
+    //     const prevElem = activeCaptionElemRef.current === nextElem ? null : activeCaptionElemRef.current;
+        
+    //     console.log('Activate caption:', index??0 - 1, prevElem, nextElem);
+    //     if(!(prevElem || nextElem)) return; // TODO: Don't reset throttle/debounce timeouts?
+        
+    //     if(prevElem) {
+    //         const prevHandle = activeCaptionHandleRef.current; // ?? captionHandleRefs.current[prevElem.props.index];
+    //         // if(prevHandle) prevHandle.setActive(false);
+    //     }
 
-    const activateCaptionDebounced = useThrottledDebounce(activateCaption, 150, 500);
+    //     if(nextElem) {
+    //         const nextHandle = captionHandleRefs.current[index! - 1]?.current;
+    //         if(nextHandle) {
+    //             // nextHandle.setActive(true); // TODO: Batch with prevHandle deactivate?
+    //             activeCaptionElemRef.current = nextElem;
+    //             activeCaptionHandleRef.current = nextHandle;
+    //         }
+    //     }
+    //     activeCaptionElemRef.current = null;
+    //     activeCaptionHandleRef.current = null;
+    // }, []);
 
-    React.useImperativeHandle(ref, ()=>({
-        activateCaption, activateCaptionDebounced
-    }), [activateCaption]);
+    // const activateCaptionDebounced = useThrottledDebounce(activateCaption, 75, 500);
 
-    console.log('sources:', sources);
+    // React.useImperativeHandle(ref, ()=>({
+    //     activateCaption, activateCaptionDebounced
+    // }), [activateCaption, activateCaptionDebounced]);
+
+    
+    // React.useEffect(()=>{
+    //     activateCaption(activeIndex);
+    // }, [activeIndex, activateCaption]);
+
+    // console.log('sources:', sources);
 
     if(!sources.length) return null;
 
-    console.log(captionElems, captionElemRefs.current, captionHandleRefs.current);
+    // console.log(captionElems, captionElemRefs.current, captionHandleRefs.current);
 
     const ret = createPortal(<div className="lightbox-captions z-1000000001 absolute bottom-0 h-full w-full pointer-events-none overflow-visible pb-8">
         <div className="container relative inset-0 h-full w-full">
@@ -335,33 +369,58 @@ const LightboxCaptionsOverlay = (({sources, captions, toggler, ref, container}: 
     return ret;
 });
 
+
+
+type CaptionedLightboxProps = {
+    sourceKey?: string,
+    sources?: LightboxSources;
+    captions?: LightboxCaptions;
+    open: boolean;
+    // setOpen: (value: boolean) => void | React.Dispatch<React.SetStateAction<boolean>>;
+    initialSlide?: number;
+    onClose?: () => void;
+};
+
+
+interface CaptionedLightboxHandle {
+    func?: () => void
+}
+
+
 export function CaptionedLightbox({
     sourceKey,
     sources,
     captions,
     open,
+    // setOpen: setToggler,
     initialSlide,
     onClose,
-}: {
-    sourceKey?: string,
-    sources?: LightboxSources;
-    captions?: LightboxCaptions;
-    open: boolean;
-    initialSlide?: number;
-    onClose?: () => void;
-}) {
+    ref
+}: CaptionedLightboxProps & React.RefAttributes<CaptionedLightboxHandle>) {
     const [toggler, setToggler] = React.useState(false);
-    const lbRef = React.useRef<FSLightbox | null>(null);
     const snRef = React.useRef<HTMLSpanElement | null>(null);
 
     React.useEffect(()=>{
         gsap.registerPlugin(Flip);
     }, []);
+
+
+    // const togglerRef = React.useRef<boolean>(toggler);
+
+    // React.useEffect(()=>{
+    //     togglerRef.current = toggler;
+    // }, [toggler]);
     
     // Sync the open prop to toggler state
     React.useEffect(() => {
+        // console.log('OPEN / TOGGLERREF:', open, togglerRef.current);
         if (open) {
-            setToggler(prev => !prev); // Toggle to trigger FSLightbox
+            // setToggler(prev => !prev); // Toggle to trigger FSLightbox
+            // setToggler(false);
+            setToggler(prev => {
+                // console.log('Setting TOGGLER to:', !prev);
+                return !prev;
+            });
         }
     }, [open]);
     const [captionSlide, setCaptionSlide] = React.useState<number | undefined>(undefined);
@@ -373,32 +432,54 @@ export function CaptionedLightbox({
     const containerRef = React.useRef<HTMLElement>(null);
 
     
+    // React.useEffect(()=>{
+    //     const captionsHandle = captionsHandleRef.current;
+    //     if(!captionsHandle) return;
+    //     if(toggler && captionSlide !== undefined) {
+    //         // captionsHandle.activateCaptionDebounced.cancel()
+    //         captionsHandle.activateCaption(undefined);
+    //         captionsHandle.activateCaptionDebounced(captionSlide);
+    //     } else {
+    //         captionsHandle.activateCaptionDebounced.cancel();
+    //         captionsHandle.activateCaption(undefined);
+    //     }
+    // }, [captionSlide, toggler]);
+
+    const [activeCaptionIndex, setActiveCaptionIndex] = React.useState<number | undefined>(undefined);
+
+    const prelimFn = React.useCallback((index: number | undefined) => {
+        console.log(`prelimFn(${index}): setActiveCaptionIndex(undefined), returning:`, undefined === index)
+        setActiveCaptionIndex(undefined);
+        return (undefined === index);
+    }, []);
+    const opts = React.useMemo(()=>({
+        prelim: prelimFn
+    }), [prelimFn]);
+    const setActiveCaptionIndexDebounced = useThrottledDebounce(setActiveCaptionIndex as ((value: number | undefined) => void), 150, 500, opts);
+
     React.useEffect(()=>{
-        const captionsHandle = captionsHandleRef.current;
-        if(!captionsHandle) return;
-        if(toggler && captionSlide !== undefined) {
-            // captionsHandle.activateCaptionDebounced.cancel()
-            captionsHandle.activateCaption(undefined);
-            captionsHandle.activateCaptionDebounced(captionSlide);
+        if(open && captionSlide !== undefined) {
+            console.log(`Calling setActiveCaptionIndexDebounced(${captionSlide})`);
+            setActiveCaptionIndexDebounced(captionSlide);
         } else {
-            captionsHandle.activateCaptionDebounced.cancel();
-            captionsHandle.activateCaption(undefined);
+            console.log(`Cancelling then calling setActiveCaptionIndexDebounced(${captionSlide})`);
+            setActiveCaptionIndexDebounced.cancel();
+            setActiveCaptionIndexDebounced(undefined);
         }
-    }, [captionSlide, toggler]);
+    }, [captionSlide, open]);
 
     
     // Only render FSLightbox if we have sources
     if (!sources || sources.length === 0) {
-        lbRef.current = null;
+        containerRef.current = null;
+        captionsHandleRef.current = null;
         return null;
     }
 
-
-    console.log('CONTAINER:', containerRef.current);
+    // console.log('CONTAINER:', containerRef.current);
 
     return <>
         <FSLightbox
-            // ref={lbRef}
             key={sourceKey}
             toggler={toggler}
             sources={sources}
@@ -420,9 +501,12 @@ export function CaptionedLightbox({
                 sourceElems.current = [];
             }}
             onClose={(_instance) => { // Every close
+                // setToggler(false);
                 setCaptionSlide(undefined);
-                containerRef.current = null;
+                setActiveCaptionIndexDebounced(undefined);
                 onClose?.();
+                containerRef.current = null;
+                captionsHandleRef.current = null;
             }}
             openOnMount={false}
             // onInit={instance=>{ // Initial open only
@@ -434,160 +518,6 @@ export function CaptionedLightbox({
             // }}
             exitFullscreenOnClose={true}
         />
-        {toggler && captions_ && sourceElems.current?.length && <LightboxCaptionsOverlay container={containerRef.current} ref={captionsHandleRef} toggler={toggler} sources={sourceElems.current} captions={captions_}></LightboxCaptionsOverlay>}
+        {captions_ && sourceElems.current?.length && <LightboxCaptionsOverlay activeIndex={!open || activeCaptionIndex === undefined ? undefined : activeCaptionIndex - 1} container={containerRef.current} ref={captionsHandleRef} toggler={toggler} sources={sourceElems.current} captions={captions_}></LightboxCaptionsOverlay>}
     </>;
 }
-
-
-
-
-
-
-// export function MultiGalleryLightbox({ galleries }) {
-//   const [state, dispatch] = React.useReducer(lightboxReducer, {
-//     open: false,
-//     galleryIndex: null,
-//     slide: 1,
-//   });
-
-//   const activeGallery =
-//     state.galleryIndex !== null ? galleries[state.galleryIndex] : null;
-
-//   return (
-//     <>
-//       {galleries.map((g, gi) => (
-//         <ImageRow
-//           key={gi}
-//           images={g.images}
-//           onImageClick={(index) => {
-//             dispatch({
-//               type: "OPEN",
-//               galleryIndex: gi,
-//               slide: index + 1,
-//             });
-//           }}
-//         />
-//       ))}
-
-//       {activeGallery && (
-//         <CaptionedLightbox
-//           open={state.open}
-//           onClose={() => dispatch({ type: "CLOSE" })}
-//           sources={activeGallery.images}
-//           captions={activeGallery.captions}
-//           slide={state.slide}
-//           onSlideChange={(s) => dispatch({ type: "SET_SLIDE", slide: s })}
-//         />
-//       )}
-//     </>
-//   );
-// }
-
-
-
-
-
-
-// export function CaptionedLightbox({
-//       sources,
-//     //   captions,
-//       initialSlide,
-//     open,
-//     onClose,
-//     // ref,
-// }: CaptionedLightboxProps & React.RefAttributes<CaptionedLightboxHandle>) {
-//     //   const [toggler, setToggler] = React.useState(false);
-//     //   const [slide, setSlide] = React.useState<number | undefined>(undefined);
-
-//     //   const sources = React.useRef<LightboxSource[]>([]);
-//     //   const captions = React.useRef<LightboxCaption[]>([]);
-
-//     //   // Sync external `open` prop to the toggler
-//     //   React.useEffect(() => {
-//     //     setToggler(open);
-//     //   }, [open]);
-
-//     // const [state, dispatch] = useReducer(lightboxReducer, {captions: [], initialSlide: 0, open: false, sources: [] });
-
-//     // const {initialSlide, open, sources} = state;
-
-//     return (
-//         <>
-//             <FSLightbox
-//                 toggler={open}
-//                 sources={sources}
-//                 slide={initialSlide}
-//                 // customAttributes={}
-//                 // onSlideChange={(instance) => setSlide(instance.props?.slide)}
-//                 onClose={() => {
-//                     // setToggler(false);   // ???
-//                     onClose?.();
-//                 }}
-//             />
-
-//             {/* {captions && open &&
-//                 createPortal(
-//                     <div
-//                         className="
-//               fixed bottom-8 left-1/2 -translate-x-1/2
-//               z-999999
-//               bg-black/65 backdrop-blur-sm
-//               text-white text-sm leading-snug
-//               max-w-[90vw]
-//               px-4 py-2 rounded-lg
-//               pointer-events-none
-//             "
-//                     >
-//                         {typeof captions[slide - 1] === "string" ? (
-//                             <div
-//                                 dangerouslySetInnerHTML={{
-//                                     __html: captions[slide - 1] as string,
-//                                 }}
-//                             />
-//                         ) : (
-//                             captions[slide - 1]
-//                         )}
-//                     </div>,
-//                     document.body
-//                 )} */}
-//         </>
-//     );
-// }
-
-
-// export function CaptionedLightbox({
-//     sources,
-//     // captions,
-//     open,
-//     initialSlide,
-//     onClose,
-// }: {
-//     sources?: LightboxSources;
-//     captions?: LightboxCaptions;
-//     open: boolean;
-//     initialSlide?: number;
-//     onClose?: () => void;
-// }) {
-//     const [toggler, setToggler] = React.useState(false);
-    
-//     // Sync the open prop to toggler state
-//     React.useEffect(() => {
-//         if (open && sources && sources.length > 0) {
-//             setToggler(prev => !prev); // Flip to trigger FSLightbox
-//         }
-//     }, [open, sources]);
-
-//     // Always render FSLightbox, but with empty array if no sources
-//     // This keeps hooks consistent
-//     return (
-//         <FSLightbox
-//             toggler={toggler}
-//             sources={sources && sources.length > 0 ? sources : ['']}
-//             slide={initialSlide ?? 1}
-//             onClose={() => {
-//                 onClose?.();
-//             }}
-//         />
-//     );
-// }
-

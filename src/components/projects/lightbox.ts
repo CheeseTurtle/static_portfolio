@@ -43,32 +43,42 @@ export type LightboxCaptions = Array<LightboxCaption | null>;
 
 export type LightboxAction =
     | { type: "OPEN"; slide: number }
+    | { type: 'ENSURE_OPEN', slide?: number }
     | { type: "CLOSE" }
-    //   | { type: "SET_SLIDE"; slide: number }
     | { type: "SET_CONTENT", sourceKey: string, sources: LightboxSource[], captions?: LightboxCaptions };
 
 export function lightboxReducer(state: LightboxState, action: LightboxAction): LightboxState {
-    switch (action.type) {
-        case "OPEN":
-            // console.log('Old state:', state);
-            return {
-                ...state,
-                open: true,
-                initialSlide: action.slide,
-            };
-        case "CLOSE":
-            return { ...state, open: false };
-        // case "SET_SLIDE":
-        //   return { ...state, slide: action.slide };
-        case 'SET_CONTENT': {
-            const {type, ...rest} = action
-            if (action.sources !== state.sources || action.captions !== state.captions)
-                return { ...state, ...rest };
-            return state;
+    const result = (()=>{
+        switch (action.type) {
+            case "OPEN":
+                // console.log('Old state:', state);
+                return {
+                    ...state,
+                    open: true,
+                    initialSlide: action.slide,
+                };
+            case "ENSURE_OPEN":
+                return {
+                    ...state,
+                    open: true,
+                    initialSlide: action.slide ?? state.initialSlide,
+                }
+            case "CLOSE":
+                return { ...state, open: false };
+            // case "SET_SLIDE":
+            //   return { ...state, slide: action.slide };
+            case 'SET_CONTENT': {
+                const {type, ...rest} = action
+                if (action.sources !== state.sources || action.captions !== state.captions)
+                    return { ...state, ...rest };
+                return state;
+            }
+            default:
+                return state;
         }
-        default:
-            return state;
-    }
+    })();
+    console.log('LIGHTBOX REDUCER', state, action, result);
+    return result;
 }
 
 

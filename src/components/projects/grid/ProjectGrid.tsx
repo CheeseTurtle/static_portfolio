@@ -173,46 +173,46 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
 
   return (
     <CaptionedLightboxProvider>
-    <div
-      className="grid w-full overflow-y-visible"
-      style={{
-        gridTemplateRows: `auto minmax(0, ${maxExtraHeight}px)`,
-        minHeight: baseHeight > 0 ? `max(100vh, ${baseHeight + maxExtraHeight}px)` : '100vh',
-      }}
-    >
-      <div ref={gridContainerRef} className={cn("flex w-full gap-4 p-8 pt-4 h-min overflow-y-visible")}> 
-         {/* style={{scrollMarginBottom: maxExtraHeight}}> */}
-        {projectCols.map((colElems, i) => (
-          <div key={i} className="flex-1 flex flex-col gap-4">
-            {colElems}
-            {/* {colElems.map((p, index) => {
-              // Calculate the actual index in the full projects array
-              const projectIndex = projects.findIndex(proj => proj.id === p.id);
-              return (
-                <ProjectItem 
-                  key={p.id}
-                  project={p}
-                  projectIndex={projectIndex}
-                  activeProject={activeProject}
-                  activeProjectId={activeProjectId}
-                  activeProjectIndex={activeProjectIndex}
-                  openProjectId={openProjectId}
-                  carouselOpen={carouselOpen}
-                  clickItem={clickItem}
-                  setCarouselOpen={setCarouselOpen}
-                />
-              );
-            })} */}
-          </div>
-        ))}
+      <div
+        className="grid w-full overflow-y-visible"
+        style={{
+          gridTemplateRows: `auto minmax(0, ${maxExtraHeight}px)`,
+          minHeight: baseHeight > 0 ? `max(100vh, ${baseHeight + maxExtraHeight}px)` : '100vh',
+        }}
+      >
+        <div ref={gridContainerRef} className={cn("flex w-full gap-4 p-8 pt-4 h-min overflow-y-visible")}> 
+          {/* style={{scrollMarginBottom: maxExtraHeight}}> */}
+          {projectCols.map((colElems, i) => (
+            <div key={i} className="flex-1 flex flex-col gap-4">
+              {colElems}
+              {/* {colElems.map((p, index) => {
+                // Calculate the actual index in the full projects array
+                const projectIndex = projects.findIndex(proj => proj.id === p.id);
+                return (
+                  <ProjectItem 
+                    key={p.id}
+                    project={p}
+                    projectIndex={projectIndex}
+                    activeProject={activeProject}
+                    activeProjectId={activeProjectId}
+                    activeProjectIndex={activeProjectIndex}
+                    openProjectId={openProjectId}
+                    carouselOpen={carouselOpen}
+                    clickItem={clickItem}
+                    setCarouselOpen={setCarouselOpen}
+                  />
+                );
+              })} */}
+            </div>
+          ))}
+        </div>
+        {/* {extraHeightDiv} */}
+        <div 
+          id="project-grid-expansion-reserve" 
+          className="pointer-events-none"
+          aria-hidden="true"
+        />
       </div>
-      {/* {extraHeightDiv} */}
-      <div 
-        id="project-grid-expansion-reserve" 
-        className="pointer-events-none"
-        aria-hidden="true"
-      />
-    </div>
     </CaptionedLightboxProvider>
   );
 });
