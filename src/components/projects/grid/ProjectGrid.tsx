@@ -8,6 +8,7 @@ import type { ScrollToFn } from "../filtering/common/filterTypes";
 import { cn } from "@/lib/utils";
 import { useResizeObserver } from "@/hooks/useResizeObserver";
 import { CaptionedLightboxProvider } from "../CaptionedLightbox";
+import { useCaptionedLightbox } from "../lightbox";
 
 interface ProjectGridProps {
   scrollContainer: RefObject<any>,
@@ -24,16 +25,12 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
   const { width } = useWindowSize();
 
   // Get state from store
-  // const projects = useBrowserContext(s => Array.from(s.visibleProjects.values()));
   const projects = useBrowserContext(s=>s.visibleProjects);
   const activeProjectId = useBrowserContext(s => s.activeProjectId);
   const activeProjectIndex = useBrowserContext(s => s.activeProjectIndex);
   const openProjectId = useBrowserContext(s => s.openProjectId);
   const carouselOpen = useBrowserContext(s => s.carouselOpen);
   
-  // const activeProjectId = useDeferredValue(activeProjectId_);
-  // const activeProjectIndex = useDeferredValue(activeProjectIndex_);
-
   // Get actions from store
   const clickItem = useBrowserContext(s => s.clickItem);
   const setCarouselOpen = useBrowserContext(s => s.setCarouselOpen);
@@ -63,8 +60,6 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
     return arr;
   }, [projects, columns]);
   
-  // const maxExtraHeight = React.useRef<number>(0);
-  
   const projectRefs = React.useRef<React.RefObject<ProjectItemHandle>[]>([]);
   projectRefs.current = projects.map((_, i) => projectRefs.current[i] ?? React.createRef());
   
@@ -72,8 +67,11 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
   const extraRefs = React.useRef<React.RefObject<HTMLDivElement>[]>([]);
   extraRefs.current = projects.map((_, i) => extraRefs.current[i] ?? React.createRef());
 
+  const lightboxOpenRef = React.useRef<boolean>(false);
 
-
+  // const {state: lightboxState} = useCaptionedLightbox();
+  // const lightboxOpen = lightboxState.open;
+  
   // Projects in columns
   const projectCols = cols.map((col, i) =>
     col.map((p, index): ProjectItemElement => {
@@ -94,6 +92,8 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
             activeProjectIndex={activeProjectIndex}
             openProjectId={openProjectId}
             carouselOpen={carouselOpen}
+            // lightboxOpen={lightboxOpenRef.current}
+            // lightboxOpen={lightboxOpen}
             clickItem={clickItem}
             setCarouselOpen={setCarouselOpen}
             scrollContainer={scrollContainer}
@@ -109,7 +109,6 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
     projectCols[activeProjectIndex % columns][Math.floor(activeProjectIndex / columns)], 
     [activeProjectIndex, columns, projectCols]);
   
-  // const activeProjectRef = useMemo(()=>activeProjectItem?.props.ref ?? null as React.Ref<ProjectItemHandle> | null, [activeProjectItem]);
   const activeProjectRef = useMemo(()=>activeProjectItem ? projectRefs.current?.[activeProjectItem.props.refIndex] ?? null : null, [activeProjectItem, projectRefs]);
   
   // console.log('activeProjectItem:', activeProjectItem, activeProjectRef);
@@ -135,10 +134,6 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
 
 
   const maxExtraHeight = Math.max(0, ...extraRefs.current.map(x=>Math.ceil(x.current?.scrollHeight ?? 0)));
-  // const extraClassName = React.useMemo(()=>maxExtraHeight ? `mb-[${maxExtraHeight}px]`: undefined, [maxExtraHeight]);
-  // const extraHeightDiv = React.useMemo(()=><div id="project-grid-bottom-padding" className="flex, border-none outline-none bg-none pointer-events-none w-full" style={{flexGrow: 1, minHeight: 0, flexBasis: `${maxExtraHeight ?? 0}px`, maxHeight: `${maxExtraHeight ?? 0}px`}}></div>, [maxExtraHeight]);
-
-  // console.log(maxExtraHeight, extraClassName);
 
   const gridContainerRef = React.useRef<HTMLDivElement>(null);
   const [baseHeight, setBaseHeight] = React.useState<number>(0);
@@ -167,12 +162,12 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
   useResizeObserver({
     ref: gridContainerRef,
     onResize: measureBaseHeight,
-    // throttle: 200,  // Update at most every 200ms during resize
-    // debounce: 150,  // Final update 150ms after resize stops
+    throttle: 200,  // Update at most every 200ms during resize
+    debounce: 150,  // Final update 150ms after resize stops
   });
 
   return (
-    <CaptionedLightboxProvider>
+    <CaptionedLightboxProvider openRef={lightboxOpenRef} onClose={undefined}>
       <div
         className="grid w-full overflow-y-visible"
         style={{
@@ -185,28 +180,9 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
           {projectCols.map((colElems, i) => (
             <div key={i} className="flex-1 flex flex-col gap-4">
               {colElems}
-              {/* {colElems.map((p, index) => {
-                // Calculate the actual index in the full projects array
-                const projectIndex = projects.findIndex(proj => proj.id === p.id);
-                return (
-                  <ProjectItem 
-                    key={p.id}
-                    project={p}
-                    projectIndex={projectIndex}
-                    activeProject={activeProject}
-                    activeProjectId={activeProjectId}
-                    activeProjectIndex={activeProjectIndex}
-                    openProjectId={openProjectId}
-                    carouselOpen={carouselOpen}
-                    clickItem={clickItem}
-                    setCarouselOpen={setCarouselOpen}
-                  />
-                );
-              })} */}
             </div>
           ))}
         </div>
-        {/* {extraHeightDiv} */}
         <div 
           id="project-grid-expansion-reserve" 
           className="pointer-events-none"

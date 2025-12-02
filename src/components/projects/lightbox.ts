@@ -19,6 +19,8 @@ export type LightboxState = {
     sources: LightboxSources;
     captions?: LightboxCaptions;
     sourceKey?: string,
+    activeProjectIndex?: number,
+    activeProjectId?: string,
 };
 
 // type ImagePath = string;
@@ -45,7 +47,9 @@ export type LightboxAction =
     | { type: "OPEN"; slide: number }
     | { type: 'ENSURE_OPEN', slide?: number }
     | { type: "CLOSE" }
-    | { type: "SET_CONTENT", sourceKey: string, sources: LightboxSource[], captions?: LightboxCaptions };
+    | { type: "SET_CONTENT", sourceKey: string, sources: LightboxSource[], captions?: LightboxCaptions }
+    | { type: 'SET_PROJECT', projectId: string, projectIndex: number,}
+    | { type: 'CLEAR_PROJECT' }
 
 export function lightboxReducer(state: LightboxState, action: LightboxAction): LightboxState {
     const result = (()=>{
@@ -55,7 +59,7 @@ export function lightboxReducer(state: LightboxState, action: LightboxAction): L
                 return {
                     ...state,
                     open: true,
-                    initialSlide: action.slide,
+                    initialSlide: action.slide - 1,
                 };
             case "ENSURE_OPEN":
                 return {
@@ -64,9 +68,14 @@ export function lightboxReducer(state: LightboxState, action: LightboxAction): L
                     initialSlide: action.slide ?? state.initialSlide,
                 }
             case "CLOSE":
-                return { ...state, open: false };
+                return { ...state, activeProjectIndex: undefined, activeProjectId: undefined, open: false };
             // case "SET_SLIDE":
             //   return { ...state, slide: action.slide };
+            case 'SET_PROJECT': {
+                return {...state, ...action};
+            }
+            case "CLEAR_PROJECT":
+                return {...state, activeProjectIndex: undefined, activeProjectId: undefined};
             case 'SET_CONTENT': {
                 const {type, ...rest} = action
                 if (action.sources !== state.sources || action.captions !== state.captions)
@@ -77,7 +86,8 @@ export function lightboxReducer(state: LightboxState, action: LightboxAction): L
                 return state;
         }
     })();
-    console.log('LIGHTBOX REDUCER', state, action, result);
+    const {type, ...params} = action;
+    console.log('LIGHTBOX REDUCER ACTION', type, params, state, result);
     return result;
 }
 

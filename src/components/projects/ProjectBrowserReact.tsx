@@ -88,97 +88,32 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
     });
 
     // Get state from stores
-    // const visibleProjects = useBrowserContext(s => Array.from(s.visibleProjects.values()));
-    // const visibleProjects = useBrowserContext(
-    //     s => Array.from(s.visibleProjects.values()),
-    //     (a, b) => {
-    //         console.log('[Equality check]', a.length, b.length, a === b);
-    //         // return shallow(a,b);
-    //         if (a.length !== b.length) return false;
-    //         return a.every((p, i) => p.id === b[i]?.id);
-    //     }
-    // );
     const visibleProjects = useBrowserContext(s=>s.visibleProjects);
-    // const activeProjectIndex = useBrowserContext(s => s.activeProjectIndex, doubleEq);
-    // const activeProjectId = useBrowserContext(s => s.activeProjectId, doubleEq);
-    // const openProjectId = useBrowserContext(s => s.openProjectId, doubleEq);
-    // const carouselOpen = useBrowserContext(s => s.carouselOpen);
-    // const sheetOpen = useBrowserContext(s => s.sheetOpen);
-    
-    // Get actions from stores
-    // const setActiveProjectIndex = useBrowserContext(s => s.setActiveProjectIndex);
-    // const clickItem = useBrowserContext(s => s.clickItem);
-    // const setCarouselOpen = useBrowserContext(s => s.setCarouselOpen);
-    // const onCarouselOpenChange = useBrowserContext(s=>s.onCarouselOpenChange);
-    // const setSheetOpen = useBrowserContext(s => s.setSheetOpen);
-    // const getIndexForId = useBrowserContext(s => s.getIndexForId);
-
-    // // useEffect(()=>{
-    // console.log('[ProjectBrowserInner] State:', {
-    //     visibleProjectsCount: visibleProjects.length,
-    //     activeProjectIndex,
-    //     activeProjectId,
-    //     openProjectId,
-    //     carouselOpen
-    // });
-    // }, []);
-
-    // const activeProject = useMemo((): ProjectInfo | null => 
-    //     activeProjectIndex !== null ? visibleProjects[activeProjectIndex] ?? null : null, 
-    //     [visibleProjects, activeProjectIndex]
-    // );
-
-    // const setActiveProjectFromId = React.useCallback((id: string | ProjectInfo | null) => {
-    //     if (id === null) {
-    //         console.warn('Setting activeProjectIndex to null');
-    //         setActiveProjectIndex(null);
-    //         return;
-    //     }
-        
-    //     const id_ = (typeof id === 'string') ? id : id.id;
-    //     const idx = getIndexForId(id_);
-        
-    //     if (idx === null) {
-    //         console.error(`Project with id '${id_}' not found in visible projects`);
-    //         return;
-    //     }
-        
-    //     console.info('Setting activeProjectIndex to:', idx);
-    //     setActiveProjectIndex(idx);
-    // }, []); // , [getIndexForId, setActiveProjectIndex]);
-
-    
-    // const setOpenProjectFromId = React.useCallback((id: string | null) => {
-    //     console.log('Set open project from ID:', id);
-        
-    //     if (id === null) {
-    //         setCarouselOpen(false);
-    //         return;
-    //     }
-        
-    //     const idx = getIndexForId(id);
-    //     if (idx === null) {
-    //         console.error(`Project with id '${id}' not found in visible projects`);
-    //         return;
-    //     }
-        
-    //     setActiveProjectIndex(idx);
-    //     setCarouselOpen(true);
-    // }, []); //}, [getIndexForId, setActiveProjectIndex, setCarouselOpen, onCarouselOpenChange]);
-
-
     const clearActiveItem = useBrowserContext(s=>s.clearActiveItem);
 
-    // const {current} = useAutoScroll(true, [], {});
+    
+    const formRef = useRef<HTMLDivElement>(null);
+    const gridHandle = useRef<ProjectGridHandle>(null);
+    const filterResultsRef = useRef<HTMLDivElement>(null);
 
+    // const {current} = useAutoScroll(true, [], {});
     // const [scrollState, scrollToFn] = useWindowScroll();
+
+
+
 
     useEffect(()=>{
         const handler = (evt: MouseEvent) => {
-            // if(evt.defaultPrevented) return;
-            if(evt.target && evt.target instanceof HTMLDivElement && evt.target.id === "carousel-dialog-overlay") {
-                return;
+            if(evt.defaultPrevented) return;
+            // const atTarget = evt.eventPhase === evt.AT_TARGET; // Otherwise BUBBLING_PHASE
+            if(evt.target && evt.target instanceof Node) {
+                if(evt.target instanceof HTMLDivElement && evt.target.id === "carousel-dialog-overlay")
+                    return;
+                if(!(filterResultsRef.current?.contains(evt.target) || formRef.current?.contains(evt.target)))
+                    return;
             }
+            console.log(evt, evt.eventPhase);
+            // srcElement, explicitOriginalTarget, view
             // console.log('Window click:', evt.target, evt.currentTarget, evt.relatedTarget, evt.bubbles, evt.eventPhase, evt.defaultPrevented, evt.detail);
             clearActiveItem();
         };
@@ -258,15 +193,10 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
         
         // useValueChangeWatcher<boolean, boolean>(inView, onInViewChange, {});
         
-        const formRef = useRef<HTMLDivElement>(null);
-    const gridRef = useRef<ProjectGridHandle>(null);
-    
-
     useEffect(()=>{
-        scrollToRef.current = gridRef.current?.scrollToItem;
+        scrollToRef.current = gridHandle.current?.scrollToItem;
         // console.log(gridRef, scrollToRef);
     });
-
 
     const initiallyHasFilter = useMemo(()=>anyFilter(), []);
     const [filterExpanded, setFilterExpanded] = useState<boolean>(initiallyHasFilter);
@@ -331,11 +261,15 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
                     {/* <div ref={sentinelRef} className="h-0 w-full"></div> */}
                 </div>
             </Collapsible>
-            <div className="mt-5 overflow-y-visible">
+            <div className="mt-5 overflow-y-visible" ref={filterResultsRef}>
                 <div className="pl-4 pr-4">
-                    Showing {visibleProjects.length} project(s) matching the current filter.
+                    {
+                        visibleProjects?.length
+                        ? <>Showing {visibleProjects.length} project(s) matching the current filter.</>
+                        : <>No projects match the current filter.</>
+                    }
                 </div>
-                <ProjectGrid ref={gridRef} scrollContainer={scrollContainer} />
+                <ProjectGrid ref={gridHandle} scrollContainer={scrollContainer} />
             </div>
         <ProjectCarouselDialog 
             showToast={showToast}

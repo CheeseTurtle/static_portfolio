@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, type MouseEvent, type MouseEventHandler, type PointerEventHandler, type RefAttributes } from "react";
+import React, { forwardRef, useCallback, useEffect, useEffectEvent, useImperativeHandle, useMemo, useRef, type MouseEvent, type MouseEventHandler, type PointerEventHandler, type RefAttributes } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { ProjectInfo, TagKey } from "../../types";
 import { BadgeRows } from "./badges/BadgeRows";
@@ -25,6 +25,7 @@ type ProjectItemProps = {
     activeProjectIndex: number | null;
     openProjectId: string | null;
     carouselOpen: boolean;
+    // lightboxOpen: boolean;
     clickItem: (itemId: string, itemIndex: number, newState?: 'active' | 'open') => void;
     setCarouselOpen: (open: boolean) => void;
     extraRef?: React.RefObject<HTMLDivElement | null>,
@@ -49,6 +50,7 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
     // activeProjectIndex,
     // openProjectId,
     carouselOpen,
+    // lightboxOpen,
     clickItem,
     // setCarouselOpen,
     extraRef: extraRef_,
@@ -76,10 +78,16 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
         [newEntries]
     );
 
+    const {state: lightboxState, dispatch: lightboxDispatch} = useCaptionedLightbox();
+    const {activeProjectId: lightboxProjectId, activeProjectIndex: lightboxProjectIndex, open: lightboxOpen} = lightboxState;
+
+    
     // Item is expanded if it's the active project
     const expanded = useMemo(() => {
-        return id === activeProjectId;
-    }, [id, activeProjectId]);
+        console.log(`id (${id}) === activeProjectId (${activeProjectId}) ?? lightboxProjectId (${lightboxProjectId})  ==>`, id === (activeProjectId ?? lightboxProjectId));
+        return id === (activeProjectId ?? lightboxProjectId);
+        // return id === activeProjectId || id === lightboxProjectId;
+    }, [id, activeProjectId, lightboxProjectId]);
 
     const onClick: MouseEventHandler<HTMLDivElement> = useCallback((evt) => {
         evt.stopPropagation();
@@ -95,28 +103,6 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
         clickItem(id, projectIndex, isMouse ? 'open' : undefined);
     }, [id, projectIndex, clickItem]);
 
-
-
-    // const getBoundingClientRect = useCallback(()=>{
-    //     const selfRect = selfRef.current.getBoundingClientRect();
-    //     if(expanded || !extraRef.current)
-    //         return selfRect;
-    //     if(!expanded && extraRef.current) {
-    //         selfRect.bottom += extraRef.current.scrollHeight;
-
-    //     }
-
-
-
-    // }, [expanded]);
-
-    const dispatch = useCaptionedLightbox().dispatch;
-    // const setUpLightbox = useCallback(()=>{
-    //     if(activeProjectId !== id) return false;
-    //     if(!lightboxData?.lightboxSources.length) return false;
-    //     dispatch({type: 'SET_CONTENT', sources: lightboxData?.lightboxSources, captions: lightboxData.lightboxCaptions});
-    //     return true;
-    // }, [activeProjectId, id, dispatch, lightboxData]);
 
     useImperativeHandle(ref, () => ({ 
         // setUpLightbox,
@@ -167,15 +153,14 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
         },
         onClick }), [onClick, scrollContainer, expanded, extraRef]);
 
-    // const maybeScrollIntoView = useCallback(()=>{
-    //     if(!carouselOpen) return;
-
-    // }, [carouselOpen]);
+    const lightboxIsOpen = useEffectEvent(()=>lightboxOpen);
 
     // Handle expand/collapse animation
     useEffect(() => {
         const el = extraRef.current;
         if (!el) return;
+
+        console.log(`PROJECT ITEM '${id}' EXPANDED:`, expanded, lightboxIsOpen());
 
         if (expanded) {
             // Expand: animate from 0 to scrollHeight
@@ -206,32 +191,36 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
     }, [id, expanded, extraRef]);
 
     const onHover: PointerEventHandler<HTMLDivElement> = useCallback((evt) => {
-        if(carouselOpen) return;
+        console.log(`PROJECT ITEM '${id}' HOVERED`, {carouselOpen, lightboxOpen});
+        if(carouselOpen || lightboxOpen/* || (lightboxProjectId !== undefined/* && lightboxProjectId !== id* /)*/) return;
         const pointerType = evt.pointerType;
         const isMouse = pointerType === 'mouse';
         if(!isMouse) return;
         clickItem(id, projectIndex, 'active');
-    }, [clickItem, carouselOpen, projectIndex, id]);
+    }, [clickItem, carouselOpen, lightboxOpen, projectIndex, id, lightboxProjectId]);
 
     const onUnhover: PointerEventHandler<HTMLDivElement> =  useCallback((evt) => {
-        if(carouselOpen) return;
+        console.log(`PROJECT ITEM '${id}' UNHOVERED`, {carouselOpen, lightboxOpen});
+         if(carouselOpen || lightboxOpen/* || (lightboxProjectId !== undefined)*/) return;
         const pointerType = evt.pointerType;
         const isMouse = pointerType === 'mouse';
         if(!isMouse) return;
         // clickItem(id, projectIndex, 'active');
         clearActiveItem();
-    }, [clearActiveItem, carouselOpen]);
+    }, [clearActiveItem, carouselOpen, lightboxOpen, lightboxProjectId, id]);
 
 
     const handleThumbClick = useCallback((evt: MouseEvent<HTMLImageElement | HTMLDivElement>, index: number) => {
         // console.log('THUMB CLICK', lightboxData, index);
+        console.log(`PROJECT ITEM '${id}' THUMB #${index + 1} CLICKED`);
         if(!lightboxData?.lightboxSources?.length) return;
         evt.preventDefault();
         evt.stopPropagation();
-        dispatch({type: 'SET_CONTENT', sourceKey: id, sources: lightboxData.lightboxSources, captions: lightboxData.lightboxCaptions});
+        lightboxDispatch({type: 'SET_PROJECT', projectId: id, projectIndex});
+        lightboxDispatch({type: 'SET_CONTENT', sourceKey: id, sources: lightboxData.lightboxSources, captions: lightboxData.lightboxCaptions});
         // console.log('OPENING LIGHTBOX');
-        dispatch({type: 'OPEN', slide: index + 1});
-    }, [dispatch, lightboxData, id]);
+        lightboxDispatch({type: 'OPEN', slide: index + 1});
+    }, [lightboxDispatch, lightboxData, id, projectIndex]);
 
     return (
         <Card 
