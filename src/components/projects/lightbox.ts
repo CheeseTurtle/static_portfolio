@@ -5,6 +5,22 @@ import type { ProjectInfo } from "./types";
 import useMutationObserver from "@/hooks/use-mutation-observer";
 import { useDomReady } from "@/hooks/use-dom-ready";
 
+
+
+// type ConvertSymbol = {
+//     (x: symbol | string): string,
+//     (x: null): null
+// };
+// export const convertSymbol: ConvertSymbol = x => (typeof x === 'symbol' ? ('%'+String(x)+'%') : x);
+
+
+export function convertSymbol(x: symbol | string): string;
+export function convertSymbol(x: null): null;
+export function convertSymbol(x: symbol | string | null): string | null;
+export function convertSymbol(x: symbol | string | null): string | null {
+  return typeof x === 'symbol' ? `%${x.toString()}%` : x;
+}
+
 export type CaptionedLightboxProps = {
     initialSlide: number,
     sources: LightboxSources;
@@ -59,13 +75,13 @@ export function lightboxReducer(state: LightboxState, action: LightboxAction): L
                 return {
                     ...state,
                     open: true,
-                    initialSlide: action.slide - 1,
+                    initialSlide: action.slide,
                 };
             case "ENSURE_OPEN":
                 return {
                     ...state,
                     open: true,
-                    initialSlide: action.slide ?? state.initialSlide,
+                    initialSlide: (action.slide === undefined ? state.initialSlide : action.slide)
                 }
             case "CLOSE":
                 return { ...state, activeProjectIndex: undefined, activeProjectId: undefined, open: false };
@@ -106,15 +122,3 @@ export function useCaptionedLightbox() {
     if(!value) throw Error('Turtles');
     return value;
 }
-
-// export function useCaptionedLightboxWithProject(project: ProjectInfo) {
-//     const {dispatch} = useCaptionedLightbox();
-//     const data = projectInfoToLightboxContent(project);
-//     if(!data) return null;
-//     const {sources, captions} = data;
-//     if(!sources?.length) return null;
-//     function openLightbox(index: number) {
-//         dispatch({type: 'SET_CONTENT', sources, captions});
-//         dispatch({type: 'OPEN', slide: index});
-//     };
-// }

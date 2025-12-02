@@ -8,7 +8,23 @@ import { gsap } from "gsap";
 import { ImageRow } from './expansion/ImageRow';
 import { useBrowserContext } from "../../filtering/common/browserContext";
 import { ThumbnailRow } from "./expansion/ThumbnailRow";
-import { useCaptionedLightbox } from "../../lightbox";
+import { useCaptionedLightbox, type LightboxCaptions, type LightboxSources } from "../../lightbox";
+
+
+function adaptLightboxData(data: ProjectInfo['lightboxData']) {
+    if(!data) return undefined;
+    const sources = data.lightboxSources.map(x=>(
+        typeof x === 'string' ? x : <>{x}</>
+    ));
+    const captions = data.lightboxCaptions?.map(x=>
+        x ? (
+            typeof x === 'string' ? x : <>{x}</>
+        ) : null
+    );
+    return {sources, captions};
+}
+
+
 
 export interface ProjectItemHandle {
     onClick: (evt: MouseEvent<HTMLDivElement>) => void;
@@ -58,7 +74,8 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
     // ref
 // }: ProjectItemProps & {ref?: React.Ref<ProjectItemHandle>}) => {
 }: ProjectItemProps, ref) => {
-    const { id, lightboxData, title, date, summary, description, tags } = project;
+    const { id, lightboxData: lightboxData_, title, date, summary, description, tags } = project;
+    const lightboxData = adaptLightboxData(lightboxData_);
 
     const clearActiveItem = useBrowserContext(s=>s.clearActiveItem);
 
@@ -84,7 +101,7 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
     
     // Item is expanded if it's the active project
     const expanded = useMemo(() => {
-        console.log(`id (${id}) === activeProjectId (${activeProjectId}) ?? lightboxProjectId (${lightboxProjectId})  ==>`, id === (activeProjectId ?? lightboxProjectId));
+        // console.log(`id (${id}) === activeProjectId (${activeProjectId}) ?? lightboxProjectId (${lightboxProjectId})  ==>`, id === (activeProjectId ?? lightboxProjectId));
         return id === (activeProjectId ?? lightboxProjectId);
         // return id === activeProjectId || id === lightboxProjectId;
     }, [id, activeProjectId, lightboxProjectId]);
@@ -213,11 +230,11 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
     const handleThumbClick = useCallback((evt: MouseEvent<HTMLImageElement | HTMLDivElement>, index: number) => {
         // console.log('THUMB CLICK', lightboxData, index);
         console.log(`PROJECT ITEM '${id}' THUMB #${index + 1} CLICKED`);
-        if(!lightboxData?.lightboxSources?.length) return;
+        if(!lightboxData?.sources?.length) return;
         evt.preventDefault();
         evt.stopPropagation();
         lightboxDispatch({type: 'SET_PROJECT', projectId: id, projectIndex});
-        lightboxDispatch({type: 'SET_CONTENT', sourceKey: id, sources: lightboxData.lightboxSources, captions: lightboxData.lightboxCaptions});
+        lightboxDispatch({type: 'SET_CONTENT', sourceKey: id, ...lightboxData});
         // console.log('OPENING LIGHTBOX');
         lightboxDispatch({type: 'OPEN', slide: index + 1});
     }, [lightboxDispatch, lightboxData, id, projectIndex]);
@@ -255,9 +272,9 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
                 {summary && (
                     <ExpandedPart ref={extraRef}>
                         {summary}
-                        {lightboxData && lightboxData.lightboxSources.length > 0 && (
+                        {lightboxData && lightboxData.sources.length > 0 && (
                             // <ImageRow images={images} />
-                            <ThumbnailRow items={lightboxData.lightboxSources} onImageClick={handleThumbClick} />
+                            <ThumbnailRow items={lightboxData.sources} onImageClick={handleThumbClick} />
                         )}
                     </ExpandedPart>
                 )}

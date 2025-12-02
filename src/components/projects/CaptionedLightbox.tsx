@@ -16,7 +16,7 @@ import { useUnmount } from "@/hooks/use-unmount";
 
 
 export function CaptionedLightboxProvider({children, onClose, openRef}: {children: React.ReactNode, onClose?: () => void, openRef: React.RefObject<boolean>}) {
-    const [state, dispatch] = useReducer(lightboxReducer, {captions: [], initialSlide: 0, open: false, sources: [] });
+    const [state, dispatch] = useReducer(lightboxReducer, {captions: [], initialSlide: 1, open: false, sources: [] });
 
     const setOpen = useCallback((open: boolean) => {
         if(open) {

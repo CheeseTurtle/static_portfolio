@@ -13,23 +13,84 @@ export type TagKey = 'languages' | 'skills' | 'topics';
 type TagCollection = string[] | Set<string>;
 
 
-type ProjectImageInfo = {
+// interface ProjectImageInfoBase {
+//     type?: 'image' | 'content',
+//     path: string,
+// };
+
+// interface ProjectImageInfoCaptionBase {
+//     caption?: string | undefined,
+//     captionPath?: string | undefined
+// }
+
+// interface ProjectInfoImageStringCaption extends ProjectImageInfoCaptionBase {
+//     caption?: string,
+//     captionPath?: undefined,
+// }
+
+// interface ProjectInfoImageContentCaption extends ProjectImageInfoCaptionBase {
+//     caption?: undefined,
+//     captionPath: string
+// }
+
+
+// interface ProjectInfoImage extends ProjectImageInfoBase {
+//     type?: 'image',
+// }
+
+// interface ProjectInfoContent extends ProjectImageInfoBase {
+//     type: 'content'
+// }
+
+// type ProjectImageStringInfo = ProjectInfoImage & ProjectInfoImageStringCaption;
+// type ProjectImageContentInfo = ProjectInfoImage & ProjectInfoImageContentCaption;
+
+// type ProjectContentStringInfo = ProjectInfoContent & ProjectInfoImageStringCaption;
+// type ProjectContentContentInfo = ProjectInfoContent & ProjectInfoImageContentCaption;
+
+// type ProjectImageInfo = {
+//     type: 'image',
+//     path: string,
+//     caption?: string,
+//     captionPath?: undefined,
+// } | {
+//     type: 'image',
+//     path: string,
+//     caption?: undefined,
+//     captionPath: string,
+// } | {
+//     type: 'content',
+//     path: string,
+//     caption?: string,
+//     captionPath?: undefined,
+// } | {
+//     type: 'content',
+//     path: string,
+//     caption?: undefined,
+//     captionPath: string,
+// };
+
+export type ProjectImageInfo = {
+    type?: 'image' | 'content',
     path: string,
-    caption?: string
+    caption?: string,
+    captionPath?: string
+
 }
+
+// export type ProjectImageInfo = ProjectImageStringInfo | ProjectImageContentInfo | ProjectContentContentInfo | ProjectContentStringInfo;
 
 
 type ProjectImageTuple = [string] | [string, string | undefined | null];
-type ProjectImageArray = (string | ProjectImageInfo | ProjectImageTuple)[];
-// type ProjectImageRecord = Record<string, string | undefined>;
 
-type ProjectImages = ProjectImageArray; // | ProjectImageRecord;
+export type ProjectImageEntry = string | ProjectImageInfo | ProjectImageTuple;
+type ProjectImageArray = ProjectImageEntry[];
+export type ProjectImages = ProjectImageArray;
 
 
 interface ProjectDataBase<C extends TagCollection, D extends number | Date | ParsedDate | string> {
     title: string;
     date: D;
-
     description: string;
     summary: string;
 
@@ -45,6 +106,21 @@ interface ProjectDataBase<C extends TagCollection, D extends number | Date | Par
 
 export type ProjectFrontmatter = ProjectDataBase<string[], string | number | Date>
 
+
+export interface ProjectInfoWithLBSymbols extends ProjectDataBase<Set<string>, ParsedDate> {
+    id: string;
+    dateStr?: string;
+    contentMdx?: string;
+    contentHtml?: string;
+    contentElem?: ReturnType<MDXInstance<ProjectFrontmatter>["Content"]>;
+    
+    lightboxData?: {
+        lightboxSources: (string)[], //(React.JSX.Element | string)[],
+        lightboxCaptions: (string | null)[],
+    }
+}
+
+
 export interface ProjectInfo extends ProjectDataBase<Set<string>, ParsedDate> {
     id: string;
     dateStr?: string;
@@ -53,8 +129,8 @@ export interface ProjectInfo extends ProjectDataBase<Set<string>, ParsedDate> {
     contentElem?: ReturnType<MDXInstance<ProjectFrontmatter>["Content"]>;
     
     lightboxData?: {
-        lightboxSources: (React.JSX.Element | string)[],
-        lightboxCaptions: (string | null)[],
+        lightboxSources: (React.JSX.Element | string)[], //(React.JSX.Element | string)[],
+        lightboxCaptions: (React.JSX.Element | string | null)[],
     }
 }
 

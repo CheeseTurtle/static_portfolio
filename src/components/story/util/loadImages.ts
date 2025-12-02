@@ -72,6 +72,7 @@ function _getImagePath(imagePaths: Set<string>, prepath: string, fn: string): st
   }
 }
 export function getImagePath(imagePaths: Set<string>, prepath: string | string[], fn: string): string | undefined {
+  // console.log(imagePaths);
   if(imagePaths.has(fn)) return trimPublicRoot(fn);
   if(typeof prepath === 'string') return _getImagePath(imagePaths, prepath, fn);
   let path: string
@@ -81,3 +82,5 @@ export function getImagePath(imagePaths: Set<string>, prepath: string | string[]
     if(undefined !== matchPath) return matchPath;
   } 
 }
+
+

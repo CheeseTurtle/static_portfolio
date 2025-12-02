@@ -2,7 +2,7 @@ import React, { forwardRef, StrictMode, useCallback, useEffect, useEffectEvent, 
 import ProjectGrid, { type ProjectGridHandle } from "./grid/ProjectGrid";
 // import ProjectCarousel from "./overlay/ProjectCarousel";
 import ProjectCarouselDialog from "./overlay/ProjectCarouselDialog";
-import type { ProjectInfo } from "./types";
+import type { ProjectInfo, ProjectInfoWithLBSymbols } from "./types";
 import parse from "html-react-parser";
 // import { FilterProvider, useFilter } from "./filtering/common/filterContext";
 import { collectFilterRangeInfo, TAGKEYS, TAGTYPES, type FilterRangeInfo, type FilterState, type ScrollToFn, type ShowToastFn } from "./filtering/common/filterTypes";
@@ -23,8 +23,10 @@ import type { FilterStoreState } from "./filtering/common/stores/filterStore";
 
 
 type ProjectBrowserProps = {
-    projects: ProjectInfo[],
+    projects: ProjectInfoWithLBSymbols[],
     contentString?: string,
+    lbContentString: string,
+    symMap: Record<symbol, string>,
     children?: {props?: {value: string}},
 } & React.ComponentProps<'div'>;
 
@@ -48,7 +50,7 @@ function isEquivalentSet(s1: Set<any>, s2: Set<any>): boolean {
     return (s1.size === s2.size) && [...s1].every(x=>s2.has(x));
 }
 
-export function isEquivalentFilterState(s1: FilterState, s2: FilterState, includeOpenProject: boolean = false): boolean {
+function isEquivalentFilterState(s1: FilterState, s2: FilterState, includeOpenProject: boolean = false): boolean {
     if(includeOpenProject && (s1.openProjectId !== s2.openProjectId)) return false;
 
     if((s1.year === undefined) || (s1.year[0] === undefined && s1.year[1] === undefined)) {
@@ -77,11 +79,13 @@ function anyFilter(){
     return ['year','category',...TAGTYPES].some((k)=>params.has(k));
 }
 
-const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps & {
+type ProjectBrowserInnerProps = Omit<ProjectBrowserProps, 'projects' | 'lbContentString' | 'symMap'> & {
     filterRangeInfo: FilterRangeInfo, scrollToRef: RefObject<ScrollToFn | undefined>, scrollTo: ScrollToFn, scrollContainer: RefObject<any>,
     showToast: ShowToastFn,
+    projects: ProjectInfo[]
+};
 
-}>(({ children, projects, filterRangeInfo, contentString, showToast, scrollToRef, scrollTo, scrollContainer }, _ref) => {
+const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInnerProps>(({ children, projects, filterRangeInfo, contentString, showToast, scrollToRef, scrollTo, scrollContainer }: ProjectBrowserInnerProps, _ref) => {
     console.log('[ProjectBrowserInner] Render start', {
         url: window.location.href,
         search: window.location.search,
@@ -146,10 +150,12 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
     // }, [activeProject, activeProjectIndex, setActiveProjectFromId, setOpenProjectFromId]);
 
     // useImperativeHandle(ref, () => handleRef.current, []);
+    // console.log(children);
 
-  if (contentString === undefined) {
-        contentString = children!.props!.value;
-    }
+  if (!contentString) {
+        // contentString = children!.props!.value;
+        throw new Error('No project details content provided');
+  }
 
     const _contentElements = parse(contentString);
     const contentElements = (
@@ -159,6 +165,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
                 ? _contentElements 
                 : [_contentElements]
     ).filter((x) => typeof x === 'object');
+
 
     // console.log('[ProjectBrowserInner] Render end');
 
@@ -279,8 +286,58 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserProps
     </>;
 });
 
-export default function ProjectBrowser({children, projects, contentString}: ProjectBrowserProps) {
-    const filterRangeInfo = useMemo(() => collectFilterRangeInfo(projects), [projects]);
+
+
+function getLightboxItems(lbContentString: string | undefined) {
+    if(!lbContentString) return {};
+    const parsed = parse(lbContentString);
+    if(typeof parsed === 'string')
+        throw new TypeError('LB content source/caption cannot be a bare string');
+    const ret: Record<string, React.JSX.Element> = {};
+    for(const elem of (Array.isArray(parsed) ? parsed : [parsed])) {
+        const id = elem.props['data-item-id'];
+        if(id === undefined) {
+            console.log(elem);
+            throw new TypeError('Could not determine ID of lightbox content item');
+        }
+        ret[id] = elem;
+    }
+    return ret;
+}
+
+
+const extractSymPat = new RegExp('(?<=^%)(.+)(?=%$)');
+
+function convertProjectInfo(projects: ProjectInfoWithLBSymbols[], symMap: Record<symbol, string>, record: Record<string, React.JSX.Element>): ProjectInfo[] {
+    return projects.map(({lightboxData, ...p})=>{
+        console.log(lightboxData);
+        if(undefined === lightboxData) return p;
+        const lightboxCaptions = lightboxData.lightboxCaptions?.map(x=>{
+            if(x === null)
+                return x;
+            const m = x.match(extractSymPat);
+            if(m === null) return x;
+            if(m[0] in record) return record[m[0]];
+            console.warn('Record does not contain symbol:', x);
+            return x;
+        });
+        const lightboxSources = lightboxData.lightboxSources.map(x=>{
+            const m = x.match(extractSymPat);
+            if(m === null) return x;
+            if(m[0] in record) return record[m[0]];
+            throw new RangeError(`Record does not contain symbol '${String(x)}'`);
+            // console.warn('symMap does not contain symbol:', x);
+            // return x;
+        })
+        return {...p, lightboxData: {
+            lightboxSources, lightboxCaptions
+        }};
+    });
+}
+
+
+export default function ProjectBrowser({children, projects: projectsWithLBSymbols, contentString, lbContentString, symMap}: ProjectBrowserProps) {
+    const filterRangeInfo = useMemo(() => collectFilterRangeInfo(projectsWithLBSymbols), [projectsWithLBSymbols]);
     
     const scrollToRef = React.useRef<ScrollToFn | undefined>(undefined);
 
@@ -303,7 +360,13 @@ export default function ProjectBrowser({children, projects, contentString}: Proj
 
     const scrollContainer = useRef<HTMLDivElement>(null);
 
-    return <>
+
+    
+    const _lightboxContentElements: Record<string, React.JSX.Element> = React.useMemo(()=>getLightboxItems(lbContentString), [lbContentString]);
+    const projects = useMemo(()=>convertProjectInfo(projectsWithLBSymbols, symMap, _lightboxContentElements), [projectsWithLBSymbols, _lightboxContentElements]);
+    
+
+return <>
         <div ref={scrollContainer} id='project-browser-wrapper' className="overflow-y-scroll inset-0 w-full h-full p-0 m-0 bg-none border-none outline-none">
         {/* <StrictMode> */}
             <AlertToast></AlertToast>
@@ -322,6 +385,7 @@ export default function ProjectBrowser({children, projects, contentString}: Proj
                             filterRangeInfo={filterRangeInfo} 
                             projects={projects} 
                             contentString={contentString}
+                            // lbContentString={lbContentString}
                             showToast={showToast}
                             scrollTo={scrollTo}
                             scrollToRef={scrollToRef}

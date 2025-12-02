@@ -62,7 +62,7 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
 
     const slideElems = slides.map((slide, i) => (
         <CarouselItem key={i} id={`slide-${i}`} className="pointer-events-auto h-min">
-            <Card className="relative w-full flex pointer-events-auto">
+            <Card className="relative w-full flex pointer-events-auto max-h-[calc(100vh-(--spacing(25)))] overflow-y-scroll">
                 <CardHeader>
                     <CardTitle>Card Title</CardTitle>
                 </CardHeader>
@@ -189,7 +189,7 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
                     >
                         <CarouselContent 
                             id="embla-container" 
-                            className="overflow-visible pointer-events-none w-full items-center ml-auto mr-auto"
+                            className="overflow-visible pointer-events-none w-full items-center max-h-[calc(100%-(--spacing(20)))] ml-auto mr-auto max-w-[calc(100%-(--spacing(12)))]"
                         >
                             {...slideElems}
                         </CarouselContent>

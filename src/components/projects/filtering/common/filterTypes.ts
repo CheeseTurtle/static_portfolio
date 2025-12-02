@@ -1,5 +1,5 @@
 import type React from "react";
-import type { ProjectInfo, TagKey } from "../../types";
+import type { ProjectInfo, ProjectInfoWithLBSymbols, TagKey } from "../../types";
 
 export type TagType = ('lang' | 'topic' | 'skill');  // | 'concept');
 export const TAGTYPES: TagType[] = ['lang', 'skill', 'topic'];
@@ -91,7 +91,7 @@ export type FilterRangeInfo = {
 
 
 
-export function collectFilterRangeInfo(allProjects: ProjectInfo[]): FilterRangeInfo {
+export function collectFilterRangeInfo(allProjects: (ProjectInfo | ProjectInfoWithLBSymbols)[]): FilterRangeInfo {
     const langs: Set<string> = new Set(), topics: Set<string> = new Set(), /*concepts: Set<string> = new Set(),*/ skills: Set<string> = new Set();
     const categories: Set<string> = new Set();  //, audiences: Set<string> = new Set();
     let minYear: number | undefined;

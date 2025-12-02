@@ -6,13 +6,17 @@
 import ProjectBrowserInner from "./ProjectBrowserInner.astro";
 import { getImagePath } from "../story/util/loadImages";
 
+// import * as Path from 'path';
+
 
 // import {render} from 'astro:content';
 
 import { getCollection/*, render*/ } from "astro:content";
 
-import type { ProjectInfo, ProjectEntry, ProjectFrontmatter, ProjectDataWithFactory, TagKey} from "./types";
+import type { ProjectEntry, ProjectFrontmatter, ProjectDataWithFactory, TagKey, ProjectImageEntry, ProjectInfoWithLBSymbols} from "./types";
 import type { MDXInstance } from "astro";
+
+import {convertSymbol} from "./lightbox";
 
 // import { compile } from "@mdx-js/mdx";
 // import * as runtime from 'react/jsx-runtime';
@@ -25,10 +29,11 @@ import type { MDXInstance } from "astro";
 // import type { AstroComponentFactory } from "astro/dist/runtime/server/render/astro";
 import parseDate from "../story/util/parseDate";
 import type { AstroComponentFactory } from "astro/runtime/server/index.js";
+// import type { LightboxCaptions, LightboxSources } from "./lightbox";
 
 // import { unified } from "unified";
 // import remarkParse from "remark-parse";
-// import remarkMdx from "remark-mdx";
+// import remarkMdx from "remark-mdx" ;
 // import { visit } from "unist-util-visit";
 // import type { MdxJsxAttribute } from "mdast-util-mdx-jsx";
 
@@ -67,7 +72,12 @@ const projectMetadata = await getCollection("projects");
 const contentRecord = import.meta.glob<MDXInstance<ProjectFrontmatter>>(
     '/src/content/projects/*.mdx',
     {eager: false, exhaustive: true});
-
+const captionRecord = import.meta.glob<MDXInstance<object>>(
+    '/src/content/captions/*.mdx',
+    {eager: false, exhaustive: true});
+const figureRecord = import.meta.glob<MDXInstance<object>>(
+    '/src/content/figures/*.mdx',
+    {eager: false, exhaustive: true});
 // console.log('contentRecord:', contentRecord);
 // console.log('projectMetadata:', projectMetadata);
 
@@ -186,21 +196,12 @@ async function processProjectItem(imagePaths: Set<string>, prepath: string | str
 
 // Prepare data for ProjectGrid 
 
-// projects.map(async (p: ProjectData): Promise<ProjectData> => console.log('p:', p));
-
 const items: ProjectDataWithFactory[] = await processProjectItems(imagePaths, prepath, projectMetadata);
 
-// const items: ProjectData[] = await Promise.all(
-//   projects.map(async (p: ProjectEntry): Promise<ProjectData> => ({
-//     id: p.id,
-//     title: p.data.title,
-//     year: p.data.year,
-//     description: p.data.description,
-//     summary: p.data.summary,
-//     tags: p.data.tags,
-//     contentHtml: (await p.render()).html,
-//   }))
-// );
+
+const symMap: Record<symbol, string> = {};
+const lbFactories: Record<string, AstroComponentFactory> = {};
+const factories: Record<string, AstroComponentFactory> = {};
 
 function parseDateValue(value: Date | string | number): [Date, string | undefined] {
     switch(typeof value) {
@@ -225,57 +226,108 @@ function compareDates(a: Date, b: Date): number {
 }
 
 
-type ImageEntry = string | [string, string | undefined | null] | [string] | {path: string, caption?: string};
-
-function extractFnAndCaption(x: ImageEntry): [string | null, string | null] {
-    if(typeof x === 'string') {
-        return [x ?? null, null];
-    } else if(Array.isArray(x)) {
-        return [x[0] ?? null, x[1] || null];
-    } else {
-        return [x.path ?? null, x.caption || null];
+function findCaptionLoader(record: typeof captionRecord, path: string) {
+    
+    const id = trimID(path);
+    const pattern = new RegExp(`^(?:.*/)?${id}[.][Mm][Dd][Xx]?$`);
+    for(const key of Object.keys(record)) {
+        // console.log(id, key);
+        if(pattern.test(key)) return record[key];
     }
+    return null;
 }
 
-const factories: Record<string, AstroComponentFactory> = {};
+
+async function getContentFromPath(kind: string, record: (typeof captionRecord), path: string) {
+    // const entry = captionRecord[path] ?? captionRecord[path + '.mdx'];
+    const loader = findCaptionLoader(record, path);
+    if(!loader) {
+        console.error(`Cannot find ${kind} MD(X) file ${path}`);
+        return null;
+    }
+    const result = await loader();
+    const key = `${kind}_${path}`;
+    const sym = Symbol(key);
+    const key2 = sym.toString();
+    symMap[sym] = key2;
+    lbFactories[key2] = result.Content;
+    // return result.Content;
+    return sym;
+    // return <result.Content></result.Content> as Element;
+}
+
+async function getCaptionFromPath(path: string) {
+    return await getContentFromPath('caption', captionRecord, path);
+}
+
+async function getFigureFromPath(path: string) {
+    return await getContentFromPath('figure', figureRecord, path);
+}
+
+function expandImagePath(fn: string) {
+    const result = getImagePath(imagePaths, prepath, fn);
+    if(!result) {
+        console.warn('Could not expand path:', fn);
+        return null;
+    }
+    return result;
+}
+
+async function extractFnAndCaption(x: ProjectImageEntry): Promise<[string | symbol | null, string | symbol | null]> {
+    if(typeof x === 'string') {
+        return [x ? expandImagePath(x) : null, null];
+    } else if(Array.isArray(x)) {
+        return [x[0] ? expandImagePath(x[0]) : null, x[1] || null] as [string | null, string | null];
+    }
+    const source = (x.type === 'content' ? (
+        await getFigureFromPath(x.path)
+    ) : (
+        expandImagePath(x.path)
+    ));
+    const caption = (x.captionPath ? (
+        await getCaptionFromPath(x.captionPath)
+    ) : x.caption);
+    // console.log('Caption:', caption, x);
+    return [source ?? null, caption || null];
+}
+
+
 // console.log('Projects:', items)
-const projects: ProjectInfo[] = items.map((data: ProjectDataWithFactory): ProjectInfo => {
+const projects: ProjectInfoWithLBSymbols[] = (await Promise.all(items.map(async (data: ProjectDataWithFactory): Promise<ProjectInfoWithLBSymbols> => {
     const factory = data.factory;
     factories[trimID(data.id)] = factory;
     // data.factory = undefined;
     // console.log(data);
     const [date, dateStr] = parseDateValue(data.date);
 
-
-
-    
-
-    const pairs: [string, (string | null)][] | undefined = data.images?.map((x: string | [string, string | undefined | null] | [string] | {path: string, caption?: string}): [string, string | null] | undefined => {
+    const pairPromises = data.images?.map(async (x: string | [string, string | undefined | null] | [string] | {path: string, caption?: string}): Promise<[string | symbol, string | symbol | null] | undefined> => {
         // const fn = typeof x === 'string' ? x : x.path;
         // const caption = (typeof x === 'string' ? null : x.caption || null);
-        const [fn, caption] = extractFnAndCaption(x);
-        if(!fn) {
-            if(caption) console.warn('Null or empty filepath given with non-null caption');
-            return undefined;
-        }
-        const result = getImagePath(imagePaths, prepath, fn);
+        const [result, caption] = await extractFnAndCaption(x);
         if(!result) {
-            console.warn('Could not expand path:', fn);
+            if(caption) console.warn('Null or empty filepath/source given with non-null caption');
             return undefined;
         }
+        
         return [result, caption];
-    }).filter((x)=>undefined !== x);
+    });
 
-    const fullPaths: string[] = [], imageCaptions: (string | null)[] = [];
+    const pairs: [string | symbol, string | symbol | null][] | undefined = pairPromises?.length ? (await Promise.all(pairPromises)).filter(x=>(undefined!==x)) : undefined;
+
+    const sources: (string | symbol)[] = [], captions: (string | symbol | null)[] = [];
     
     pairs?.forEach(([fn,caption])=>{
-        fullPaths.push(fn);
-        imageCaptions.push(caption);
+        sources.push(fn);
+        captions.push(caption);
     })
 
-    const lightboxData = pairs && fullPaths.length ? {
-        lightboxSources: fullPaths,
-        lightboxCaptions: imageCaptions
+    // console.log('Pairs:', pairs);
+
+    
+
+    const lightboxData = pairs && sources.length ? {
+        lightboxSources: sources.map(x=>convertSymbol(x)), // as LightboxSources,
+        lightboxCaptions: captions?.map(x=>convertSymbol(x)), // as LightboxCaptions,
     } : undefined;
 
 
@@ -297,15 +349,12 @@ const projects: ProjectInfo[] = items.map((data: ProjectDataWithFactory): Projec
             Object.entries(data.tags as Record<TagKey, string[]>).map(([tagType, tagArr]) => [tagType, new Set<string>(tagArr)])
         ) as Record<TagKey, Set<string>>
     };
-}).sort((a,b)=>compareDates(a.date, b.date));
-
-// console.log('Factories:', factories);
-
-
+}))).sort((a,b)=>compareDates(a.date, b.date));
 
 ---
 
-<ProjectBrowserInner projects={projects}>
+<ProjectBrowserInner projects={projects} symMap={symMap}>
+    <Fragment slot="carousel-content">
     {
         Object.entries(factories).map(([id, Factory]) => (
             // <><Factory data-project-id={id}></Factory></>
@@ -313,21 +362,12 @@ const projects: ProjectInfo[] = items.map((data: ProjectDataWithFactory): Projec
             // <div><Factory data-project-id={id}></Factory></div>
         ))
     }
-    <!-- { (() => {
-        const elems = Object.entries(factories).map(([id, Factory]) => (
-            // <><Factory data-project-id={id}></Factory></>
-            <Factory data-project-id={id}></Factory>
-            <div><Factory data-project-id={id}></Factory></div>
-        ));
-        console.log('Elems:', elems);
-        return elems;
-    })()} -->
-    <!-- {
-        Object.values(factories).map(
-            f => <f/>
-        )
-    } -->
+    </Fragment>
+    <Fragment slot="lightbox-content">
+        {
+            Object.entries(lbFactories).map(([id, Factory])=>(
+                <article data-item-id={id} class:list={['backdrop-blur-xs backdrop-grayscale']}><Factory/></article>
+            ))
+        }
+    </Fragment>
 </ProjectBrowserInner>
-
-<!-- <ProjectGrid projects={items} client:load/>
-<ProjectDialog client:only></ProjectDialog> -->

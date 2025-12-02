@@ -144,10 +144,16 @@ const projectCollection = defineCollection({
       skills: z.array(z.string()).optional(),
       topics: z.array(z.string()).optional(),
     }),
-    images: z.array(z.union([z.string(), z.tuple([z.string()]), z.tuple([z.string(), z.nullable(z.string()).optional()]), z.object({
-      path: z.string(),
-      caption: z.string().optional(),      
-    })])).optional()
+    images: z.array(z.union(
+      [
+        z.string(), 
+        z.tuple([z.string(), z.nullable(z.string()).optional()]), 
+        z.tuple([z.string()]), 
+        z.object({type: z.literal('content'), path: z.string(), captionPath: z.string(),}),
+        z.object({type: z.literal('content'), path: z.string(), caption: z.string().optional(),}),
+        z.object({type: z.literal('image').optional(), path: z.string(), captionPath: z.string()}),
+        z.object({type: z.literal('image').optional(), path: z.string(), caption: z.string().optional()}),
+    ])).optional()
   }),
 })
 
