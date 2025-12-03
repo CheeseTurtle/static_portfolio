@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useEffect, useEffectEvent, useImperativeHandle, useMemo, useRef, type MouseEvent, type MouseEventHandler, type PointerEventHandler, type RefAttributes } from "react";
+import React, { forwardRef, useCallback, useDeferredValue, useEffect, useEffectEvent, useImperativeHandle, useMemo, useRef, type MouseEvent, type MouseEventHandler, type PointerEventHandler, type RefAttributes } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { ProjectInfo, TagKey } from "../../types";
 import { BadgeRows } from "./badges/BadgeRows";
@@ -120,6 +120,8 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
         clickItem(id, projectIndex, isMouse ? 'open' : undefined);
     }, [id, projectIndex, clickItem]);
 
+    // const expanded = useDeferredValue(expanded);
+
 
     useImperativeHandle(ref, () => ({ 
         // setUpLightbox,
@@ -132,7 +134,7 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
             const containerRect = container.getBoundingClientRect();
 
             let diffHeight: number;
-            console.log('expanded:', expanded, extraRef.current ? extraRef.current.scrollHeight - extraRef.current.clientHeight : null);
+            // console.log('expanded:', expanded, extraRef.current ? extraRef.current.scrollHeight - extraRef.current.clientHeight : null);
             const selfRect: DOMRect = (!expanded && extraRef.current && (diffHeight = extraRef.current.scrollHeight - extraRef.current.clientHeight) > 0) ? (
                 new DOMRect(selfRect_.x, selfRect_.y, selfRect_.width, selfRect_.height + diffHeight)
             ) : selfRect_;
@@ -154,9 +156,9 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
             const ALLOWABLE_MISSED_Y = Math.min(-(selfRect.height - containerRect.height), 0);
             const ALLOWABLE_MISSED_X = Math.min(-(selfRect.width - containerRect.width), 0);
 
-            console.log(`(selfRect.bottom - containerRect.top >= MIN_Y_VISIBLE) <==> (${selfRect.bottom} - ${containerRect.top} >= ${MIN_Y_VISIBLE}) <==> ${selfRect.bottom - containerRect.top >= MIN_Y_VISIBLE}`);
-            console.log(`(containerRect.bottom - selfRect.bottom >= ALLOWABLE_MISSED_Y) <==> (${containerRect.bottom} - ${selfRect.bottom} >= ${ALLOWABLE_MISSED_Y}) <==> ${containerRect.bottom - selfRect.bottom >= ALLOWABLE_MISSED_Y}`);
-            console.log(`(containerRect.bottom - selfRect.top >= MIN_Y_VISIBLE) <==> (${containerRect.bottom} - ${selfRect.top} >= ${MIN_Y_VISIBLE}) <==> ${containerRect.bottom - selfRect.top >= MIN_Y_VISIBLE}`);
+            // console.log(`(selfRect.bottom - containerRect.top >= MIN_Y_VISIBLE) <==> (${selfRect.bottom} - ${containerRect.top} >= ${MIN_Y_VISIBLE}) <==> ${selfRect.bottom - containerRect.top >= MIN_Y_VISIBLE}`);
+            // console.log(`(containerRect.bottom - selfRect.bottom >= ALLOWABLE_MISSED_Y) <==> (${containerRect.bottom} - ${selfRect.bottom} >= ${ALLOWABLE_MISSED_Y}) <==> ${containerRect.bottom - selfRect.bottom >= ALLOWABLE_MISSED_Y}`);
+            // console.log(`(containerRect.bottom - selfRect.top >= MIN_Y_VISIBLE) <==> (${containerRect.bottom} - ${selfRect.top} >= ${MIN_Y_VISIBLE}) <==> ${containerRect.bottom - selfRect.top >= MIN_Y_VISIBLE}`);
             if(((selfRect.bottom - containerRect.top >= MIN_Y_VISIBLE) && ((containerRect.bottom - selfRect.bottom >= ALLOWABLE_MISSED_Y) && (containerRect.bottom - selfRect.top >= MIN_Y_VISIBLE)))
                 && ((selfRect.right - containerRect.left >= MIN_X_VISIBLE) && ((containerRect.right - selfRect.right >= ALLOWABLE_MISSED_X) && (containerRect.right - selfRect.left >= MIN_X_VISIBLE)))
             ) return;

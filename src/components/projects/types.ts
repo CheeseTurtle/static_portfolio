@@ -101,6 +101,8 @@ interface ProjectDataBase<C extends TagCollection, D extends number | Date | Par
     tags: Record<TagKey, C>;
 
     images?: ProjectImages;
+
+    exclude?: boolean,
 }
 
 

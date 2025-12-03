@@ -114,9 +114,6 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
   // console.log('activeProjectItem:', activeProjectItem, activeProjectRef);
 
   const scrollActiveProjectIntoView = useCallback((jump?: boolean)=> {
-    // if(!activeProjectRef) return;
-    // const activeRef = projectRefs.current?.find(x=>x==activeProjectRef);
-    // const ref = projectRefs.current?.[2];
     activeProjectRef?.current?.scrollIntoView(jump);
   }, [activeProjectRef]);
 

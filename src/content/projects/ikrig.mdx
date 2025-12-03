@@ -1,0 +1,46 @@
+---
+title: Senior design project
+date: 2022
+description: n/a
+summary: n/a
+category: n/a
+tags:
+    languages: ["Python", "Javascript"]
+    skills: ["abc"]
+    topics: ["def"]
+# images: ['testImage', 'photo-1506744038136-46273834b3fb (1)']
+images: [
+  ['testImage', 'A test image.'],
+  ['testImage', 'A test image.'],
+  ['testImage', 'A test image.'],
+  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+  {
+    type: content,
+    path: testFigure,
+    captionPath: testCaption,  
+  }
+]
+  # {path: 'testImage', caption: 'turtle'}
+---
+
+#let proj-hungarians = define.def-subsection(
+  [Custom rig and script for automated animation generation from AI-generated video landmarks],
+  [2025],
+  summary: [(Freelance) Automated system in ==Blender 3D== for rendering human animation from MediaPipe landmarks],
+  columns: (
+    (title: "Python", items: (
+        [Wrote Python script to process JSON coordinates from video analysis and ==generate keyframes== for the positions of ==landmark bones==],
+        [Added smoothing and other corrective measures],
+        [Wrote another script to run from another process]
+        // [Wrote another script to run Blender and the first script in the background from another process]
+      )
+    ),
+    (title: "Rigging", items: (
+      [Built novel structures for weighted contribution from ==redundant landmarks== (ex. wrist and fingers and elbow) to ==estimate pole location==],
+      [Set up additional ==bone constraints== to use facial features to estimate orientation and position of head],
+      // [Created structures to estimate pole location and orientation as well as hip/shoulder orientation]
+    ))
+  ),
+)

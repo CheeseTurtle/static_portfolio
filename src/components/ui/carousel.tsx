@@ -168,9 +168,15 @@ function Carousel({ orientation = "horizontal",
           }
 
           const tweenValue = 1 - Math.abs(diffToTarget * tweenFactor.current)
-          const opacity = numberWithinRange(tweenValue, 0, 1).toString()
+          const opacity = numberWithinRange(tweenValue, 0, 1)
           // console.log(slideIndex, opacity)
-          emblaApi.slideNodes()[slideIndex].style.opacity = opacity
+          const slide = emblaApi.slideNodes()[slideIndex];
+          slide.style.opacity = opacity.toString()
+          if(opacity === 0) {
+            slide.style.visibility = 'hidden';
+          } else {
+            slide.style.visibility = 'visible';
+          }
         })
       })
     },

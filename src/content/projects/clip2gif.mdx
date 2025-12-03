@@ -1,0 +1,57 @@
+---
+title: Senior design project
+date: 2022
+description: n/a
+summary: n/a
+category: n/a
+tags:
+    languages: ["Python", "Javascript"]
+    skills: ["abc"]
+    topics: ["def"]
+# images: ['testImage', 'photo-1506744038136-46273834b3fb (1)']
+images: [
+  ['testImage', 'A test image.'],
+  ['testImage', 'A test image.'],
+  ['testImage', 'A test image.'],
+  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+  {
+    type: content,
+    path: testFigure,
+    captionPath: testCaption,  
+  }
+]
+---
+
+#let proj-clip2gif = define.def-subsection(
+  "Clip2GIF: Video Editor / GIF Creator Desktop Application",
+  [2025],
+  summary: [Developed graphical app for convenient, intuitive extraction of short GIFs from video files],
+  columns: (
+    (
+      title: "Backend",
+      items: (
+        [Used FFMPEG, `libav`, and `numpy` to decode video frames and create proxy and memory-mapped files],
+        [Used `threading` and `multiprocessing` modules to orchestrate dynamic cache management and interdependent cancelable requests],
+        [Wrote utility libraries for reusable, cancellation-aware time limits, test parameter matrices, and thread-safe ANSI-enabled print queues with `logging` support],
+        [Conducted extensive testing and code coverage analysis using `pytest`, `pytest-cov`, and `pytest-mock`]
+      )
+    ),
+    (
+      title: "Preview & Navigation",
+      items: (
+        [Created custom interface for iterative narrowing of long videos with minimal decoding],
+        [Provided fine and coarse playback position control sliders, as well as sliders for defining the export range],
+        [Implemented dynamic cache regions for preview/playback image and the two thumbnail/timeline views]
+      )
+    ),
+    (
+      title: "Cropping & Export",
+      items: (
+        [Designed algorithm for minimal decoding based on desired output frame rate (very low for GIFs)],
+        [Implemented custom string interpolation for inserting predefined fields (start/end frame, number of frames, frame dimensions, date/time, etc) in the output filename]
+      )
+    )
+  )
+)

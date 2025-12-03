@@ -153,7 +153,8 @@ const projectCollection = defineCollection({
         z.object({type: z.literal('content'), path: z.string(), caption: z.string().optional(),}),
         z.object({type: z.literal('image').optional(), path: z.string(), captionPath: z.string()}),
         z.object({type: z.literal('image').optional(), path: z.string(), caption: z.string().optional()}),
-    ])).optional()
+    ])).optional(),
+    exclude: z.boolean().optional(),
   }),
 })
 

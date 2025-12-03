@@ -1,0 +1,82 @@
+---
+title: Senior design project
+date: 2022
+description: n/a
+summary: n/a
+category: n/a
+tags:
+    languages: ["Python", "Javascript"]
+    skills: ["abc"]
+    topics: ["def"]
+images: [
+  ['testImage', 'A test image.'],
+  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+  {
+    type: content,
+    path: testFigure,
+    captionPath: testCaption,  
+  }
+]
+---
+
+
+#let proj-colpa = define.def-subsection(
+  [Dramatic monologue with film score#sym.dash.en\style accompaniment],
+  [2019 -- 2020],
+  summary: [Senior thesis (==original text and music==, 1.5hr runtime) entitled _Colpa di Fulmine_],
+  columns: (
+    (title: "Text", items: (
+      [Penned ==original text== in several languages],
+      [Strategicallly ==interwove== quotations from other literature to add additional layers of meaning],
+      [Recorded self performing dramatic reading]
+      // [Leveraged tasteful repetition and variation to develop ideas poignantly],
+      // [Conveyed self-reflection with a combination of stream-of-consciousness prose and quotations from internet messages],
+      // [Made effective, insightful commentary on complex topics such as religiosity, ideological differences, otherness, and truth]
+    )),
+    (title: "Music", items: (
+      [==Composed== several moving themes, informed by several particular ==folk traditions==],
+      [==Orchestrated== for strings, winds/brass, piano, \ and synthesizer; wrote VST ==MIDI automation==],
+      // [Devised a system to "spell" and connect Italian words as pitch class sets, and used this system in atonal passages]
+    ))
+  ),
+)
+
+#let proj-colpa-typ = define.def-subsection(
+  [Dramatic monologue with film score#sym.dash.en\style accompaniment],
+  [2019 -- 2020],
+  summary: [Senior thesis (==original text and music==, 1.5hr runtime) entitled _Colpa di Fulmine_],
+  columns: (
+    (title: "Text", items: (
+      [Penned ==original text== (Eng., Ita., Fr.)],
+      [Strategicallly interwove quotations from other literature to add additional layers of meaning],
+      [Recorded self performing dramatic reading]
+    )),
+    (title: "Music", items: (
+      [==Composed== several moving themes, informed by French/Italian folk traditions],
+      [==Orchestrated== for strings, winds/brass, piano, \ and synthesizer; wrote VST MIDI automation],
+    ))
+  ),
+  extra: [
+    #bullet-columns-title("Thesis Document Typesetting")
+
+    #pad(
+      left: 10pt,
+      right: 10pt,
+      align(center,bullet-columns-bare(gutter: 15pt,
+      [
+        #align(left)[
+          - Used/created specialized #style.color-strong()[#LaTeX packages] for various aspects of document layout and content
+          - Fine-tuned pagination, landscape/portrait switching, ==figure placement== and labeling, hyperlinked ==glossary/index generation==
+          - Integrated ==bibliography== and hyperlinked ==inline citations== with BibTeX
+        ]
+        #colbreak()
+
+        #align(left)[
+          - Created system for automatically drawing configurable left/right ==instant-message bubble== and Scripture excerpt callouts capable of spanning across page breaks
+          - Adapted existing packages for typesetting ==linguistic glosses== for precise alignment control
+          - Developed packages for  reusable, glossary-compatible ==inline musical notation== items
+        ]
+      ]
+    )))
+  ]
+)

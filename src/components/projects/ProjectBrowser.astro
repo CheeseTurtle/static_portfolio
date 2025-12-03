@@ -293,7 +293,7 @@ async function extractFnAndCaption(x: ProjectImageEntry): Promise<[string | symb
 
 
 // console.log('Projects:', items)
-const projects: ProjectInfoWithLBSymbols[] = (await Promise.all(items.map(async (data: ProjectDataWithFactory): Promise<ProjectInfoWithLBSymbols> => {
+const projects: ProjectInfoWithLBSymbols[] = (await Promise.all(items.filter(x=>!x.exclude).map(async (data: ProjectDataWithFactory): Promise<ProjectInfoWithLBSymbols> => {
     const factory = data.factory;
     factories[trimID(data.id)] = factory;
     // data.factory = undefined;
