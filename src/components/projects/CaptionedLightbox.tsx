@@ -1,14 +1,11 @@
 import React, { useCallback, useMemo, useReducer } from "react";
 import FSLightbox from "fslightbox-react";
 import { createPortal } from "react-dom";
-import type { ProjectInfo } from "./types";
 import useMutationObserver from "@/hooks/use-mutation-observer";
-import { useDomReady } from "@/hooks/use-dom-ready";
 import { LightboxContext, lightboxReducer, type LightboxCaptions, type LightboxSources } from "./lightbox";
 
 import {Flip} from "gsap/Flip";
 import {gsap} from "gsap";
-import { useDebounceCallback } from "@/hooks/use-debounce-callback";
 import useThrottledDebounce from "@/hooks/useThrottledDebounce";
 import { cn } from "@/lib/utils";
 import type { WithRequired } from "node_modules/astro/dist/type-utils";
@@ -18,14 +15,6 @@ import { useUnmount } from "@/hooks/use-unmount";
 export function CaptionedLightboxProvider({children, onClose, openRef}: {children: React.ReactNode, onClose?: () => void, openRef: React.RefObject<boolean>}) {
     const [state, dispatch] = useReducer(lightboxReducer, {captions: [], initialSlide: 1, open: false, sources: [] });
 
-    const setOpen = useCallback((open: boolean) => {
-        if(open) {
-            dispatch({type: 'ENSURE_OPEN'});
-        } else {
-            dispatch({type: 'CLOSE'});
-        }
-    }, [dispatch]);
-
     const onClose_ = useCallback(()=>{
         dispatch({type: 'CLOSE'});
         onClose?.();
@@ -34,7 +23,7 @@ export function CaptionedLightboxProvider({children, onClose, openRef}: {childre
     return <LightboxContext.Provider value={{
         state, dispatch
     }}>
-        <CaptionedLightbox {...state} openRef={openRef} onClose={onClose_}></CaptionedLightbox>
+        {/*(state.open || openRef.current) && */<CaptionedLightbox {...state} openRef={openRef} onClose={onClose_}></CaptionedLightbox>}
         {children}
     </LightboxContext.Provider>;
 }
@@ -71,7 +60,6 @@ function useLightboxSlideObserver(snRef: React.RefObject<HTMLSpanElement | null>
         // console.log('Observer / mutations:', observer, mutations);
         
         const lastMutation = clMutations[clMutations.length - 1];
-        // lastMutation.removedNodes[0]
         const addedNode = (lastMutation.addedNodes[0] as Text);
         if(!addedNode.data) return;
         const numVal = Number(addedNode.data);
@@ -80,12 +68,8 @@ function useLightboxSlideObserver(snRef: React.RefObject<HTMLSpanElement | null>
         if(isNaN(numVal)) return;
 
         // Debounced & throttled transition to new caption
-
         setCaptionSlideRef.current?.(numVal);
     }, []);
-
-    // console.log('snRef:', snRef);
-    // if(snRef.current) console.log(captionSlide, captionSlideRef.current);
 
     useMutationObserver(snRef, callback, {characterData: false, characterDataOldValue: false, attributes: false, childList: true, subtree: false});
 }
@@ -396,7 +380,7 @@ const LightboxCaptionsOverlay = (({sources, captions, open, ref, divRef, activeI
 
 
     const ret = createPortal(<div ref={divRef} className="lightbox-captions z-1000000001 absolute bottom-0 h-full w-full pointer-events-none overflow-visible pb-8">
-        <div className="container relative inset-0 h-full w-full">
+        <div className="m-0 p-0 relative inset-0 h-full w-full">
             {captionElems}
         </div>
     </div>,
@@ -509,8 +493,6 @@ export function CaptionedLightbox({
         return null;
     }
 
-    // console.log('CONTAINER:', containerRef.current);
-
     return <>
         <FSLightbox
             key={sourceKey}
@@ -537,7 +519,6 @@ export function CaptionedLightbox({
                 sourceElems.current = [];
             }}
             onClose={(_instance) => { // Every close
-                // setToggler(false);
                 console.log('CLOSED LIGHTBOX');
                 openRef.current = false;
                 setCaptionSlide(undefined);

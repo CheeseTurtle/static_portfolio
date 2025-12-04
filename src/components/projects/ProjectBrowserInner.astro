@@ -1,13 +1,9 @@
 ---
 
-import "../../styles/projects.css";
-
-// import ProjectGrid from "./grid/ProjectGrid";
-// import ProjectDialog from "./overlay/dialog";
-
 import ProjectBrowserReact from "./ProjectBrowserReact";
 import type { ProjectInfoWithLBSymbols } from "./types";
 
+import "../../styles/projects.css";
 
 const props = Astro.props as {projects: ProjectInfoWithLBSymbols[], symMap: Record<symbol, string>};
 
@@ -15,19 +11,12 @@ const props = Astro.props as {projects: ProjectInfoWithLBSymbols[], symMap: Reco
 const rp = Astro.slots.has('carousel-content') && Astro.slots.render('carousel-content');
 const html = rp ? await rp : undefined;
 
-// console.log(html);
-
 const lp = Astro.slots.has('lightbox-content') && Astro.slots.render('lightbox-content');
 const lbHTML = lp ? await lp : undefined;
 
-// console.log(lbHTML);
-
 ---
 
-<ProjectBrowserReact projects={props.projects} contentString={html} lbContentString={lbHTML ?? ''} symMap={props.symMap} client:only="react">
+<ProjectBrowserReact projects={props.projects} contentString={html} lbContentString={lbHTML ?? ''} client:only="react">
     <slot name="carousel-content"/>
     <slot name="lightbox-content"/>
 </ProjectBrowserReact>
-
-<!-- <ProjectGrid projects={items} client:load/>
-<ProjectDialog client:only></ProjectDialog> -->

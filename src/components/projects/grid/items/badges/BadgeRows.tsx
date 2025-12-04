@@ -1,3 +1,4 @@
+import React from "react";
 import { BadgeRow } from "./BadgeRow";
 import type { BadgeType } from "./badgeTypes";
 
@@ -6,10 +7,7 @@ type BadgeMap = Record<BadgeType, Set<string>>;
 
 type BadgeRowsProps = React.ComponentProps<"div"> & {badgeRows: BadgeMap};
 
-// export function isNonemptyTags(badgeRows: BadgeMap)
-
-// TODO: Wrap in div?
-export const BadgeRows = ({badgeRows, ...props}: BadgeRowsProps) => {
+export const BadgeRows = React.memo(({badgeRows, ...props}: BadgeRowsProps) => {
     return <>
         {
             (Object.keys(badgeRows) as BadgeType[]).map(badgeType => {
@@ -19,4 +17,4 @@ export const BadgeRows = ({badgeRows, ...props}: BadgeRowsProps) => {
             })
         }
     </>
-}
+});

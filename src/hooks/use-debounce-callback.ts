@@ -30,16 +30,19 @@ export function useDebounceCallback<T extends (...args: Parameters<T>) => Return
   const isPending = React.useRef<boolean>(false);
 
   useUnmount(() => {
+    console.log('inside useUnmount effect')
     debouncedFunc.current?.cancel();
   });
 
   const func_: T = React.useCallback(((...args) => {
+    console.log('Inside func_')
     isPending.current = false;
     return func(...args);
   }) as T, [func]);
 
   const debounced = React.useMemo(() => {
     if (debouncedFunc.current) {
+      console.log('Cancelling old');
       debouncedFunc.current.cancel();
       isPending.current = false;
     }
@@ -53,11 +56,13 @@ export function useDebounceCallback<T extends (...args: Parameters<T>) => Return
     }
 
     wrappedFunc.cancel = () => {
+      console.log('Inside wrappedFunc.cancel')
       debouncedFuncInstance.cancel();
       isPending.current = false;
     };
       
     wrappedFunc.flush = () => {
+      console.log('Inside wrappedFunc.flush')
       const result = debouncedFuncInstance.flush();
       isPending.current = false;
       return result;

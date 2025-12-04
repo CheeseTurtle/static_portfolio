@@ -1,9 +1,85 @@
-import { forwardRef } from "react";
+import * as React from 'react';
+import { gsap } from "gsap";
 
-type ExpandedPartProps = React.ComponentProps<"div"> & {}
 
-const ExpandedPart = forwardRef<HTMLDivElement, ExpandedPartProps>(({children, ...props}: ExpandedPartProps, ref) => {
-    return <div ref={ref} style={{height: 0, overflow: 'hidden', opacity: 0, width: '100%'}} data-slot='project-item-extra' {...props}>{children}</div>;
+type ExpandedPartProps = React.ComponentProps<"div"> & {
+    id: string,
+    expanded: boolean,
+    ref?: React.RefObject<HTMLDivElement | null>,
+}
+
+const ExpandedPart = (({children, id, ref: externalRef, expanded, ...props}: ExpandedPartProps) => {
+    // const lightboxIsOpen = useEffectEvent(()=>lightboxOpen);
+    const localRef = React.useRef<HTMLDivElement | null>(null);
+    const ref = React.useMemo(()=>(externalRef ?? localRef), [externalRef]);
+
+    const [canUnmount, setCanUnmount] = React.useState<boolean>(!expanded);
+
+    const handleExpandedChange = React.useEffectEvent((el: HTMLDivElement, expanded: boolean) => {
+        console.log(`PROJECT ITEM '${id}' EXPANDED:`, expanded);
+        if (expanded) {
+            // Expand: animate from 0 to scrollHeight
+            setCanUnmount(false);
+            gsap.set(el, {visibility: 'visible'});
+            gsap.killTweensOf(el);
+            gsap.fromTo(
+                el,
+                { height: el.clientHeight, opacity: el.style.opacity },
+                {
+                    height: el.scrollHeight,
+                    opacity: 1,
+                    duration: 0.3,
+                    ease: "power1.out",
+                    // onStart: () => {
+                    // },
+                    onComplete: () => { 
+                        gsap.set(el, { height: "auto" });
+                    },
+                }
+            );
+        } else if (el.clientHeight === 0) {
+            setCanUnmount(true);
+        } else {
+            // Collapse: animate from current height to 0
+            gsap.killTweensOf(el);
+            gsap.fromTo(
+                el,
+                { height: el.clientHeight, opacity: el.style.opacity },
+                { height: 0, opacity: 0, duration: 0.3, ease: "power1.in",
+                    onComplete() {
+                        gsap.set(el, {visibility: 'hidden'});
+                        requestAnimationFrame(()=>{
+                            setCanUnmount(true);
+                        });
+                    }
+                 },
+            );
+        }
+    });
+
+    // Handle expand/collapse animation
+    React.useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        handleExpandedChange(el, expanded);
+    }, [expanded, ref]);
+
+    const lastRef = React.useRef<HTMLDivElement | null>(ref.current);
+    React.useEffect(()=>{
+        const current = ref.current;
+        if(current === lastRef.current) return;
+        lastRef.current = current;
+        if(!current) return;
+        const handler = (evt: Event) => { evt.stopPropagation(); };
+
+        current.addEventListener('scroll', handler);
+        return ()=>{current.removeEventListener('scroll', handler)};
+    }, [ref]);
+
+    if(canUnmount && !expanded) return null;
+    // return <React.Suspense fallback={<div className='w-full min-h-20 h-min bg-blue-500'>Placeholder</div>}>
+    return <div ref={ref} style={{height: 0, overflow: 'hidden', opacity: 0, width: '100%', visibility: 'hidden'}} data-slot='project-item-extra' {...props}>{children}</div>
+    // </React.Suspense>
 });
 
 export default ExpandedPart;

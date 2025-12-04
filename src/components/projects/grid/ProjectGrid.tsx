@@ -63,7 +63,6 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
   const projectRefs = React.useRef<React.RefObject<ProjectItemHandle>[]>([]);
   projectRefs.current = projects.map((_, i) => projectRefs.current[i] ?? React.createRef());
   
-
   const extraRefs = React.useRef<React.RefObject<HTMLDivElement>[]>([]);
   extraRefs.current = projects.map((_, i) => extraRefs.current[i] ?? React.createRef());
 
@@ -104,6 +103,12 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
   
   const projectItems = useMemo(()=>projectCols.flat(1), [projectCols]);
 
+  const projectGridContents = useMemo(()=>projectCols.map((colElems, i) => (
+    <div key={i} className="flex-1 flex flex-col gap-4">
+      {colElems}
+    </div>
+  )), [projectCols]);
+
   const activeProjectItem = useMemo(()=>activeProjectIndex === null ? null : 
     // projectItems.find(x=>x.key === activeProjectId) ?? null,
     projectCols[activeProjectIndex % columns][Math.floor(activeProjectIndex / columns)], 
@@ -114,11 +119,13 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
   // console.log('activeProjectItem:', activeProjectItem, activeProjectRef);
 
   const scrollActiveProjectIntoView = useCallback((jump?: boolean)=> {
+    console.log('SCROLL ACTIVE INTO VIEW:', activeProjectRef?.current, jump);
     activeProjectRef?.current?.scrollIntoView(jump);
   }, [activeProjectRef]);
 
   const scrollToItem: ScrollToFn = useCallback((index, jump)=>{
     const item = projectItems.find(p=>p.props.projectIndex === index);
+    console.log('SCROLL TO ITEM:', index, item, jump);
     if(!item) return;
     const itemRef = projectRefs.current?.[item.props.refIndex];
     if(!itemRef) return;
@@ -130,11 +137,11 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
   }), [scrollActiveProjectIntoView, scrollToItem]);
 
 
-  const maxExtraHeight = Math.max(0, ...extraRefs.current.map(x=>Math.ceil(x.current?.scrollHeight ?? 0)));
-
   const gridContainerRef = React.useRef<HTMLDivElement>(null);
-  const [baseHeight, setBaseHeight] = React.useState<number>(0);
+  
+  const maxExtraHeight = Math.max(0, ...extraRefs.current.map(x=>x.current?.scrollHeight ? Math.ceil(x.current.scrollHeight) : 0));
 
+  const [baseHeight, setBaseHeight] = React.useState<number>(0);
   // Calculate base height by subtracting any expanded content
   const measureBaseHeight = useCallback(() => {
     if (!gridContainerRef.current) return;
@@ -146,7 +153,8 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
       return sum + (ref.current?.clientHeight ?? 0);
     }, 0);
     
-    const calculatedBaseHeight = currentHeight - expandedExtraHeight;
+    const calculatedBaseHeight = currentHeight - 0*expandedExtraHeight;
+    // console.log(calculatedBaseHeight, currentHeight, expandedExtraHeight)
     setBaseHeight(calculatedBaseHeight);
   }, []);
 
@@ -155,7 +163,9 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
     measureBaseHeight();
   }, [projects, columns, measureBaseHeight]);
 
+
   // Track resize changes
+  // TODO: Temporarily disable resize observation during carousel update
   useResizeObserver({
     ref: gridContainerRef,
     onResize: measureBaseHeight,
@@ -173,12 +183,7 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
         }}
       >
         <div ref={gridContainerRef} className={cn("flex w-full gap-4 p-8 pt-4 h-min overflow-y-visible")}> 
-          {/* style={{scrollMarginBottom: maxExtraHeight}}> */}
-          {projectCols.map((colElems, i) => (
-            <div key={i} className="flex-1 flex flex-col gap-4">
-              {colElems}
-            </div>
-          ))}
+          {projectGridContents}
         </div>
         <div 
           id="project-grid-expansion-reserve" 

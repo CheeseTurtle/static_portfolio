@@ -498,12 +498,13 @@ export const createBrowserStore = (
                     if (year?.[1] !== null && year?.[1] !== undefined && pYear > year[1]) return false;
                     if (categories.size && !categories.has(p.category)) return false;
                     
+                    // TODO
                     for (const t of TAGTYPES) {
                         const k = getProjectKeyFromTagType(t);
                         if (tags?.[t].size && (
                             !tagModes[t] ? [...tags[t]].some(tag => !p.tags[k]?.has(tag))
                             // : ![...tags[t]].some(tag => p.tags[k]?.has(tag))
-                            : !Array.from(p.tags[k]).some(tag=>tags[t].has(tag))
+                            : !(p.tags[k] && Array.from(p.tags[k]).some(tag=>tags[t].has(tag)))
                         )) {
                             return false;
                         }
@@ -617,7 +618,6 @@ export const createBrowserStore = (
         
         if(carouselOpen && !prevCarouselOpen && debounced.isPending())
             debounced.flush();
-
 
         const openProjectId = store.getState().getOpenProjectId(carouselOpen, activeProjectId);
         store.setState({openProjectId});

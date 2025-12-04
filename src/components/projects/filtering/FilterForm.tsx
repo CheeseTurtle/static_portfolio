@@ -12,6 +12,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import ResetButton from "./common/ResetButton";
 import YearValue from "./sections/YearValue";
 import { URLSyncFlag } from "./common/stores/browserStore";
+import { WrappingToggleGroup, WrappingToggleGroupItem } from "./common/WrappingToggleGroup";
 
 // type SliderProps = React.ComponentProps<typeof Slider>;
 
@@ -129,6 +130,7 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, _ref) =
     
 
     // #region Year slider
+    const showYearSlider = useMemo(()=>props.rangeInfo.minYear !== props.rangeInfo.maxYear, [props.rangeInfo]);
     const yearSlider = <YearSlider value={yearValue} min={props.rangeInfo.minYear} max={props.rangeInfo.maxYear} defaultValue={[props.rangeInfo.minYear, props.rangeInfo.maxYear]}
         // onValueChange={(value: [number, number]) => props.dispatch({type: 'SET_YEAR', payload: value})}
         onValueChange={(value: [number, number])=>{
@@ -142,6 +144,7 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, _ref) =
         }}
         // vocab=""
         color='green'
+        disabled={!showYearSlider}
         // minStepsBetweenThumbs={1}
         step={1}
         className={cn("w-[60%]", undefined)}
@@ -163,7 +166,6 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, _ref) =
 
 
     return <>
-
         <FilterFormSection filterField="year" resetFn={resetYear} canReset={canResetYear} 
             headingExtra={<YearValue minYear={year0} maxYear={year1} rangeMinYear={props.rangeInfo.minYear} rangeMaxYear={props.rangeInfo.maxYear}/>}
         >
@@ -171,12 +173,12 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, _ref) =
         </FilterFormSection>
 
         <FilterFormSection filterField="categories" resetFn={resetCategories} canReset={canResetCategories}>
-            <ToggleGroup type="multiple" variant="default" value={selectedCategories} onValueChange={setCategories}>
+            <WrappingToggleGroup type="multiple" variant="default" value={selectedCategories} onValueChange={setCategories}>
                 {categoryNames.map(name=>{
                     const enabled = !selectedCategories.length || canToggleCategory(name, selectedCategories.includes(name));
-                    return <ToggleGroupItem key={name} value={name} disabled={!enabled} className="disabled:text-shadow-accent">{name[0].toLocaleUpperCase() + name.slice(1)}</ToggleGroupItem>;
+                    return <WrappingToggleGroupItem key={name} value={name} disabled={!enabled} className="disabled:text-shadow-accent">{name[0].toLocaleUpperCase() + name.slice(1)}</WrappingToggleGroupItem>;
                 })}
-            </ToggleGroup>
+            </WrappingToggleGroup>
         </FilterFormSection>
 
         <FilterFormSection filterField="tags" resetFn={resetTags} canReset={canResetTags}>

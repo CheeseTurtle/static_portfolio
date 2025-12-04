@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { /*SkillBadge, ConceptBadge, LangBadge, TopicBadge,*/ type BadgeType, getBadgeConstructor } from "./badgeTypes";
+import { type BadgeType, getBadgeConstructor } from "./badgeTypes";
 type BadgeRowProps = React.ComponentProps<"div"> & {badgeType: BadgeType, badgeItems: Set<string>}
 
 export const BadgeRow = ({badgeType, badgeItems, ...props}: BadgeRowProps) => {
@@ -45,18 +45,8 @@ export const BadgeRow = ({badgeType, badgeItems, ...props}: BadgeRowProps) => {
   const visibleBadges = useMemo(()=> badgeArray.slice(0, visibleCount), [badgeArray, visibleCount]);
   const hiddenCount = useMemo(() => badgeArray.length - visibleCount, [badgeArray, visibleCount]);
 
-
-
   return (
     <div ref={containerRef} className="flex gap-1 overflow-hidden" data-slot='badge-row' data-badge-type={badgeType} {...props}>
-    {/* {{visibleBadges.map((label, idx) => (
-    <div
-        key={idx}
-        className="bg-gray-200 text-gray-800 px-2 py-1 rounded text-sm"
-    >
-        {label}
-    </div>
-    ))}} */}
     {
         visibleBadges.map((label, idx) => (
             <BadgeConstructor key={`${label}${idx}`}>{label}</BadgeConstructor>
@@ -64,10 +54,9 @@ export const BadgeRow = ({badgeType, badgeItems, ...props}: BadgeRowProps) => {
     }
     {
         hiddenCount > 0 && (
-            <div className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-sm">
+          <div className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-sm">
             {visibleBadges.length > 0 ? `+${hiddenCount}` : `${hiddenCount} items`}
-            {/* +{hiddenCount} */}
-            </div>
+          </div>
         )
     }
     </div>

@@ -1,11 +1,9 @@
-import React, { forwardRef, useCallback, useDeferredValue, useEffect, useEffectEvent, useImperativeHandle, useMemo, useRef, type MouseEvent, type MouseEventHandler, type PointerEventHandler, type RefAttributes } from "react";
+import React, { forwardRef, memo, Suspense, useCallback, useDeferredValue, useEffect, useEffectEvent, useImperativeHandle, useMemo, useRef, type MouseEvent, type MouseEventHandler, type PointerEventHandler, type RefAttributes } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { ProjectInfo, TagKey } from "../../types";
 import { BadgeRows } from "./badges/BadgeRows";
 import { convertToBadgeType, type BadgeType } from "./badges/badgeTypes";
 import ExpandedPart from "./expansion/ExpandedPart";
-import { gsap } from "gsap";
-import { ImageRow } from './expansion/ImageRow';
 import { useBrowserContext } from "../../filtering/common/browserContext";
 import { ThumbnailRow } from "./expansion/ThumbnailRow";
 import { useCaptionedLightbox, type LightboxCaptions, type LightboxSources } from "../../lightbox";
@@ -57,18 +55,13 @@ export type ProjectItemElement = React.ReactElement<ProjectItemProps & RefAttrib
 
 // export type ProjectItemElement = React.ComponentClass<React.ComponentPropsWithRef<typeof ProjectItem>>;
 
-const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({ 
+const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({ 
 // const ProjectItem = (({ 
     project,
     projectIndex,
-    // activeProject,
     activeProjectId, 
-    // activeProjectIndex,
-    // openProjectId,
     carouselOpen,
-    // lightboxOpen,
     clickItem,
-    // setCarouselOpen,
     extraRef: extraRef_,
     scrollContainer,
     // ref
@@ -96,15 +89,13 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
     );
 
     const {state: lightboxState, dispatch: lightboxDispatch} = useCaptionedLightbox();
-    const {activeProjectId: lightboxProjectId, activeProjectIndex: lightboxProjectIndex, open: lightboxOpen} = lightboxState;
+    const {open: lightboxOpen} = lightboxState;
 
     
     // Item is expanded if it's the active project
     const expanded = useMemo(() => {
-        // console.log(`id (${id}) === activeProjectId (${activeProjectId}) ?? lightboxProjectId (${lightboxProjectId})  ==>`, id === (activeProjectId ?? lightboxProjectId));
-        return id === (activeProjectId ?? lightboxProjectId);
-        // return id === activeProjectId || id === lightboxProjectId;
-    }, [id, activeProjectId, lightboxProjectId]);
+        return (id === activeProjectId);
+    }, [id, activeProjectId]);
 
     const onClick: MouseEventHandler<HTMLDivElement> = useCallback((evt) => {
         evt.stopPropagation();
@@ -120,11 +111,7 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
         clickItem(id, projectIndex, isMouse ? 'open' : undefined);
     }, [id, projectIndex, clickItem]);
 
-    // const expanded = useDeferredValue(expanded);
-
-
     useImperativeHandle(ref, () => ({ 
-        // setUpLightbox,
         scrollIntoView(jump?: boolean) {
             const self = selfRef.current, container = scrollContainer.current;
             // console.log('self, container:', self, container);
@@ -139,6 +126,7 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
                 new DOMRect(selfRect_.x, selfRect_.y, selfRect_.width, selfRect_.height + diffHeight)
             ) : selfRect_;
 
+            /*
             // console.log(selfRect, containerRect, self, container);
             // console.log((['top','bottom','left','right'] as ('top' | 'bottom' | 'left' | 'right')[]).map(x=>
             //     `${selfRect[x].toFixed(4).padStart(9, ' ')} | ${containerRect[x].toFixed(4).padStart(9, ' ')}`
@@ -148,7 +136,7 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
             // if(containerRect.top < selfRect.bottom && (selfRect.bottom < containerRect.bottom || selfRect.top < containerRect.bottom)
             //     && containerRect.left < selfRect.right && (selfRect.right < containerRect.right || selfRect.left < containerRect.right)
             // ) //     return;
-
+            */
 
             const MIN_Y_VISIBLE = Math.min(containerRect.height, 0.8 * selfRect.height);
             const MIN_X_VISIBLE = Math.min(containerRect.width, 0.8 * selfRect.width);
@@ -172,74 +160,84 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
         },
         onClick }), [onClick, scrollContainer, expanded, extraRef]);
 
-    const lightboxIsOpen = useEffectEvent(()=>lightboxOpen);
+    /*
+    // const lightboxIsOpen = useEffectEvent(()=>lightboxOpen);
 
-    // Handle expand/collapse animation
-    useEffect(() => {
-        const el = extraRef.current;
-        if (!el) return;
+    // // Handle expand/collapse animation
+    // useEffect(() => {
+    //     const el = extraRef.current;
+    //     if (!el) return;
 
-        console.log(`PROJECT ITEM '${id}' EXPANDED:`, expanded, lightboxIsOpen());
+    //     console.log(`PROJECT ITEM '${id}' EXPANDED:`, expanded, lightboxIsOpen());
 
-        if (expanded) {
-            // Expand: animate from 0 to scrollHeight
-            gsap.killTweensOf(el);
-            gsap.fromTo(
-                el,
-                { height: el.clientHeight, opacity: el.style.opacity },
-                {
-                    height: el.scrollHeight,
-                    opacity: 1,
-                    duration: 0.3,
-                    ease: "power1.out",
-                    onComplete: () => { 
-                        gsap.set(el, { height: "auto" });
-                    },
-                }
-            );
-        } else if (el.clientHeight !== 0) {
-            // Collapse: animate from current height to 0
-            gsap.killTweensOf(el);
-            const currentHeight = el.clientHeight;
-            gsap.fromTo(
-                el,
-                { height: currentHeight, opacity: el.style.opacity },
-                { height: 0, opacity: 0, duration: 0.3, ease: "power1.in" }
-            );
-        }
-    }, [id, expanded, extraRef]);
+    //     if (expanded) {
+    //         // Expand: animate from 0 to scrollHeight
+    //         gsap.killTweensOf(el);
+    //         gsap.fromTo(
+    //             el,
+    //             { height: el.clientHeight, opacity: el.style.opacity },
+    //             {
+    //                 height: el.scrollHeight,
+    //                 opacity: 1,
+    //                 duration: 0.3,
+    //                 ease: "power1.out",
+    //                 onComplete: () => { 
+    //                     gsap.set(el, { height: "auto" });
+    //                 },
+    //             }
+    //         );
+    //     } else if (el.clientHeight !== 0) {
+    //         // Collapse: animate from current height to 0
+    //         gsap.killTweensOf(el);
+    //         const currentHeight = el.clientHeight;
+    //         gsap.fromTo(
+    //             el,
+    //             { height: currentHeight, opacity: el.style.opacity },
+    //             { height: 0, opacity: 0, duration: 0.3, ease: "power1.in" }
+    //         );
+    //     }
+    // }, [id, expanded, extraRef]);
+    */
 
     const onHover: PointerEventHandler<HTMLDivElement> = useCallback((evt) => {
-        console.log(`PROJECT ITEM '${id}' HOVERED`, {carouselOpen, lightboxOpen});
-        if(carouselOpen || lightboxOpen/* || (lightboxProjectId !== undefined/* && lightboxProjectId !== id* /)*/) return;
+        // console.log(`PROJECT ITEM '${id}' HOVERED`, {carouselOpen, lightboxOpen, lightboxData});
+        if(carouselOpen || lightboxOpen) return;
         const pointerType = evt.pointerType;
         const isMouse = pointerType === 'mouse';
         if(!isMouse) return;
         clickItem(id, projectIndex, 'active');
-    }, [clickItem, carouselOpen, lightboxOpen, projectIndex, id, lightboxProjectId]);
+    }, [clickItem, carouselOpen, lightboxOpen, projectIndex, id, lightboxData]);
 
     const onUnhover: PointerEventHandler<HTMLDivElement> =  useCallback((evt) => {
-        console.log(`PROJECT ITEM '${id}' UNHOVERED`, {carouselOpen, lightboxOpen});
-         if(carouselOpen || lightboxOpen/* || (lightboxProjectId !== undefined)*/) return;
+        // console.log(`PROJECT ITEM '${id}' UNHOVERED`, {carouselOpen, lightboxOpen});
+         if(carouselOpen || lightboxOpen) return;
         const pointerType = evt.pointerType;
         const isMouse = pointerType === 'mouse';
         if(!isMouse) return;
-        // clickItem(id, projectIndex, 'active');
         clearActiveItem();
-    }, [clearActiveItem, carouselOpen, lightboxOpen, lightboxProjectId, id]);
+    }, [clearActiveItem, carouselOpen, lightboxOpen, id]);
 
 
     const handleThumbClick = useCallback((evt: MouseEvent<HTMLImageElement | HTMLDivElement>, index: number) => {
         // console.log('THUMB CLICK', lightboxData, index);
-        console.log(`PROJECT ITEM '${id}' THUMB #${index + 1} CLICKED`);
+        // console.log(`PROJECT ITEM '${id}' THUMB #${index + 1} CLICKED`);
         if(!lightboxData?.sources?.length) return;
         evt.preventDefault();
         evt.stopPropagation();
         lightboxDispatch({type: 'SET_PROJECT', projectId: id, projectIndex});
         lightboxDispatch({type: 'SET_CONTENT', sourceKey: id, ...lightboxData});
-        // console.log('OPENING LIGHTBOX');
         lightboxDispatch({type: 'OPEN', slide: index + 1});
     }, [lightboxDispatch, lightboxData, id, projectIndex]);
+
+    // const fallback = <div className="w-full min-h-20 h-max bg-blue-500">
+    //     {
+    //         [0].map(()=>{
+    //             console.log('Fallback element');
+    //             return null;
+    //         })
+    //     }
+    //     (Placeholder)...
+    //     </div>;
 
     return (
         <Card 
@@ -259,30 +257,37 @@ const ProjectItem = forwardRef<ProjectItemHandle, ProjectItemProps>(({
                     <span className="text-lg font-semibold">{title}</span>
                     <span className="text-sm text-muted-foreground">{year}</span>
                 </CardTitle>
-                <div>{project.category.toUpperCase()}</div>
+                {/* Description */}
+                <p className="text-sm text-muted-foreground">{description}</p>
+
+                {/* Category */}
+                <div className="absolute w-full inset-0 flex justify-center h-min rounded-t-xl text-sm select-none pointer-events-none text-gray-900 dark:text-gray-400">
+                    
+                    {project.category.toUpperCase()}
+
+                </div>
             </CardHeader>
 
             {/* Content */}
             <CardContent className='space-y-2'>
-                {/* Description */}
-                <p className="text-sm text-muted-foreground">{description}</p>
 
                 {/* Category-based tags */}
                 <BadgeRows badgeRows={badgeRows} />
 
                 {/* Expanded content */}
                 {summary && (
-                    <ExpandedPart ref={extraRef}>
-                        {summary}
-                        {lightboxData && lightboxData.sources.length > 0 && (
-                            // <ImageRow images={images} />
-                            <ThumbnailRow items={lightboxData.sources} onImageClick={handleThumbClick} />
-                        )}
-                    </ExpandedPart>
+                    // <Suspense fallback={fallback}>
+                        <ExpandedPart id={id} expanded={expanded} ref={extraRef}>
+                            {summary}
+                            {lightboxData && lightboxData.sources.length > 0 && (
+                                <ThumbnailRow items={lightboxData.sources} onImageClick={handleThumbClick} />
+                            )}
+                        </ExpandedPart>
+                    // </Suspense>
                 )}
             </CardContent>
         </Card>
     );
-});
+}));
 
 export default ProjectItem;

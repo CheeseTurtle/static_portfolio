@@ -101,8 +101,11 @@ export function applyFilter({tagModes, ...spec}: Partial<FilterDataProps>, proje
     if(spec.tags) {
       if(!tagModes) throw TypeError(tagModes);
       let tagKey: TagKey;
+      
+
+      // TODO
       if(Object.entries(spec.tags).some(([tagType, specTags]) => specTags?.size && 
-      (tagKey = getProjectKeyFromTagType(tagType as TagType)) &&
+      (tagKey = getProjectKeyFromTagType(tagType as TagType)) && (!p.tags[tagKey] ||
       (
         tagModes[tagType as TagType] 
         ?
@@ -111,7 +114,7 @@ export function applyFilter({tagModes, ...spec}: Partial<FilterDataProps>, proje
         :
         // (not) BOOLEAN OR: No tags are common to specTags and p.tags.
         ![...p.tags[tagKey]].some(pTag=>specTags.has(pTag))
-      )))
+      ))))
         return false;
     }
     return true;
