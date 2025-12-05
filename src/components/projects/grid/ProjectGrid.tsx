@@ -7,8 +7,7 @@ import { useBrowserContext } from "../filtering/common/browserContext";
 import type { ScrollToFn } from "../filtering/common/filterTypes";
 import { cn } from "@/lib/utils";
 import { useResizeObserver } from "@/hooks/useResizeObserver";
-import { CaptionedLightboxProvider } from "../CaptionedLightbox";
-import { useCaptionedLightbox } from "../lightbox";
+import CaptionedLightboxProvider from "../CaptionedLightboxProvider";
 
 interface ProjectGridProps {
   scrollContainer: RefObject<any>,
@@ -60,11 +59,15 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
     return arr;
   }, [projects, columns]);
   
-  const projectRefs = React.useRef<React.RefObject<ProjectItemHandle>[]>([]);
-  projectRefs.current = projects.map((_, i) => projectRefs.current[i] ?? React.createRef());
-  
-  const extraRefs = React.useRef<React.RefObject<HTMLDivElement>[]>([]);
-  extraRefs.current = projects.map((_, i) => extraRefs.current[i] ?? React.createRef());
+  // const projectRefs = React.useRef<React.RefObject<ProjectItemHandle>[]>([]);
+  // projectRefs.current = projects.map((_, i) => projectRefs.current[i] ?? React.createRef());
+  const projectRefs = React.useRef<Record<string, React.RefObject<ProjectItemHandle>>>({});
+  projectRefs.current = Object.fromEntries(projects.map(p=>[p.id, projectRefs.current[p.id] ?? React.createRef()]));
+
+  // const extraRefs = React.useRef<React.RefObject<HTMLDivElement>[]>([]);
+  // extraRefs.current = projects.map((_, i) => extraRefs.current[i] ?? React.createRef());
+  const extraRefs = React.useRef<Record<string, React.RefObject<HTMLDivElement>>>({});
+  extraRefs.current = Object.fromEntries(projects.map(p=>[p.id, extraRefs.current[p.id] ?? React.createRef()]));
 
   const lightboxOpenRef = React.useRef<boolean>(false);
 
@@ -80,8 +83,10 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
         const projectIndex = projects.findIndex(proj => proj.id === p.id);
         return (
           <ProjectItem 
-            ref={projectRefs.current[refIndex]}
-            extraRef={extraRefs.current[refIndex]}
+            // ref={projectRefs.current[refIndex]}
+            // extraRef={extraRefs.current[refIndex]}
+            ref={projectRefs.current[p.id]}
+            extraRef={extraRefs.current[p.id]}
             key={p.id}
             project={p}
             refIndex={refIndex}
@@ -139,7 +144,8 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
 
   const gridContainerRef = React.useRef<HTMLDivElement>(null);
   
-  const maxExtraHeight = Math.max(0, ...extraRefs.current.map(x=>x.current?.scrollHeight ? Math.ceil(x.current.scrollHeight) : 0));
+  // const maxExtraHeight = Math.max(0, ...extraRefs.current.map(x=>x.current?.scrollHeight ? Math.ceil(x.current.scrollHeight) : 0));
+  const maxExtraHeight = Math.max(0, ...Object.values(extraRefs.current).map(x=>x.current?.scrollHeight ? Math.ceil(x.current.scrollHeight) : 0));
 
   const [baseHeight, setBaseHeight] = React.useState<number>(0);
   // Calculate base height by subtracting any expanded content
@@ -149,7 +155,8 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
     const currentHeight = gridContainerRef.current.scrollHeight;
     
     // Subtract the height of any currently expanded extra content
-    const expandedExtraHeight = extraRefs.current.reduce((sum, ref) => {
+    // const expandedExtraHeight = extraRefs.current.reduce((sum, ref) => {
+    const expandedExtraHeight = Object.values(extraRefs.current).reduce((sum, ref) => {
       return sum + (ref.current?.clientHeight ?? 0);
     }, 0);
     

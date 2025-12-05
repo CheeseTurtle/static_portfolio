@@ -4,6 +4,7 @@ import ProjectBrowser from "../components/projects/ProjectBrowser.astro";
 // import ZustandTest from "../components/projects/ZustandTest";
 
 import "../styles/carousel.css";
+// import SuspenseTest from "@/components/projects/SuspenseTest";
 
 export const ssr = false;
 
@@ -14,119 +15,10 @@ export const ssr = false;
     
   <ProjectBrowser/>
 
-  <!-- <ZustandTest client:only="react"></ZustandTest> -->
-
-</Layout>
-
-
-<!-- <script>
-    // import { gsap } from "gsap";
-    // import { ScrollSmoother } from "gsap/ScrollSmoother";
-    // import { ScrollTrigger } from "gsap/ScrollTrigger";
-    // import { GSDevTools } from "gsap/GSDevTools";
-
-    // gsap.registerPlugin(ScrollTrigger, ScrollSmoother, GSDevTools);
-      if (typeof window !== "undefined") {
-        import("gsap").then(({gsap}) => {
-            import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
-                import("gsap/ScrollSmoother").then(({ScrollSmoother}) => {
-                    gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
-
-                    // ScrollTrigger.create({
-                    //   trigger: "#my-element",
-                    //   start: "top top",
-                    //   end: "bottom top",
-                    //   pin: true,
-                    //   scrub: true,
-                    // });
-
-
-                    // gsap.to("header", {
-                    //     x: "25px",
-                    //     scrollTrigger: {
-                    //         pin: true,
-                    //         id: "turtle",
-                    //         start: 0
-                    //     }
-                    // })
-
-                    
-                    const header = document.querySelector("header");
-                    let lastScrollY = window.scrollY;
-
-                    let opts2:  = {
-
-
-                    };
-                    ScrollTrigger.create(
-                       
-                    {
-                        start: 0,
-                        end: "max",
-                        onUpdate: (self) => {
-                            
-                            const currentScrollY = self.scroll().y;
-
-                            if (currentScrollY > lastScrollY) {
-                                // Scrolling down — fade out
-                                gsap.to(header, { 
-                                    opacity: 0, duration: 0.3, overwrite: "auto",
-                                    onComplete: (_) => {
-                                        console.log("onComplete (0)")
-                                    }
-                                });
-                            } else {
-                                // Scrolling up — fade in
-                                gsap.to(header, { 
-                                    opacity: 1, duration: 0.3, overwrite: "auto",
-                                    onComplete: (_) => {
-                                        console.log("onComplete (1)")
-                                    }
-                                });
-                            }
-
-                            lastScrollY = currentScrollY;
-                        }
-                    });
-                    
-                    let opts: ScrollTrigger.Vars = {
-                        fastScrollEnd: true,
-
-                    };
-                    // gsap.to("body", {
-                    //     scrollTrigger: opts,
-                    // });
-                });
-            });
-
-            import("gsap/GSDevTools").then(({GSDevTools}) => {
-                gsap.registerPlugin(GSDevTools);
-
-                GSDevTools.create({
-                    css: { right: "200px" }
-                });
-            });
-
-        });
-    }
-</script> -->
-
-<!-- <script>
-  // https://gsap.com/docs/v3/Plugins/GSDevTools/
-  if (typeof window !== "undefined") {
-    // import("gsap/dist/gsap").then(({gsap}) => {
-    import("gsap").then((mod) => {
-      const { gsap } = mod as unknown as { gsap: typeof import("gsap") };
-      import.meta.env.DEV &&
-        import("gsap/GSDevTools").then(({ GSDevTools }) => {
-          gsap.registerPlugin(GSDevTools);
-          GSDevTools.create({
-            css: {
-              right:
-                "200px" /* Move it over so it doesn't overlap with the Astro floating dev tools */,
-            },
-          });
-        });
-    });
+  {
+    '<div>Hello</div>'
   }
-</script> -->
+
+  <!-- <ZustandTest client:only="react"></ZustandTest> -->
+  <!-- <SuspenseTest client:only='react'></SuspenseTest> -->
+</Layout>

@@ -1,30 +1,34 @@
-import { Carousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import useEmblaCarousel from "embla-carousel-react";
-import React, { useCallback, useEffect, useEffectEvent, useMemo, useRef, type MouseEventHandler, type PointerEventHandler, type ReactNode } from "react";
+import React, { useCallback, useEffect, useEffectEvent, useMemo, useRef, type MouseEventHandler, type ReactNode } from "react";
 import type {EmblaCarouselType, EmblaOptionsType} from "embla-carousel";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogOverlay, DialogPortal, DialogTitle } from "./TransparentDialog";
+import { Dialog, DialogContent, DialogHeader, DialogOverlay, DialogPortal, DialogTitle } from "./TransparentDialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import { XIcon } from "lucide-react";
 import { useBrowserContext } from "../filtering/common/browserContext";
-import { ShareButton } from "../grid/items/sharing/ShareCard";
 import type { ScrollToFn, ShowToastFn } from "../filtering/common/filterTypes";
 import { useDebounceCallback } from "@/hooks/use-debounce-callback";
+import type { ProjectInfo } from "../types";
+// import ProjectCarousel from "./ProjectCarousel";
 
-type CarouselContentItem = {
+const ProjectCarousel = React.lazy(()=>import('./ProjectCarousel'));
+
+export type CarouselContentItem = {
     children?: ReactNode[],
     props: {
         ['data-project-id']: string,
     }
 } & ReactNode;
 
-type ProjectCarouselProps = {
+export type CarouselContentItemWithTitle = CarouselContentItem & {
+    title: ProjectInfo['title'],
+}
+
+type ProjectCarouselDialogProps = {
     contentElements: CarouselContentItem[],
     showToast: ShowToastFn,
     scrollTo: ScrollToFn,
 } & React.ComponentProps<"div">;
 
-export default function ProjectCarouselDialog({ contentElements, showToast, scrollTo }: ProjectCarouselProps) {
+export default function ProjectCarouselDialog({ contentElements, showToast, scrollTo }: ProjectCarouselDialogProps) {
     // Get all state and actions from the store
     const open = useBrowserContext(s => s.carouselOpen);
     const setOpen = useBrowserContext(s => s.setCarouselOpen);
@@ -34,8 +38,8 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
     const visibleProjects = useBrowserContext(s=>s.visibleProjects);
     
     const overlayRef = useRef<HTMLDivElement>(null);
-    const prevRef = useRef<HTMLButtonElement>(null);
-    const nextRef = useRef<HTMLButtonElement>(null);
+    // const prevRef = useRef<HTMLButtonElement>(null);
+    // const nextRef = useRef<HTMLButtonElement>(null);
 
     // Embla setup
     const containerRef = useRef<HTMLDivElement>(null);
@@ -52,36 +56,13 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
         () => Object.fromEntries(contentElements.map(elem => [elem.props["data-project-id"], elem])), 
         [contentElements]
     );
-
     // Get slides for visible projects
     const slides = useMemo(
-        () => visibleProjects.map((p) => allSlides[p.id]), 
+        () => visibleProjects.map((p) => Object.assign({title: p.title}, allSlides[p.id])), 
         [visibleProjects, allSlides]
     );
 
-    const clickCallback: PointerEventHandler = (evt)=>{
-        evt.stopPropagation();
-    }
-
-    const slideElems = slides.map((slide, i) => (
-        <CarouselItem key={i} id={`slide-${i}`} className="pointer-events-auto h-min">
-            <Card className="relative w-full flex pointer-events-auto max-h-[calc(100vh-(--spacing(25)))] overflow-y-scroll">
-                <CardHeader>
-                    <CardTitle><div className="text-wrap mr-50">{visibleProjects[i].title}</div></CardTitle>
-                </CardHeader>
-                <CardContent className="pointer-events-auto" onPointerDown={clickCallback}>
-                    <DialogClose data-slot="dialog-close"
-                        className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"><XIcon></XIcon></DialogClose>
-                    {/* accessible close: give button an explicit aria-label */}
-                    {/* <DialogClose aria-label="Close carousel" data-slot="dialog-close" className="sr-only" /> */}
-                    {/* above sr-only DialogClose is a compact additional accessible control — main visual close still has icon */}
-                    <ShareButton className="absolute top-4 right-14 text-sm" showToast={showToast} openProjectId={slide.props["data-project-id"]}></ShareButton>
-                    {slide}
-                </CardContent>
-            </Card>
-        </CarouselItem>
-    ));
-
+   
     const debouncedScrollTo = useDebounceCallback(scrollTo, 1000);
 
     // Handle carousel slide selection
@@ -90,8 +71,6 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
         
         const index = emblaApi.selectedScrollSnap();
         console.log('[Carousel] onSelect - scrolling to index:', index, 'current activeIndex:', activeProjectIndex);
-        
-        const shouldScroll = index !== activeProjectIndex;
 
         // Update the store's active project index
         // This will trigger URL sync automatically if carousel is open
@@ -160,13 +139,35 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
         }, [onOpenChange, debouncedScrollTo]);
 
     useEffect(()=>{
+        if(!embla) return;
 
         const callback = (evt: KeyboardEvent) => {
-            console.log('Key up:', evt);
-
+            // console.log('Key up/down:', evt);
+            switch(evt.key) {
+                case 'ArrowLeft': {
+                    if(embla.canScrollPrev())
+                        embla.scrollPrev(false);
+                    break;
+                }
+                case 'ArrowRight': {
+                    if(embla.canScrollNext())
+                        embla.scrollNext(false);
+                    break;
+                }
+                default: 
+                    return;
+                }
+            evt.preventDefault();
+            // evt.stopImmediatePropagation();
+            evt.stopPropagation();
         };
+        // window.addEventListener('keydown', callback);
         window.addEventListener('keyup', callback);
-        return () => { window.removeEventListener('keyup', callback) };
+        return () => { 
+            // window.removeEventListener('keydown', callback);
+            window.removeEventListener('keyup', callback) 
+        };
+        
     });
 
     return (
@@ -193,29 +194,9 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
                             <DialogTitle>Project Carousel</DialogTitle>
                         </DialogHeader>
                     </VisuallyHidden>
-                    
-                    <Carousel 
-                        ref={emblaRef} 
-                        externalCarouselRef={emblaRef} 
-                        externalApi={embla} 
-                        opts={opts} 
-                        className="overflow-visible z-60 w-full max-w-2xl pointer-events-none"
-                        onCarouselSelect={onSelect}
-                    >
-                        <CarouselContent 
-                            id="embla-container" 
-                            className="overflow-visible pointer-events-none w-full items-center max-h-[calc(100%-(--spacing(20)))] ml-auto mr-auto max-w-[calc(100%-(--spacing(12)))]"
-                            style={{
-                                willChange: 'transform',
-                                transform: 'translateZ(0)'
-                            }}
-                        >
-                            {...slideElems}
-                        </CarouselContent>
-                        <CarouselPrevious ref={prevRef} className='pointer-events-auto disabled:pointer-events-auto'/> 
-                        <CarouselNext ref={nextRef} className='pointer-events-auto disabled:pointer-events-auto'/> 
-                        <CarouselDots />
-                    </Carousel>
+                    <React.Suspense>
+                        <ProjectCarousel ref={emblaRef} slides={slides} onCarouselSelect={onSelect} externalApi={embla} showToast={showToast} />
+                    </React.Suspense>
                 </DialogContent>
             </DialogPortal>
         </Dialog>

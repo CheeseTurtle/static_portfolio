@@ -10,6 +10,11 @@ import type { MDXInstance } from "astro";
 import {convertSymbol} from "./lightbox";
 import parseDate from "../story/util/parseDate";
 import type { AstroComponentFactory } from "astro/runtime/server/index.js";
+// import { createParser } from "./parseMdx";
+
+
+import {markdown} from '@astropub/md';
+import type {AstroMarkdownOptions} from '@astrojs/markdown-remark';
 
 const prepath = [
     "/public/images/story/sidebar/",
@@ -173,6 +178,22 @@ async function extractFnAndCaption(x: ProjectImageEntry): Promise<[string | symb
     return [source ?? null, caption || null];
 }
 
+// const parse = createParser();
+
+const options: AstroMarkdownOptions = {
+    gfm: false,
+    rehypePlugins: [],
+    remarkPlugins: [],
+    remarkRehype: {
+        allowDangerousHtml: false,
+        passThrough: [],
+        handlers: {},
+    },
+    shikiConfig: {},
+    smartypants: undefined,
+    syntaxHighlight: false,
+    // syntaxHighlight: 'prism'
+}
 
 const projects: ProjectInfoWithLBSymbols[] = (await Promise.all(items.filter(x=>!x.exclude).map(async (data: ProjectDataWithFactory): Promise<ProjectInfoWithLBSymbols> => {
     const factory = data.factory;
@@ -204,12 +225,15 @@ const projects: ProjectInfoWithLBSymbols[] = (await Promise.all(items.filter(x=>
     } : undefined;
 
 
+    // const titleHTML = await markdown.inline(data.title);
+    // console.log(titleHTML);
+
     return {
         id: trimID(data.id),
         category: data.category,
-        description: data.description,
-        summary: data.summary,
-        title: data.title,
+        description: await markdown.inline(data.description, options),
+        summary: await markdown.inline(data.summary, options),
+        title: await markdown.inline(data.title, options), // <><Markdown of={data.title} /></>,
         date: date,
         dateStr: dateStr,
         audience: data.audience,
@@ -224,9 +248,31 @@ const projects: ProjectInfoWithLBSymbols[] = (await Promise.all(items.filter(x=>
     };
 }))).sort((a,b)=>compareDates(a.date, b.date));
 
+
+
 ---
 
-<ProjectBrowserInner projects={projects} symMap={symMap}>
+<ProjectBrowserInner projects={projects.map(p=>({
+    ...p,
+    title: String(p.title),
+    summary: String(p.summary),
+    description: String(p.description),
+}))} symMap={symMap}>
+    <Fragment slot="project-titles">
+        {
+            projects.map(p=><article data-project-id={p.id}><Fragment set:html={p.title}></Fragment></article>)
+        }
+    </Fragment>
+    <Fragment slot="project-descriptions">
+        {
+            projects.map(p=><article data-project-id={p.id}><Fragment set:html={p.description}></Fragment></article>)
+        }
+    </Fragment>
+    <Fragment slot="project-summaries">
+        {
+            projects.map(p=><article data-project-id={p.id}><Fragment set:html={p.summary}></Fragment></article>)
+        }
+    </Fragment>
     <Fragment slot="carousel-content">
     {
         Object.entries(factories).map(([id, Factory]) =>

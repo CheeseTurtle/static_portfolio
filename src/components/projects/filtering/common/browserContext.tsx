@@ -164,7 +164,8 @@ export function useBrowserContext<T>(
     selector: (state: BrowserStoreState) => T,
     equalityFn?: (left: T, right: T) => boolean,
 ): T {
-    const ctx = React.useContext(BrowserStoreContext);
+    // const ctx = React.useContext(BrowserStoreContext);
+    const ctx = React.use(BrowserStoreContext);
     if (!ctx) throw new Error('Missing BrowserStoreContext.Provider in the tree');
     // return useStoreWithEqualityFn(store, selector, (a: any, b: any) => {
     //     const result = a === b;

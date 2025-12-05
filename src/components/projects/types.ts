@@ -3,6 +3,7 @@ import type { AstroComponentFactory } from "astro/runtime/server/index.js";
 import type { CollectionEntry/*, RenderResult*/ } from "astro:content";
 // import type { JSXElementConstructor } from "react";
 import type { ParsedDate } from "../story/util/parseDate";
+import type React from "react";
 
 export type ContentInstance<T extends Record<string,any>> = MDXInstance<T> | MarkdownInstance<T>;
 export type ProjectContentInstance = ContentInstance<ProjectFrontmatter>;
@@ -88,11 +89,11 @@ type ProjectImageArray = ProjectImageEntry[];
 export type ProjectImages = ProjectImageArray;
 
 
-interface ProjectDataBase<C extends TagCollection, D extends number | Date | ParsedDate | string> {
-    title: string;
+interface ProjectDataBase<C extends TagCollection, D extends number | Date | ParsedDate | string, S extends string | Promise<string> | React.JSX.Element> {
+    title: S;
     date: D;
-    description: string;
-    summary: string;
+    description: S;
+    summary: S;
 
     category: string;
 
@@ -106,10 +107,10 @@ interface ProjectDataBase<C extends TagCollection, D extends number | Date | Par
 }
 
 
-export type ProjectFrontmatter = ProjectDataBase<string[], string | number | Date>
+export type ProjectFrontmatter = ProjectDataBase<string[], string | number | Date, string>
 
 
-export interface ProjectInfoWithLBSymbols extends ProjectDataBase<Set<string>, ParsedDate> {
+export interface ProjectInfoWithLBSymbols extends ProjectDataBase<Set<string>, ParsedDate, string> {
     id: string;
     dateStr?: string;
     contentMdx?: string;
@@ -123,7 +124,7 @@ export interface ProjectInfoWithLBSymbols extends ProjectDataBase<Set<string>, P
 }
 
 
-export interface ProjectInfo extends ProjectDataBase<Set<string>, ParsedDate> {
+export interface ProjectInfo extends ProjectDataBase<Set<string>, ParsedDate, string | React.JSX.Element> {
     id: string;
     dateStr?: string;
     contentMdx?: string;

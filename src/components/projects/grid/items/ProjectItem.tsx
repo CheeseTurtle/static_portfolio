@@ -1,4 +1,4 @@
-import React, { forwardRef, memo, Suspense, useCallback, useDeferredValue, useEffect, useEffectEvent, useImperativeHandle, useMemo, useRef, type MouseEvent, type MouseEventHandler, type PointerEventHandler, type RefAttributes } from "react";
+import React, { forwardRef, memo, useCallback, useImperativeHandle, useMemo, useRef, type MouseEvent, type MouseEventHandler, type PointerEventHandler, type RefAttributes } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { ProjectInfo, TagKey } from "../../types";
 import { BadgeRows } from "./badges/BadgeRows";
@@ -6,7 +6,7 @@ import { convertToBadgeType, type BadgeType } from "./badges/badgeTypes";
 import ExpandedPart from "./expansion/ExpandedPart";
 import { useBrowserContext } from "../../filtering/common/browserContext";
 import { ThumbnailRow } from "./expansion/ThumbnailRow";
-import { useCaptionedLightbox, type LightboxCaptions, type LightboxSources } from "../../lightbox";
+import { useCaptionedLightbox } from "../../lightbox";
 
 
 function adaptLightboxData(data: ProjectInfo['lightboxData']) {
@@ -206,7 +206,7 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
         const isMouse = pointerType === 'mouse';
         if(!isMouse) return;
         clickItem(id, projectIndex, 'active');
-    }, [clickItem, carouselOpen, lightboxOpen, projectIndex, id, lightboxData]);
+    }, [clickItem, carouselOpen, lightboxOpen, projectIndex, id]);
 
     const onUnhover: PointerEventHandler<HTMLDivElement> =  useCallback((evt) => {
         // console.log(`PROJECT ITEM '${id}' UNHOVERED`, {carouselOpen, lightboxOpen});
@@ -215,7 +215,7 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
         const isMouse = pointerType === 'mouse';
         if(!isMouse) return;
         clearActiveItem();
-    }, [clearActiveItem, carouselOpen, lightboxOpen, id]);
+    }, [clearActiveItem, carouselOpen, lightboxOpen]);
 
 
     const handleThumbClick = useCallback((evt: MouseEvent<HTMLImageElement | HTMLDivElement>, index: number) => {

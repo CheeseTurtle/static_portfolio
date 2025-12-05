@@ -39,7 +39,7 @@ export default defineConfig([
         // projectService: true,
         projectService: {
           // allowDefaultProject: ["*.js"],
-          projectFolderIgnoreList:  ["**/node_modules/**", "**/dist/**"],
+          projectFolderIgnoreList: ["**/node_modules/**", "**/dist/**"],
         },
         tsconfigRootDir: __dirname ?? import.meta.dirname,
       },
@@ -53,12 +53,12 @@ export default defineConfig([
   {
     files: ["**/*.{js,ts,jsx,tsx}"],
     plugins: {
-      "react-hooks": pluginReactHooks
+      "react-hooks": pluginReactHooks,
     },
     rules: {
       "react-hooks/exhaustive-deps": "warn",
       "@typescript-eslint/no-unused-vars": "warn",
-    }
+    },
   },
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
@@ -68,44 +68,44 @@ export default defineConfig([
     files: ["**/*.{ts,tsx,d.ts,cts}"],
     rules: {
       "no-redeclare": "off",
-    }
+    },
   },
   {
     // files: ["**/*.{js,mjs,cjs,mts,cts,ts,jsx,tsx,d.ts,mdx}"],
     files: ["**/*.{mts,cts,ts,tsx,d.ts,mdx}"],
-    parserOptions: {
-      extraFileExtensions: ['.mdx']
+    languageOptions: {
+      parserOptions: {
+        extraFileExtensions: [".mdx"],
+      },
     },
     rules: {
-      "no-undef": "off",  // Not supported for Typescript
-      "no-unused-vars": "off",  // Use Typescript check instead
+      "no-undef": "off", // Not supported for Typescript
+      "no-unused-vars": "off", // Use Typescript check instead
       "@typescript-eslint/no-explicit-any": "off",
       "prefer-const": "warn",
       "@typescript-eslint/only-throw-error": "warn",
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
         {
-          args: 'all',
-          argsIgnorePattern: '^_',
-          vars: 'local', // or after-used?
-          varsIgnorePattern: '^_',
-          caughtErrors: 'all',
-          caughtErrorsIgnorePattern: '^_',
-          destructuredArrayIgnorePattern: '^_',
+          args: "all",
+          argsIgnorePattern: "^_",
+          vars: "local", // or after-used?
+          varsIgnorePattern: "^_",
+          caughtErrors: "all",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
           ignoreRestSiblings: true,
           // ignoreClassWithStaticInitBlock: true,
           // ignoreUsingDeclarations: true,
-
         },
-    ],
+      ],
       "@typescript-eslint/no-unsafe-member-access": "warn",
       "@typescript-eslint/no-unsafe-assignment": "warn",
       "@typescript-eslint/no-unsafe-argument": "warn",
 
       "@typescript-eslint/no-inferrable-types": "off",
-    }
+    },
   },
-  
 
   // pluginReact.configs.flat.recommended,
   {
@@ -156,7 +156,7 @@ export default defineConfig([
   {
     files: ["**/*.astro"],
     plugins: {
-      astro: pluginAstro
+      astro: pluginAstro,
     },
     // parser: pluginAstroParser, //"astro-eslint-parser",
     languageOptions: {
@@ -169,19 +169,19 @@ export default defineConfig([
         extraFileExtensions: [".astro", ".mdx"],
         projectService: {
           allowDefaultProject: ["*.astro"],
-          projectFolderIgnoreList: ["**/node_modules/**", "**/dist/**"]
+          projectFolderIgnoreList: ["**/node_modules/**", "**/dist/**"],
         },
         // project: "./tsconfig.json",
         tsconfigRootDir: __dirname,
         ecmaVersion: "latest",
         ecmaFeatures: {
-          jsx: true
+          jsx: true,
         },
       },
     },
     // rules: {
     //   // you can add any Astro-specific rule overrides here
- 
+
     // },
   },
 ]);

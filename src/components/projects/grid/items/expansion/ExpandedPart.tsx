@@ -15,13 +15,16 @@ const ExpandedPart = (({children, id, ref: externalRef, expanded, ...props}: Exp
 
     const [canUnmount, setCanUnmount] = React.useState<boolean>(!expanded);
 
+    const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
     const handleExpandedChange = React.useEffectEvent((el: HTMLDivElement, expanded: boolean) => {
         console.log(`PROJECT ITEM '${id}' EXPANDED:`, expanded);
         if (expanded) {
             // Expand: animate from 0 to scrollHeight
+            gsap.killTweensOf(el);
+            clearTimeout(timeoutRef.current);
             setCanUnmount(false);
             gsap.set(el, {visibility: 'visible'});
-            gsap.killTweensOf(el);
             gsap.fromTo(
                 el,
                 { height: el.clientHeight, opacity: el.style.opacity },
@@ -38,7 +41,9 @@ const ExpandedPart = (({children, id, ref: externalRef, expanded, ...props}: Exp
                 }
             );
         } else if (el.clientHeight === 0) {
-            setCanUnmount(true);
+            // setCanUnmount(true);
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = setTimeout(()=>setCanUnmount(true), 5000);
         } else {
             // Collapse: animate from current height to 0
             gsap.killTweensOf(el);
@@ -49,7 +54,8 @@ const ExpandedPart = (({children, id, ref: externalRef, expanded, ...props}: Exp
                     onComplete() {
                         gsap.set(el, {visibility: 'hidden'});
                         requestAnimationFrame(()=>{
-                            setCanUnmount(true);
+                            clearTimeout(timeoutRef.current);
+                            timeoutRef.current = setTimeout(()=>setCanUnmount(true), 5000);
                         });
                     }
                  },

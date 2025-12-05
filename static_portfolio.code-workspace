@@ -102,5 +102,6 @@
 		],
 		"omlet.showUnusedPropsWarnings": false,
 		"eslint.rules.customizations": [],
+		"javascript.inlayHints.parameterTypes.enabled": true,
 	},
 }

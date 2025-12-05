@@ -1,8 +1,7 @@
-import React, { useCallback, useMemo, useReducer } from "react";
-import FSLightbox from "fslightbox-react";
+import React from "react";
 import { createPortal } from "react-dom";
 import useMutationObserver from "@/hooks/use-mutation-observer";
-import { LightboxContext, lightboxReducer, type LightboxCaptions, type LightboxSources } from "./lightbox";
+import { type LightboxCaptions, type LightboxSources } from "./lightbox";
 
 import {Flip} from "gsap/Flip";
 import {gsap} from "gsap";
@@ -10,24 +9,31 @@ import useThrottledDebounce from "@/hooks/useThrottledDebounce";
 import { cn } from "@/lib/utils";
 import type { WithRequired } from "node_modules/astro/dist/type-utils";
 import { useUnmount } from "@/hooks/use-unmount";
+import type FsLightbox from "fslightbox-react";
+// import type { FsLightboxProps } from "fslightbox-react";
 
 
-export function CaptionedLightboxProvider({children, onClose, openRef}: {children: React.ReactNode, onClose?: () => void, openRef: React.RefObject<boolean>}) {
-    const [state, dispatch] = useReducer(lightboxReducer, {captions: [], initialSlide: 1, open: false, sources: [] });
 
-    const onClose_ = useCallback(()=>{
-        dispatch({type: 'CLOSE'});
-        onClose?.();
-    }, [onClose, dispatch]);
 
-    return <LightboxContext.Provider value={{
-        state, dispatch
-    }}>
-        {/*(state.open || openRef.current) && */<CaptionedLightbox {...state} openRef={openRef} onClose={onClose_}></CaptionedLightbox>}
-        {children}
-    </LightboxContext.Provider>;
-}
+// import FSLightbox from "fslightbox-react";
+const FSLightbox = React.lazy(()=>import('fslightbox-react'));
+// type ExtractLazy<T extends LazyExoticComponent<any>> = T extends LazyExoticComponent<infer C> ? C : never;
+// type FSLightboxType = ExtractLazy<typeof FSLightbox>;
+// type FSLightboxType2 = Parameters<Exclude<FsLightboxProps['onOpen'], undefined>>[0];
 
+// type x = Exclude<FSLightboxType, FsLightbox>;   // typeof FsLightbox
+// type y = Exclude<FsLightbox, FSLightboxType>;   // FsLightbox
+// type z = Extract<FSLightboxType, FsLightbox>;   // never
+// type w = Extract<FsLightbox, FSLightboxType>;   // never
+// type k = FsLightbox | FSLightboxType;           // typeof FsLightbox | FsLightbox
+// type u = FsLightbox & FSLightboxType;           // FsLightbox & typeof FsLightbox
+
+// type x2 = Exclude<FSLightboxType2, FsLightbox>; // never
+// type y2 = Exclude<FsLightbox, FSLightboxType2>; // never
+// type z2 = Extract<FSLightboxType2, FsLightbox>; // FsLightbox
+// type w2 = Extract<FsLightbox, FSLightboxType2>; // FsLightbox
+// type k2 = FsLightbox | FSLightboxType2;         // FsLightbox
+// type u2 = FsLightbox & FSLightboxType2;         // FsLightbox
 
 function useLightboxSlideObserver(snRef: React.RefObject<HTMLSpanElement | null>, captionSlide: number | undefined, setCaptionSlide: React.Dispatch<React.SetStateAction<number | undefined>>, overlayRef: React.RefObject<LightboxCaptionsOverlayHandle | null>) {
     /* div.fslightbox-container.fslightbox-full-dimension
@@ -75,7 +81,7 @@ function useLightboxSlideObserver(snRef: React.RefObject<HTMLSpanElement | null>
 }
 
 
-interface FSLightboxInstance extends FSLightbox {
+interface FSLightboxInstance extends FsLightbox {
     close: () => void,
     collections: {
         sourceLoadHandlers?: {
@@ -149,7 +155,7 @@ interface FSLightboxInstance extends FSLightbox {
 
 
 
-function isFullLightboxInstance(instance: FSLightbox): instance is FSLightboxInstance {
+function isFullLightboxInstance(instance: FsLightbox): instance is FSLightboxInstance {
     if(Object.hasOwn(instance, 'elements')) {
         const elems = (instance as FSLightboxInstance).elements;
         if(elems && Object.hasOwn(elems, 'container') && elems.container instanceof HTMLDivElement)
@@ -411,7 +417,7 @@ interface CaptionedLightboxHandle {
 }
 
 
-export function CaptionedLightbox({
+export default function CaptionedLightbox({
     openRef,
     sourceKey,
     sources,

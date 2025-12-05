@@ -1,32 +1,33 @@
 import React, { forwardRef, StrictMode, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type RefObject } from "react"
 import ProjectGrid, { type ProjectGridHandle } from "./grid/ProjectGrid";
-// import ProjectCarousel from "./overlay/ProjectCarousel";
-import ProjectCarouselDialog from "./overlay/ProjectCarouselDialog";
+// import ProjectCarouselDialog from "./overlay/ProjectCarouselDialog";
 import type { ProjectInfo, ProjectInfoWithLBSymbols } from "./types";
 import parse from "html-react-parser";
-// import { FilterProvider, useFilter } from "./filtering/common/filterContext";
 import { collectFilterRangeInfo, TAGKEYS, TAGTYPES, type FilterRangeInfo, type FilterState, type ScrollToFn, type ShowToastFn } from "./filtering/common/filterTypes";
-// import { FilterURLSync, parseURL, ProjectURLSync, useInitializeFilterFromURL, useInitializeFromURL } from "./filtering/sync";
 import AlertToast from "./toasts";
 
 import { BrowserStoreProvider, useBrowserContext, useFilterStore } from "./filtering/common/browserContext";
 import { toast } from "sonner";
 import FilterForm from "./filtering/FilterForm";
-import {useScrollSentinel, useValueChangeWatcher} from "./scrolling";
+// import {useScrollSentinel, useValueChangeWatcher} from "./scrolling";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CountStoreProvider, useCountContext } from "./filtering/common/stores/countStoreContext";
-import ErrorBoundary from "@/hooks/ErrorBoundary";
+// import ErrorBoundary from "@/hooks/ErrorBoundary";
 import { useDomReady } from "@/hooks/use-dom-ready";
 import type { FilterStoreState } from "./filtering/common/stores/filterStore";
 
+const ProjectCarouselDialog = React.lazy(()=>import('./overlay/ProjectCarouselDialog'));
 
 type ProjectBrowserProps = {
     projects: ProjectInfoWithLBSymbols[],
     contentString?: string,
     lbContentString: string,
     children?: {props?: {value: string}},
+    projectTitles: string,
+    projectSummaries: string,
+    projectDescriptions: string,
 } & React.ComponentProps<'div'>;
 
 
@@ -78,7 +79,7 @@ function anyFilter(){
     return ['year','category',...TAGTYPES].some((k)=>params.has(k));
 }
 
-type ProjectBrowserInnerProps = Omit<ProjectBrowserProps, 'projects' | 'lbContentString' | 'symMap' | 'contentString'> & {
+type ProjectBrowserInnerProps = Omit<ProjectBrowserProps, 'projects' | 'lbContentString' | 'symMap' | 'contentString' | 'projectTitles' | 'projectDescriptions' | 'projectSummaries'> & {
     filterRangeInfo: FilterRangeInfo, scrollToRef: RefObject<ScrollToFn | undefined>, scrollTo: ScrollToFn, scrollContainer: RefObject<any>,
     showToast: ShowToastFn,
     projects: ProjectInfo[],
@@ -223,7 +224,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
             /> */}
         <h1 className="text-3xl font-black align-middle self-center justify-self-center justify-center text-center w-full xl:p-10 md:p-2 sm:p-1 p-0">Projects</h1>
         <Collapsible open={filterExpanded} onOpenChange={setFilterExpanded} ref={formRef} asChild>
-            <div className="flex-col flex max-w-2xl min-w-xl mx-auto  bg-linear-to-tr from-gray-900 to-gray-800 rounded-lg p-0"> 
+            <div className="flex-col flex max-w-2xl min-w-xl mx-auto  bg-linear-to-tr from-gray-200 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-0"> 
                 {/* xl:mx-30 lg:mx-20 md:mx-10 sm:mx-5 mx-2 */}
                 <CollapsibleTrigger asChild>
                     <div className="text-popover-foreground text-lg font-bold justify-center w-full items-center content-center align-middle text-center p-10 select-none cursor-pointer relative">
@@ -278,7 +279,12 @@ function getLightboxItems(lbContentString: string | undefined) {
 
 const extractSymPat = new RegExp('(?<=^%)(.+)(?=%$)');
 
-function convertProjectInfo(projects: ProjectInfoWithLBSymbols[], record: Record<string, React.JSX.Element>): ProjectInfo[] {
+function convertProjectInfo(projects: ProjectInfoWithLBSymbols[], record: Record<string, React.JSX.Element>, projectTitles: string, projectDescriptions: string, projectSummaries: string): ProjectInfo[] {
+    
+    const titles = parseToData(projectTitles);
+    const descriptions = parseToData(projectDescriptions);
+    const summaries = parseToData(projectSummaries);
+
     return projects.map(({lightboxData, ...p})=>{
         // console.log(lightboxData);
         if(undefined === lightboxData) return p;
@@ -297,17 +303,49 @@ function convertProjectInfo(projects: ProjectInfoWithLBSymbols[], record: Record
             if(m[0] in record) return record[m[0]];
             throw new RangeError(`Record does not contain symbol '${String(x)}'`);
         })
-        return {...p, lightboxData: {
-            lightboxSources, lightboxCaptions
-        }};
+        return {
+            ...p, 
+            title: titles[p.id] ?? p.title,
+            description: descriptions[p.id] ?? p.description,
+            summary: summaries[p.id] ?? p.summary,
+            lightboxData: {
+                lightboxSources, lightboxCaptions
+            }
+        };
     });
 }
 
 
-export default function ProjectBrowser({children, projects: projectsWithLBSymbols, contentString, lbContentString}: ProjectBrowserProps) {
+
+
+function parseToData(src: string): Record<string, React.JSX.Element> {
+    console.log('src:', src);
+    const elems = parse(src);
+    if(typeof elems === 'string') {
+        throw new TypeError('Unexpected bare string');
+    }
+    const ret: Record<string, React.ReactElement<{'data-project-id': string}, any>> = {};
+    
+    for(const elem of (Array.isArray(elems) ? elems : [elems])) {
+        const id = elem.props['data-project-id'] as string;
+        if(typeof id !== 'string')
+            throw new TypeError('Missing or invalid project ID on data item');
+        if(id in ret) 
+            throw new RangeError('Duplicate project ID');
+        console.log('elem:', elem);
+        ret[id] = (elem.props?.children ?? elem) as React.JSX.Element;
+    }
+    return ret;
+}
+
+export default function ProjectBrowser({children, projects: projectsWithLBSymbols, contentString, lbContentString, projectTitles, projectDescriptions, projectSummaries}: ProjectBrowserProps) {
+    // console.log(projectsWithLBSymbols);
     const filterRangeInfo = useMemo(() => collectFilterRangeInfo(projectsWithLBSymbols), [projectsWithLBSymbols]);
     const lightboxContentElements: Record<string, React.JSX.Element> = React.useMemo(()=>getLightboxItems(lbContentString), [lbContentString]);
-    const projects = useMemo(()=>convertProjectInfo(projectsWithLBSymbols, lightboxContentElements), [projectsWithLBSymbols, lightboxContentElements]);
+
+    // console.log('TITLES:', titles);
+
+    const projects = useMemo(()=>convertProjectInfo(projectsWithLBSymbols, lightboxContentElements, projectTitles, projectDescriptions, projectSummaries), [projectsWithLBSymbols, lightboxContentElements, projectTitles, projectDescriptions, projectSummaries]);
     
     if (!contentString) {
         // contentString = children!.props!.value;
@@ -342,10 +380,10 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
         scrollToRef.current?.(index, jump);
     }, []);
 
-return <>
+    return <>
         <div ref={scrollContainer} id='project-browser-wrapper' className="overflow-y-scroll inset-0 w-full h-full p-0 m-0 bg-none border-none outline-none">
         <StrictMode>
-            <AlertToast></AlertToast>
+            <AlertToast/>
             {/* <AlertToast message={toastMessage} onClose={() => setToastMessage(null)} /> */}
             {/* <ErrorBoundary displayName="myBoundary" callback={(err: Error) => {
                 console.error(err, err.cause, err.message, err.name, err.stack);
