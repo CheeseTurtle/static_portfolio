@@ -70,7 +70,7 @@ const ExpandedPart = (({children, id, ref: externalRef, expanded, ...props}: Exp
         handleExpandedChange(el, expanded);
     }, [expanded, ref]);
 
-    const lastRef = React.useRef<HTMLDivElement | null>(ref.current);
+const lastRef = React.useRef<HTMLDivElement | null>(ref.current);
     React.useEffect(()=>{
         const current = ref.current;
         if(current === lastRef.current) return;
@@ -84,7 +84,9 @@ const ExpandedPart = (({children, id, ref: externalRef, expanded, ...props}: Exp
 
     if(canUnmount && !expanded) return null;
     // return <React.Suspense fallback={<div className='w-full min-h-20 h-min bg-blue-500'>Placeholder</div>}>
-    return <div ref={ref} style={{height: 0, overflow: 'hidden', opacity: 0, width: '100%', visibility: 'hidden'}} data-slot='project-item-extra' {...props}>{children}</div>
+    return <div ref={ref} 
+        style={{ height: 0, overflow: 'hidden', opacity: 0, width: '100%', visibility: 'hidden'}} 
+        data-slot='project-item-extra' {...props}>{children}</div>
     // </React.Suspense>
 });
 

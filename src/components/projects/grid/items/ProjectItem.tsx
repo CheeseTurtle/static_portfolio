@@ -34,14 +34,14 @@ type ProjectItemProps = {
     refIndex: number,
     project: ProjectInfo;
     projectIndex: number; // Index in the visible projects array
-    activeProject: ProjectInfo | null;
+    // activeProject: ProjectInfo | null;
     activeProjectId: string | null;
-    activeProjectIndex: number | null;
+    // activeProjectIndex: number | null;
     openProjectId: string | null;
     carouselOpen: boolean;
     // lightboxOpen: boolean;
     clickItem: (itemId: string, itemIndex: number, newState?: 'active' | 'open') => void;
-    setCarouselOpen: (open: boolean) => void;
+    // setCarouselOpen: (open: boolean) => void;
     extraRef?: React.RefObject<HTMLDivElement | null>,
     scrollContainer: React.RefObject<HTMLDivElement | null>,
 };
@@ -67,6 +67,7 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
     // ref
 // }: ProjectItemProps & {ref?: React.Ref<ProjectItemHandle>}) => {
 }: ProjectItemProps, ref) => {
+    const [isPending, startTransition] = React.useTransition();
     const { id, lightboxData: lightboxData_, title, date, summary, description, tags } = project;
     const lightboxData = adaptLightboxData(lightboxData_);
 
@@ -108,55 +109,45 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
         // This handles both:
         // 1. Clicking an already-active item (opens carousel)
         // 2. Clicking a different item (makes it active)
-        clickItem(id, projectIndex, isMouse ? 'open' : undefined);
+        // startTransition(() => {
+            clickItem(id, projectIndex, isMouse ? 'open' : undefined);
+        // });
     }, [id, projectIndex, clickItem]);
 
     useImperativeHandle(ref, () => ({ 
         scrollIntoView(jump?: boolean) {
-            const self = selfRef.current, container = scrollContainer.current;
-            // console.log('self, container:', self, container);
-            if(!self || !container) return;
+            startTransition(()=>{
+                const self = selfRef.current, container = scrollContainer.current;
+                // console.log('self, container:', self, container);
+                if(!self || !container) return;
 
-            const selfRect_ = self.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
+                const selfRect_ = self.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
 
-            let diffHeight: number;
-            // console.log('expanded:', expanded, extraRef.current ? extraRef.current.scrollHeight - extraRef.current.clientHeight : null);
-            const selfRect: DOMRect = (!expanded && extraRef.current && (diffHeight = extraRef.current.scrollHeight - extraRef.current.clientHeight) > 0) ? (
-                new DOMRect(selfRect_.x, selfRect_.y, selfRect_.width, selfRect_.height + diffHeight)
-            ) : selfRect_;
+                let diffHeight: number;
+                // console.log('expanded:', expanded, extraRef.current ? extraRef.current.scrollHeight - extraRef.current.clientHeight : null);
+                const selfRect: DOMRect = (!expanded && extraRef.current && (diffHeight = extraRef.current.scrollHeight - extraRef.current.clientHeight) > 0) ? (
+                    new DOMRect(selfRect_.x, selfRect_.y, selfRect_.width, selfRect_.height + diffHeight)
+                ) : selfRect_;
 
-            /*
-            // console.log(selfRect, containerRect, self, container);
-            // console.log((['top','bottom','left','right'] as ('top' | 'bottom' | 'left' | 'right')[]).map(x=>
-            //     `${selfRect[x].toFixed(4).padStart(9, ' ')} | ${containerRect[x].toFixed(4).padStart(9, ' ')}`
-            // ).join('\n'))
-            
-            // If it is in view already, then don't scroll.
-            // if(containerRect.top < selfRect.bottom && (selfRect.bottom < containerRect.bottom || selfRect.top < containerRect.bottom)
-            //     && containerRect.left < selfRect.right && (selfRect.right < containerRect.right || selfRect.left < containerRect.right)
-            // ) //     return;
-            */
+                const MIN_Y_VISIBLE = Math.min(containerRect.height, 0.8 * selfRect.height);
+                const MIN_X_VISIBLE = Math.min(containerRect.width, 0.8 * selfRect.width);
 
-            const MIN_Y_VISIBLE = Math.min(containerRect.height, 0.8 * selfRect.height);
-            const MIN_X_VISIBLE = Math.min(containerRect.width, 0.8 * selfRect.width);
+                const ALLOWABLE_MISSED_Y = Math.min(-(selfRect.height - containerRect.height), 0);
+                const ALLOWABLE_MISSED_X = Math.min(-(selfRect.width - containerRect.width), 0);
 
-            const ALLOWABLE_MISSED_Y = Math.min(-(selfRect.height - containerRect.height), 0);
-            const ALLOWABLE_MISSED_X = Math.min(-(selfRect.width - containerRect.width), 0);
+                // console.log(`(selfRect.bottom - containerRect.top >= MIN_Y_VISIBLE) <==> (${selfRect.bottom} - ${containerRect.top} >= ${MIN_Y_VISIBLE}) <==> ${selfRect.bottom - containerRect.top >= MIN_Y_VISIBLE}`);
+                // console.log(`(containerRect.bottom - selfRect.bottom >= ALLOWABLE_MISSED_Y) <==> (${containerRect.bottom} - ${selfRect.bottom} >= ${ALLOWABLE_MISSED_Y}) <==> ${containerRect.bottom - selfRect.bottom >= ALLOWABLE_MISSED_Y}`);
+                // console.log(`(containerRect.bottom - selfRect.top >= MIN_Y_VISIBLE) <==> (${containerRect.bottom} - ${selfRect.top} >= ${MIN_Y_VISIBLE}) <==> ${containerRect.bottom - selfRect.top >= MIN_Y_VISIBLE}`);
+                if(((selfRect.bottom - containerRect.top >= MIN_Y_VISIBLE) && ((containerRect.bottom - selfRect.bottom >= ALLOWABLE_MISSED_Y) && (containerRect.bottom - selfRect.top >= MIN_Y_VISIBLE)))
+                    && ((selfRect.right - containerRect.left >= MIN_X_VISIBLE) && ((containerRect.right - selfRect.right >= ALLOWABLE_MISSED_X) && (containerRect.right - selfRect.left >= MIN_X_VISIBLE)))
+                ) return;
 
-            // console.log(`(selfRect.bottom - containerRect.top >= MIN_Y_VISIBLE) <==> (${selfRect.bottom} - ${containerRect.top} >= ${MIN_Y_VISIBLE}) <==> ${selfRect.bottom - containerRect.top >= MIN_Y_VISIBLE}`);
-            // console.log(`(containerRect.bottom - selfRect.bottom >= ALLOWABLE_MISSED_Y) <==> (${containerRect.bottom} - ${selfRect.bottom} >= ${ALLOWABLE_MISSED_Y}) <==> ${containerRect.bottom - selfRect.bottom >= ALLOWABLE_MISSED_Y}`);
-            // console.log(`(containerRect.bottom - selfRect.top >= MIN_Y_VISIBLE) <==> (${containerRect.bottom} - ${selfRect.top} >= ${MIN_Y_VISIBLE}) <==> ${containerRect.bottom - selfRect.top >= MIN_Y_VISIBLE}`);
-            if(((selfRect.bottom - containerRect.top >= MIN_Y_VISIBLE) && ((containerRect.bottom - selfRect.bottom >= ALLOWABLE_MISSED_Y) && (containerRect.bottom - selfRect.top >= MIN_Y_VISIBLE)))
-                && ((selfRect.right - containerRect.left >= MIN_X_VISIBLE) && ((containerRect.right - selfRect.right >= ALLOWABLE_MISSED_X) && (containerRect.right - selfRect.left >= MIN_X_VISIBLE)))
-            ) return;
-
-
-
-            // const selfBottom = self.clientTop + self.clientHeight;
-            // const containerBottom = Math.min(container.scrollTop + container.clientHeight, container.scrollHeight);
-            selfRef.current?.scrollIntoView({behavior: jump ? "instant" : (jump === false ? "smooth" : "auto")});
-            // // selfRef.current?.scrollTo()
+                // const selfBottom = self.clientTop + self.clientHeight;
+                // const containerBottom = Math.min(container.scrollTop + container.clientHeight, container.scrollHeight);
+                selfRef.current?.scrollIntoView({behavior: jump ? "instant" : (jump === false ? "smooth" : "auto")});
+                // // selfRef.current?.scrollTo()
+            });
         },
         onClick }), [onClick, scrollContainer, expanded, extraRef]);
 
@@ -199,13 +190,16 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
     // }, [id, expanded, extraRef]);
     */
 
+    const shouldExpand = React.useRef<boolean>(false);
+
     const onHover: PointerEventHandler<HTMLDivElement> = useCallback((evt) => {
         // console.log(`PROJECT ITEM '${id}' HOVERED`, {carouselOpen, lightboxOpen, lightboxData});
         if(carouselOpen || lightboxOpen) return;
         const pointerType = evt.pointerType;
         const isMouse = pointerType === 'mouse';
         if(!isMouse) return;
-        clickItem(id, projectIndex, 'active');
+        shouldExpand.current = true;
+        startTransition(()=>{if(shouldExpand.current) clickItem(id, projectIndex, 'active')});
     }, [clickItem, carouselOpen, lightboxOpen, projectIndex, id]);
 
     const onUnhover: PointerEventHandler<HTMLDivElement> =  useCallback((evt) => {
@@ -214,7 +208,8 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
         const pointerType = evt.pointerType;
         const isMouse = pointerType === 'mouse';
         if(!isMouse) return;
-        clearActiveItem();
+        shouldExpand.current = false;
+        startTransition(()=>{if(!shouldExpand.current) clearActiveItem()});
     }, [clearActiveItem, carouselOpen, lightboxOpen]);
 
 
@@ -249,7 +244,9 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
                 relative cursor-pointer overflow-hidden transition-all
                 hover:shadow-lg
                 ${expanded ? "ring-2 ring-primary" : ""}
+                ${isPending ? "outline-4 outline-yellow-500" : ""}
             `}
+            style={{textWrapMode: "wrap", textWrap: "stable"}}
         >
             {/* Header */}
             <CardHeader className="pb-2">

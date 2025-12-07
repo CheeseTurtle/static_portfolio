@@ -126,10 +126,10 @@ interface FSLightboxInstance extends FsLightbox {
         customClasses: Array<string>,
         exitFullscreenOnClose: boolean
         maxYoutubeDimensions?: any,
-        // onClose: function onClose(_instance)​​
+        // onClose: function onClose(_instance)
         // onInit: ....
-        // onOpen: function onOpen(instance)​​
-        // onShow: function onShow(instance)​​
+        // onOpen: function onOpen(instance)
+        // onShow: function onShow(instance)
         // onSourceLoad: function onSourceLoad(e4, t4, n2)
         openOnMount: boolean,
         slide: number,
@@ -175,6 +175,7 @@ type LightboxCaptionsOverlayProps = {
     divRef: React.RefObject<HTMLDivElement | null>,
 };
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type LightboxCaptionsOverlayHandle = {
     // activateCaption: (index: number | undefined) => void,
     // activateCaptionDebounced: ReturnType<typeof useThrottledDebounce<(index: number | undefined) => void>>,    
@@ -244,7 +245,7 @@ function LightboxCaption({ref, children, divRef, sourceElem, className, index, a
             });
         }
         return ()=>gsap.killTweensOf(div);
-    }, [active]);
+    }, [active, divRef]);
 
 
     return <div ref={divRef} className={cn(
@@ -449,7 +450,7 @@ export default function CaptionedLightbox({
     const captionsHandleRef = React.useRef<LightboxCaptionsOverlayHandle>(null);
     useLightboxSlideObserver(snRef, captionSlide, setCaptionSlide, captionsHandleRef);
     const sourceElems = React.useRef<(HTMLElement | HTMLImageElement)[]>([]);
-    const captions_ = React.useMemo(()=>captions?.length && captions.some(x => x) ? captions : null, [captions, toggler]);
+    const captions_ = React.useMemo(()=>captions?.length && captions.some(x => !!x) ? captions : null, [captions]);
     const containerRef = React.useRef<HTMLElement>(null);
 
     const captionDivRef = React.useRef<HTMLDivElement | null>(null);
@@ -489,7 +490,7 @@ export default function CaptionedLightbox({
             setCaptionSlide(undefined);
             setActiveCaptionIndex(undefined);
         }
-    }, [captionSlide, open]);
+    }, [captionSlide, open, setActiveCaptionIndexDebounced]);
 
     
     // Only render FSLightbox if we have sources

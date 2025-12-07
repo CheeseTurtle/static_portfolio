@@ -17,6 +17,8 @@ import { CountStoreProvider, useCountContext } from "./filtering/common/stores/c
 // import ErrorBoundary from "@/hooks/ErrorBoundary";
 import { useDomReady } from "@/hooks/use-dom-ready";
 import type { FilterStoreState } from "./filtering/common/stores/filterStore";
+import ErrorBoundary from "@/hooks/ErrorBoundary";
+import FilterSheet from "./filtering/FilterSheet";
 
 const ProjectCarouselDialog = React.lazy(()=>import('./overlay/ProjectCarouselDialog'));
 
@@ -164,17 +166,15 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
     });
 
     
-    /*
-    // const {inView, sentinelRef} = useScrollSentinel(null, 0, true, '-15% 0px 0px 0px');
+    const sheetContentRef = useRef<HTMLDivElement>(null);
+    const sheetTriggerRef = useRef<HTMLButtonElement>(null);
 
-    // // const sheetContentRef = useRef<HTMLDivElement>(null);
-    // // const sheetTriggerRef = useRef<HTMLButtonElement>(null);
+    // const {inView, sentinelRef} = useScrollSentinel(null, 0, true, '-15% 0px 0px 0px');
     // const onInViewChange = useCallback((value: boolean, prev: boolean)=> {
-        //     console.log('In view change:', prev, value);
-        // }, []);
+    //         console.log('In view change:', prev, value);
+    //     }, []);
         
-        // useValueChangeWatcher<boolean, boolean>(inView, onInViewChange, {});
-    */
+    // useValueChangeWatcher<boolean, boolean>(inView, onInViewChange, {});
 
     const initiallyHasFilter = useMemo(()=>anyFilter(), []);
     const [filterExpanded, setFilterExpanded] = useState<boolean>(initiallyHasFilter);
@@ -212,19 +212,9 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
 
     // throw Error('help');
     return <>
-        {/* <FilterSheet 
-            contentRef={sheetContentRef}
-            triggerRef={sheetTriggerRef}
-            projects={visibleProjects} 
-            rangeInfo={filterRangeInfo} 
-            registerReset={registerReset}
-            resetAll={resetAll}
-            registeredResets={registeredResets}
-            // browserStore={store}
-            /> */}
         <h1 className="text-3xl font-black align-middle self-center justify-self-center justify-center text-center w-full xl:p-10 md:p-2 sm:p-1 p-0">Projects</h1>
         <Collapsible open={filterExpanded} onOpenChange={setFilterExpanded} ref={formRef} asChild>
-            <div className="flex-col flex max-w-2xl min-w-xl mx-auto  bg-linear-to-tr from-gray-200 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-0"> 
+            <div className="flex-col flex max-w-2xl min-w-xl max-md:hidden mx-auto bg-linear-to-tr from-gray-200 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-0"> 
                 {/* xl:mx-30 lg:mx-20 md:mx-10 sm:mx-5 mx-2 */}
                 <CollapsibleTrigger asChild>
                     <div className="text-popover-foreground text-lg font-bold justify-center w-full items-center content-center align-middle text-center p-10 select-none cursor-pointer relative">
@@ -239,20 +229,32 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
                 </CollapsibleContent>
                 <CollapsibleTrigger asChild>
                     <div className="w-full h-min flex flex-row justify-center cursor-pointer">
-                        <ChevronDown size={40} className={cn("relative flex tansition-all duration-300", filterExpanded ? 'rotate-180' : 'rotate-0')}></ChevronDown>
+                        <ChevronDown size={40} className={cn("relative flex transition-all duration-300", filterExpanded ? 'rotate-180' : 'rotate-0')}></ChevronDown>
                     </div>
                 </CollapsibleTrigger>
                 {/* <div ref={sentinelRef} className="h-0 w-full"></div> */}
             </div>
         </Collapsible>
-        <div className="mt-5 overflow-y-visible" ref={filterResultsRef}>
-            <div className="pl-4 pr-4">{resultText}</div>
+        <div className="mt-5 overflow-y-visible w-full max-w-[100vw]" ref={filterResultsRef}>
+            <div className="pl-4 pr-4 sticky top-[-0.8px] z-1 bg-background">{resultText}</div>
             <ProjectGrid ref={gridHandle} scrollContainer={scrollContainer} />
         </div>
-        <ProjectCarouselDialog 
-            showToast={showToast}
-            scrollTo={scrollTo}
-            contentElements={contentElements}
+        <React.Suspense fallback={<div className="absolute inset-0 w-screen h-screen bg-green-400"></div>}>
+            <ProjectCarouselDialog 
+                showToast={showToast}
+                scrollTo={scrollTo}
+                contentElements={contentElements}
+            />
+        </React.Suspense>
+         <FilterSheet 
+            contentRef={sheetContentRef}
+            triggerRef={sheetTriggerRef}
+            projects={visibleProjects} 
+            rangeInfo={filterRangeInfo} 
+            registerReset={registerReset}
+            resetAll={resetAll}
+            registeredResets={registeredResets}
+            // browserStore={store}
         />
     </>;
 });
@@ -266,7 +268,7 @@ function getLightboxItems(lbContentString: string | undefined) {
         throw new TypeError('LB content source/caption cannot be a bare string');
     const ret: Record<string, React.JSX.Element> = {};
     for(const elem of (Array.isArray(parsed) ? parsed : [parsed])) {
-        const id = elem.props['data-item-id'];
+        const id = elem.props['data-item-id'] as string;
         if(id === undefined) {
             console.log(elem);
             throw new TypeError('Could not determine ID of lightbox content item');
@@ -319,7 +321,7 @@ function convertProjectInfo(projects: ProjectInfoWithLBSymbols[], record: Record
 
 
 function parseToData(src: string): Record<string, React.JSX.Element> {
-    console.log('src:', src);
+    // console.log('src:', src);
     const elems = parse(src);
     if(typeof elems === 'string') {
         throw new TypeError('Unexpected bare string');
@@ -332,7 +334,7 @@ function parseToData(src: string): Record<string, React.JSX.Element> {
             throw new TypeError('Missing or invalid project ID on data item');
         if(id in ret) 
             throw new RangeError('Duplicate project ID');
-        console.log('elem:', elem);
+        // console.log('elem:', elem);
         ret[id] = (elem.props?.children ?? elem) as React.JSX.Element;
     }
     return ret;
@@ -385,9 +387,9 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
         <StrictMode>
             <AlertToast/>
             {/* <AlertToast message={toastMessage} onClose={() => setToastMessage(null)} /> */}
-            {/* <ErrorBoundary displayName="myBoundary" callback={(err: Error) => {
+            <ErrorBoundary displayName="myBoundary" callback={(err: Error) => {
                 console.error(err, err.cause, err.message, err.name, err.stack);
-            }}> */}
+            }}>
                 <BrowserStoreProvider 
                     allProjects={projects}
                     filterRangeInfo={filterRangeInfo}
@@ -408,7 +410,7 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
                         </ProjectBrowserInner>
                     </CountStoreProvider>
                 </BrowserStoreProvider>
-            {/* </ErrorBoundary> */}
+            </ErrorBoundary>
         </StrictMode>
         </div>
     </>;

@@ -32,12 +32,15 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
   
   // Get actions from store
   const clickItem = useBrowserContext(s => s.clickItem);
-  const setCarouselOpen = useBrowserContext(s => s.setCarouselOpen);
+  // const setCarouselOpen = useBrowserContext(s => s.setCarouselOpen);
 
-  const activeProject = useMemo(
-    () => activeProjectIndex !== null ? projects[activeProjectIndex] ?? null : null,
-    [projects, activeProjectIndex]
-  );
+  // const activeProject = useMemo(
+  //   () => activeProjectIndex !== null ? projects[activeProjectIndex] ?? null : null,
+  //   [projects, activeProjectIndex]
+  // );
+  
+  const deferredActiveProjectId = React.useDeferredValue(activeProjectId);
+  const gridActiveProjectId = React.useMemo(()=>(carouselOpen ? deferredActiveProjectId : activeProjectId), [carouselOpen, deferredActiveProjectId, activeProjectId]);
 
 
   // Determine number of columns based on viewport width
@@ -91,15 +94,15 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
             project={p}
             refIndex={refIndex}
             projectIndex={projectIndex}
-            activeProject={activeProject}
-            activeProjectId={activeProjectId}
-            activeProjectIndex={activeProjectIndex}
+            // activeProject={activeProject}
+            activeProjectId={gridActiveProjectId}
+            // activeProjectIndex={activeProjectIndex}
             openProjectId={openProjectId}
             carouselOpen={carouselOpen}
             // lightboxOpen={lightboxOpenRef.current}
             // lightboxOpen={lightboxOpen}
             clickItem={clickItem}
-            setCarouselOpen={setCarouselOpen}
+            // setCarouselOpen={setCarouselOpen}
             scrollContainer={scrollContainer}
           />
         );
@@ -109,7 +112,7 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
   const projectItems = useMemo(()=>projectCols.flat(1), [projectCols]);
 
   const projectGridContents = useMemo(()=>projectCols.map((colElems, i) => (
-    <div key={i} className="flex-1 flex flex-col gap-4">
+    <div key={i} className="flex-1 flex flex-col gap-4 h-min max-w-[calc(100vw-16*var(--spacing))]">
       {colElems}
     </div>
   )), [projectCols]);
@@ -147,23 +150,60 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
   // const maxExtraHeight = Math.max(0, ...extraRefs.current.map(x=>x.current?.scrollHeight ? Math.ceil(x.current.scrollHeight) : 0));
   const maxExtraHeight = Math.max(0, ...Object.values(extraRefs.current).map(x=>x.current?.scrollHeight ? Math.ceil(x.current.scrollHeight) : 0));
 
-  const [baseHeight, setBaseHeight] = React.useState<number>(0);
-  // Calculate base height by subtracting any expanded content
+  const [collapsedGridHeight, setCollapsedGridHeight] = React.useState<number>(0);
+  const isMeasuringRef = React.useRef(false);
+  const lastNaturalHeightRef = React.useRef<number>(0);
+  
+  // // Calculate base height by subtracting any expanded content
+  // const measureBaseHeight = useCallback(() => {
+  //   if (!gridContainerRef.current) return;
+    
+  //   const currentHeight = gridContainerRef.current.scrollHeight;
+    
+  //   // Subtract the height of any currently expanded extra content
+  //   // const expandedExtraHeight = extraRefs.current.reduce((sum, ref) => {
+  //   const expandedExtraHeight = Object.values(extraRefs.current).reduce((sum, ref) => {
+  //     return sum + (ref.current?.clientHeight ?? 0);
+  //   }, 0);
+    
+  //   const calculatedBaseHeight = currentHeight - 0*expandedExtraHeight;
+  //   // console.log(calculatedBaseHeight, currentHeight, expandedExtraHeight)
+  //   setBaseHeight(calculatedBaseHeight);
+  // }, []);
+
+
   const measureBaseHeight = useCallback(() => {
-    if (!gridContainerRef.current) return;
+    if (!gridContainerRef.current || isMeasuringRef.current) return;
     
-    const currentHeight = gridContainerRef.current.scrollHeight;
+    isMeasuringRef.current = true;
     
-    // Subtract the height of any currently expanded extra content
-    // const expandedExtraHeight = extraRefs.current.reduce((sum, ref) => {
-    const expandedExtraHeight = Object.values(extraRefs.current).reduce((sum, ref) => {
-      return sum + (ref.current?.clientHeight ?? 0);
-    }, 0);
+    const container = gridContainerRef.current;
+    const originalMinHeight = container.style.minHeight;
     
-    const calculatedBaseHeight = currentHeight - 0*expandedExtraHeight;
-    // console.log(calculatedBaseHeight, currentHeight, expandedExtraHeight)
-    setBaseHeight(calculatedBaseHeight);
+    // Temporarily remove minHeight to get true collapsed size
+    container.style.minHeight = 'auto';
+    
+    // Force reflow and measure
+    void container.offsetHeight;
+    const naturalHeight = container.scrollHeight;
+    
+    // Restore minHeight immediately
+    container.style.minHeight = originalMinHeight;
+    
+    // Only update state if the natural height actually changed significantly
+    if (Math.abs(naturalHeight - lastNaturalHeightRef.current) > 5) {
+      lastNaturalHeightRef.current = naturalHeight;
+      setCollapsedGridHeight(naturalHeight);
+    }
+    
+    // Release lock after next frame
+    requestAnimationFrame(() => {
+      isMeasuringRef.current = false;
+    });
   }, []);
+
+  // const deferredBaseHeight = React.useDeferredValue(baseHeight);
+  // const [, startTransition] = React.useTransition();
 
   // Initial measurement
   React.useLayoutEffect(() => {
@@ -175,10 +215,16 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
   // TODO: Temporarily disable resize observation during carousel update
   useResizeObserver({
     ref: gridContainerRef,
-    onResize: measureBaseHeight,
-    throttle: 200,  // Update at most every 200ms during resize
-    debounce: 150,  // Final update 150ms after resize stops
+    onResize: ()=>{
+        if (!isMeasuringRef.current) {
+          measureBaseHeight();
+    }
+    },
+    throttle: 500,  // Update at most every 200ms during resize
+    debounce: 250,  // Final update 150ms after resize stops
   });
+
+  const totalReservedHeight = collapsedGridHeight + maxExtraHeight;
 
   return (
     <CaptionedLightboxProvider openRef={lightboxOpenRef} onClose={undefined}>
@@ -186,10 +232,11 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
         className="grid w-full overflow-y-visible"
         style={{
           gridTemplateRows: `auto minmax(0, ${maxExtraHeight}px)`,
-          minHeight: baseHeight > 0 ? `max(100vh, ${baseHeight + maxExtraHeight}px)` : '100vh',
+          minHeight: collapsedGridHeight > 0 ? `max(100vh, ${totalReservedHeight}px)` : '100vh',
         }}
       >
-        <div ref={gridContainerRef} className={cn("flex w-full gap-4 p-8 pt-4 h-min overflow-y-visible")}> 
+        {/* <div ref={gridContainerRef} className={cn("flex w-full gap-4 p-8 pt-4 h-min overflow-y-visible")}>  */}
+        <div ref={gridContainerRef} className={cn("w-full max-w-full grid grid-flow-col auto-cols-fr gap-4 p-8 pt-4 h-min overflow-y-visible sm:grid-flow-col-dense md:grid-flow-col-dense")}> 
           {projectGridContents}
         </div>
         <div 

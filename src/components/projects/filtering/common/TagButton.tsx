@@ -12,7 +12,7 @@ export type TagButtonProps = {
 } & ToggleProps;
 
 
-const TagButton = ({isPressed, toggleTag, disabled, tagText, matchCount, colorClassName, ...props}: TagButtonProps) => {
+const TagButton = ({className, isPressed, toggleTag, disabled, tagText, matchCount, colorClassName, ...props}: TagButtonProps) => {
 
     const onPressedChange = useCallback((pressed: boolean) => toggleTag(tagText, pressed), [tagText, toggleTag]);
 
@@ -20,7 +20,7 @@ const TagButton = ({isPressed, toggleTag, disabled, tagText, matchCount, colorCl
 
     const colorClassName_ = useMemo(()=>colorClassName ?? '', [colorClassName]);
 
-    return <Toggle className={cn(colorClassName_)} disabled={disabled} aria-disabled={disabled} variant={variant} pressed={isPressed} onPressedChange={(pressed)=>{
+    return <Toggle className={cn(colorClassName_, 'not-disabled:cursor-pointer', className)} disabled={disabled} aria-disabled={disabled} variant={variant} pressed={isPressed} onPressedChange={(pressed)=>{
         console.log('%cTag %s %s', 'color: black; background-color: yellow;', tagText, isPressed ? 'PRESSED' : 'UNPRESSED');
         onPressedChange(pressed);
     }} {...props}>{tagText}&nbsp;({matchCount})</Toggle>;

@@ -62,7 +62,6 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
         [visibleProjects, allSlides]
     );
 
-   
     const debouncedScrollTo = useDebounceCallback(scrollTo, 1000);
 
     // Handle carousel slide selection
@@ -171,34 +170,38 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
     });
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange_} modal={true}>
-            <DialogPortal container={document.getElementById('modal-root')}>
-                <DialogContent 
-                    className="border-0 shadow-none p-0 m-0 items-center justify-center focus:outline-none z-50 flex w-full h-full inset-0 pointer-events-none" 
-                    aria-describedby={undefined}
-                    showCloseButton={false}
-                    // onKeyUp={(evt)=>{
-                    //     console.log('Key up:', evt);
-                    // }}
-                >
-                    <DialogOverlay 
-                        id="carousel-dialog-overlay"
-                        ref={overlayRef} 
-                        className="fixed p-0 m-0 inset-0 z-40 bg-black/40 backdrop-blur-sm"
-                        onClick={dialogOnClick} 
-                        onPointerDownCapture={noPropagate} 
-                        onPointerDown={noPropagate}
-                    />
-                    <VisuallyHidden>
-                        <DialogHeader>
-                            <DialogTitle>Project Carousel</DialogTitle>
-                        </DialogHeader>
-                    </VisuallyHidden>
-                    <React.Suspense>
-                        <ProjectCarousel ref={emblaRef} slides={slides} onCarouselSelect={onSelect} externalApi={embla} showToast={showToast} />
-                    </React.Suspense>
-                </DialogContent>
-            </DialogPortal>
-        </Dialog>
+        <React.Suspense fallback={<div className="z-50 absolute w-screen h-screen bg-red-500">Turtles</div>}>
+            <Dialog open={open} onOpenChange={onOpenChange_} modal={true}>
+                <DialogPortal container={document.getElementById('modal-root')}>
+                    <DialogContent 
+                        className="border-0 shadow-none p-0 m-0 items-center justify-center focus:outline-none z-50 flex w-full h-full inset-0 pointer-events-none" 
+                        aria-describedby={undefined}
+                        showCloseButton={false}
+                        // onKeyUp={(evt)=>{
+                            //     console.log('Key up:', evt);
+                            // }}
+                            >
+                        <React.Suspense fallback={<div className="w-full h-full bg-orange-400">Turtles</div>}>
+                            <DialogOverlay 
+                                id="carousel-dialog-overlay"
+                                ref={overlayRef} 
+                                className="fixed p-0 m-0 inset-0 z-40 bg-black/40 backdrop-blur-sm"
+                                onClick={dialogOnClick} 
+                                onPointerDownCapture={noPropagate} 
+                                onPointerDown={noPropagate}
+                                />
+                            <VisuallyHidden>
+                                <DialogHeader>
+                                    <DialogTitle>Project Carousel</DialogTitle>
+                                </DialogHeader>
+                            </VisuallyHidden>
+                            <React.Suspense fallback={<div className="w-full h-full bg-yellow-300">Turtles</div>}>
+                                <ProjectCarousel ref={emblaRef} slides={slides} onCarouselSelect={onSelect} externalApi={embla} showToast={showToast}/>
+                            </React.Suspense>
+                        </React.Suspense>
+                    </DialogContent>
+                </DialogPortal>
+            </Dialog>
+        </React.Suspense>
     );
 }

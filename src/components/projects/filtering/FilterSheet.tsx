@@ -13,6 +13,8 @@ import { type RefObject } from "react";
 import type { ProjectInfo } from "../types";
 import FilterForm from "./FilterForm";
 import type { FilterRangeInfo } from "./common/filterTypes";
+import { Button } from "@/components/ui/button";
+import { LucideFilter } from "lucide-react";
 // import { useBrowserContext } from "./common/browserContext";
 
 
@@ -62,7 +64,11 @@ export default function FilterSheet({contentRef, triggerRef, resetAll, registere
             if(!open) resetAll();
         }
     }>
-        <SheetTrigger ref={triggerRef}>Open</SheetTrigger>
+        <SheetTrigger ref={triggerRef} asChild>
+            <Button className="absolute rounded-full bottom-4 right-4 w-12 h-12 cursor-pointer" title="Edit filter">
+                <LucideFilter />
+            </Button>
+        </SheetTrigger>
         <SheetContent side='top' className='overflow-y-auto max-h-screen top-0 bottom-0 h-min overscroll-none' ref={contentRef}>
             {/* <div className="container overscroll-auto max-h-full"> */}
             <SheetHeader>

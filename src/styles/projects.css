@@ -25,3 +25,19 @@
 		height: 0;
 	}
 }
+
+
+.embla__slide {
+	margin-left: 16em;
+	/* padding-left: 1em; */
+	/* padding-right: 1em; */
+	/* white-space-collapse: collapse; */
+}
+
+.embla__slide:first-child {
+	margin-left: 0;
+}
+
+/* .embla__slide:last-child {
+	margin-right: 0;
+} */

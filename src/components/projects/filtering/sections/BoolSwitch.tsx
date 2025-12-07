@@ -8,12 +8,12 @@ export default function BoolSwitch({className, checked, ...props}: React.Compone
         <span className={!checked ? '' : 'text-muted-foreground'} aria-hidden="true">Match ALL</span>
 
         <Switch
-            className={cn("inline-flex focus-visible:ring-2 focus-visible:ring-primary", className)}
+            className={cn("inline-flex focus-visible:ring-2 focus-visible:ring-primary not-disabled:cursor-pointer", className)}
             aria-label="Toggle match mode: Match ALL or Match ANY"
             checked={checked}
             {...props}
         />
 
-        <span className={checked ? '' : 'text-muted-foreground'} aria-hidden="true">Match ANY</span>
+        <span className={checked ? '' : 'text-muted-foreground select-none pointer-events-none'} aria-hidden="true">Match ANY</span>
     </div>
 }
