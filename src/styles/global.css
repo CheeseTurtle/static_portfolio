@@ -375,3 +375,9 @@ a.inline-block.leading-5.pl-12{
     @apply bg-background text-foreground;
   }
 }
+
+
+#modal-root {
+  height: 100vh;
+  width: 100vw;
+}

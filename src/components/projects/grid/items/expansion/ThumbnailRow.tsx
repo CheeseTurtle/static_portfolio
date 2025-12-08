@@ -32,27 +32,27 @@ export function ThumbnailRow({ thumbnails, items, onImageClick }: ThumbnailGalle
     if(!divRef.current || !items?.length) return;
     
     const onCompletion: ImagesLoaded.ImagesLoadedCallback = () => {
-      if(!alreadyMounted.current) console.log('Completed loading', alreadyMounted.current);
+      // if(!alreadyMounted.current) console.log('Completed loading', alreadyMounted.current);
       alreadyMounted.current = true;
     }
     
-    const onProgress: ImagesLoaded.ImagesLoadedListener = (_instance, image) => {
-      if(!alreadyMounted.current) console.log('Image loaded:', alreadyMounted.current, image?.isLoaded, image?.img)
-    }
+    // const onProgress: ImagesLoaded.ImagesLoadedListener = (_instance, image) => {
+    //   if(!alreadyMounted.current) console.log('Image loaded:', alreadyMounted.current, image?.isLoaded, image?.img)
+    // }
 
     const imgLoad = imagesLoaded(divRef.current, onCompletion);
 
-    imgLoad.on('progress', onProgress);
+    // imgLoad.on('progress', onProgress);
 
     return () => {
       imgLoad.off('always', onCompletion);
-      imgLoad.off('progress', onProgress);
+      // imgLoad.off('progress', onProgress);
     }
   }, [items]);
 
   React.useInsertionEffect(()=>{
     if(!items?.length || alreadyMounted.current) return;
-    console.log('Beginning loading');  
+    // console.log('Beginning loading');  
   }, [items]);
 
   React.useInsertionEffect(()=>{
@@ -61,7 +61,7 @@ export function ThumbnailRow({ thumbnails, items, onImageClick }: ThumbnailGalle
     // });
     return () => {
       // cancelAnimationFrame(handle);
-      console.log('Unmounting');
+      // console.log('Unmounting');
       alreadyMounted.current = false;
     }
   }, []);

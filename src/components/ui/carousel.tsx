@@ -9,6 +9,10 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
 import type {EmblaCarouselType, /*EmblaEventType*/ } from "embla-carousel";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "./hover-card"
+import CarouselSlider from "../projects/overlay/CarouselSlider"
+import { useWindowSize } from "@/hooks/useWindowSize"
+import { useResizeObserver } from "@/hooks/useResizeObserver"
 
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
@@ -287,7 +291,8 @@ function CarouselContent({ children, className, ...props }: React.ComponentProps
     //   id="embla-container"
     className={cn(
       "flex",
-      orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col",
+      // orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col",
+      orientation === 'horizontal' ? '' : 'flex-col',
       className
     )}
     // {/* {...props} */}
@@ -300,7 +305,7 @@ function CarouselContent({ children, className, ...props }: React.ComponentProps
 
 function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
   // const obj = useCarousel()
-  // const { orientation, api }  = obj;
+  // const { orientation }  = obj;
 
   // React.useEffect(()=>{
   //   console.log('(ITEM) API:', api, obj);
@@ -314,6 +319,8 @@ function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
       className={cn(
         "embla__slide",
         "min-w-0 shrink-0 grow-0 basis-full",
+        // "min-2xl:outline-2 min-2xl:outline-red-400",
+        // orientation === 'horizontal' ? "last-child:mr-4" : 'last-child:mb-4',
         // orientation === "horizontal" ? "pl-4" : "pt-4",
         className
       )}
@@ -386,13 +393,13 @@ function CarouselNext({
 
 
 
-type CarouselDotButtonPropType = {selected: boolean} & React.ComponentPropsWithRef<'button'>;
+type CarouselDotButtonPropType = {index: number, selected: boolean, getHovercardContentForIndex: (index: number)=>React.ReactNode} & React.ComponentPropsWithRef<'button'>;
 
 // export const DotButton: React.FC<PropType> = (props) => {
 function CarouselDotButton (props: CarouselDotButtonPropType) {
-  const { children, selected, className, ...restProps } = props
+  const { getHovercardContentForIndex, children, selected, index, className, ...restProps } = props
 
-  return (
+  const button =
     <button type="button" {...restProps} data-selected={selected} className={cn(
         "appearance-none bg-transparent touch-manipulation inline-flex cursor-pointer border-0 p-0 m-0",
         "w-[2.6rem] h-[2.6rem] flex items-center justify-center rounded-full",
@@ -405,12 +412,18 @@ function CarouselDotButton (props: CarouselDotButtonPropType) {
         className
     )}>
       {children}
-    </button>
-  )
+    </button>;
+
+  // if(hovercardContents)
+    return <HoverCard>
+      <HoverCardTrigger asChild>{button}</HoverCardTrigger>
+      <HoverCardContent>{getHovercardContentForIndex(index)}</HoverCardContent>
+    </HoverCard>
+  // return button;
 }
 
 
-function CarouselDots() {
+function CarouselDots({getHovercardContentForIndex}: {getHovercardContentForIndex: (index: number)=>React.ReactNode}) {
 
   // const obj = useCarousel();
   const obj = useCarousel();
@@ -432,10 +445,102 @@ function CarouselDots() {
         key={index}
         onClick={() => onDotButtonClick(index)}
         selected={index === selectedIndex}
+        getHovercardContentForIndex={getHovercardContentForIndex}
+        // hovercardContents={hovercardContents?.[index]}
+        index={index}
         />
     )}
 
   </div>
+}
+
+export function CarouselNav({getHovercardContentForIndex, className}: {getHovercardContentForIndex: (index: number)=>React.ReactNode, className?: string, }) {
+  
+  const {api} = useCarousel();
+  
+  const { selectedIndex, slideIndices, onDotButtonClick } = useDotButton(api);
+
+  
+  // const {width} = useWindowSize();
+
+  const [useSlider, setUseSlider] = React.useState<boolean>(false);
+  
+  const numSlides = React.useMemo(()=>slideIndices.length, [slideIndices]);
+
+  const navRef = React.useRef<HTMLDivElement>(null);
+  // const navDiv = navRef.current;
+
+  const lastWidth = React.useRef<number | undefined>(undefined);
+
+  const handleResize = React.useCallback((width: number, el: Element)=>{
+    // const minWidthForDots = numSlides = * CSS
+    // console.log(width, numSlides * CSS.rem(2).to('px').value)
+    // setUseSlider((width < numSlides * document.;
+    // console.log(CSS);
+    const computed = getComputedStyle(document.documentElement);
+    const rem = parseFloat(computed.fontSize);
+    const minWidthForDots = numSlides * 1.6 * rem;
+    console.log(width, minWidthForDots);
+    setUseSlider(width < minWidthForDots);
+    lastWidth.current = width;
+  }, [numSlides]);
+
+  const options: Parameters<typeof useResizeObserver>[0] = React.useMemo(()=>({
+    ref: navRef,
+    onResize(entry) {
+      const width = entry.contentRect.width;
+      if(width === lastWidth.current) return;
+      handleResize(width, entry.target);
+    },
+    debounce: 500,
+    throttle: 300,
+    // enabled: true
+  }), [handleResize]);
+  useResizeObserver(options);
+
+
+
+  const handleResize_ = React.useEffectEvent(handleResize);
+  React.useLayoutEffect(()=>{
+    if(lastWidth.current === undefined) return;
+    if(!navRef.current) return;
+    // if(lastWidth.current === navRef.current.clientWidth) return;
+    handleResize_(navRef.current.clientWidth || lastWidth.current, navRef.current);
+  }, [numSlides]);
+  
+
+  return <div 
+    ref={navRef}
+  // className="flex flex-wrap justify-end items-center mr-[calc((2.6rem-1.4rem)/(-2))]"
+  className={className}
+  >
+      <div className={
+        cn('flex',
+        useSlider ? 'hidden' : 'visible'
+      )}
+        data-role='carousel-dot-buttons w-full flex relative justify-items-center justify-center pointer-events-auto
+          hover:bg-blue-500
+        ' 
+      >
+        {slideIndices.map(index=>
+          <CarouselDotButton
+            key={index}
+            onClick={() => onDotButtonClick(index)}
+            selected={index === selectedIndex}
+            index={index}
+            // hovercardContents={hovercardContents?.[index]}
+            getHovercardContentForIndex={getHovercardContentForIndex}
+            />
+        )}
+      </div>
+
+      <div className={cn('flex',
+        useSlider ? 'visible' : 'hidden'
+      )} data-role='carousel-slider h-[2.6rem]'>
+        <CarouselSlider  className="pointer-events-auto py-[1.4rem]" defaultValue={[selectedIndex]} onValueChange={([value])=>onDotButtonClick(value)} getHovercardContentForIndex={getHovercardContentForIndex} numSlides={slideIndices.length} />
+      </div>
+
+  </div> 
 }
 
 
@@ -454,7 +559,7 @@ type UseDotButtonType = {
 
 export const useDotButton = (
   emblaApi: EmblaCarouselType | undefined,
-  onButtonClick?: (emblaApi: EmblaCarouselType) => void
+  onButtonClick?: (emblaApi: EmblaCarouselType) => void,
 ): UseDotButtonType => {
   const [selectedIndex, setSelectedIndex] = React.useState<number>(0)
   const [slideIndices, setSlideIndices] = React.useState<number[]>([])

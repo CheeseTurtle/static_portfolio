@@ -28,6 +28,17 @@ type ProjectCarouselDialogProps = {
     scrollTo: ScrollToFn,
 } & React.ComponentProps<"div">;
 
+
+
+const HovercardContentItem = ({project, index, numSlides}: {project: ProjectInfo, index: number, numSlides: number}) => {
+    const indexSpan = useMemo(()=><span><span>{index}</span>/<span>{numSlides}</span></span>, [index, numSlides]);
+    return <div className="w-full outline-2 outline-green-500">
+        <div className="text-center w-full text-xs font-normal tabular-nums">{indexSpan}</div>
+        <div className="w-full text-sm font-extrabold">{project.title}</div>
+        <p className="text-xs font-light">{project.description}</p>
+    </div>
+}
+
 export default function ProjectCarouselDialog({ contentElements, showToast, scrollTo }: ProjectCarouselDialogProps) {
     // Get all state and actions from the store
     const open = useBrowserContext(s => s.carouselOpen);
@@ -61,6 +72,14 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
         () => visibleProjects.map((p) => Object.assign({title: p.title}, allSlides[p.id])), 
         [visibleProjects, allSlides]
     );
+
+    const numSlides = useMemo(()=>visibleProjects.length, [visibleProjects]);
+
+    const getHovercardContentForIndex = React.useCallback((index: number) => {
+        const project = visibleProjects[index];
+        if(!project) return null;
+        return <HovercardContentItem project={project} numSlides={numSlides} index={index} />;
+    }, [visibleProjects, numSlides]);
 
     const debouncedScrollTo = useDebounceCallback(scrollTo, 1000);
 
@@ -129,7 +148,8 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
         e.stopPropagation();
     };
 
-    const dialogOnClick: MouseEventHandler<HTMLDivElement> = React.useCallback((e) => {setOpen(false); e.preventDefault();}, [setOpen]);
+    const dialogOnClick: MouseEventHandler<HTMLDivElement> = React.useCallback((e) => {
+        setOpen(false); e.preventDefault();}, [setOpen]);
 
     const onOpenChange_ = React.useCallback((open: boolean) => {
             console.log('Open changed:', open);
@@ -174,9 +194,10 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
             <Dialog open={open} onOpenChange={onOpenChange_} modal={true}>
                 <DialogPortal container={document.getElementById('modal-root')}>
                     <DialogContent 
-                        className="border-0 shadow-none p-0 m-0 items-center justify-center focus:outline-none z-50 flex w-full h-full inset-0 pointer-events-none" 
+                        className="border-0 shadow-none p-0 m-0 items-center justify-center focus:outline-none z-50 flex w-full h-full inset-0 pointer-events-none overflow-clip" 
                         aria-describedby={undefined}
                         showCloseButton={false}
+                        style={{contentVisibility: 'auto'}}
                         // onKeyUp={(evt)=>{
                             //     console.log('Key up:', evt);
                             // }}
@@ -196,7 +217,7 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
                                 </DialogHeader>
                             </VisuallyHidden>
                             <React.Suspense fallback={<div className="w-full h-full bg-yellow-300">Turtles</div>}>
-                                <ProjectCarousel ref={emblaRef} slides={slides} onCarouselSelect={onSelect} externalApi={embla} showToast={showToast}/>
+                                <ProjectCarousel ref={emblaRef} slides={slides} onCarouselSelect={onSelect} externalApi={embla} showToast={showToast} getHovercardContentForIndex={getHovercardContentForIndex}/>
                             </React.Suspense>
                         </React.Suspense>
                     </DialogContent>

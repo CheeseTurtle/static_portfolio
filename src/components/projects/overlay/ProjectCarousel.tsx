@@ -1,4 +1,4 @@
-import { Carousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselDots, CarouselItem, CarouselNav, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { type EmblaViewportRefType } from "embla-carousel-react";
 import React, { type PointerEventHandler } from "react";
 import type { EmblaCarouselType } from "embla-carousel";
@@ -18,7 +18,8 @@ type ProjectCarouselProps = Omit<React.ComponentProps<typeof Carousel>, 'externa
     nextRef?: React.RefObject<HTMLButtonElement | null>,
     onCarouselSelect: (emblaApi?: EmblaCarouselType) => void,
     externalApi?: EmblaCarouselType,
-    showToast: ShowToastFn
+    showToast: ShowToastFn,
+    getHovercardContentForIndex: (index: number) => React.ReactNode,
 }
 
 
@@ -105,7 +106,8 @@ const ProjectCarousel = React.memo(({
     slides,
     prevRef,
     nextRef,
-    showToast
+    showToast,
+    getHovercardContentForIndex,
 }: ProjectCarouselProps) => {
     const slideHandles = React.useRef<Record<string, React.RefObject<ProjectCarouselItemHandle>>>({});
     slideHandles.current = Object.fromEntries(slides.map((slide) => [slide.props["data-project-id"], slideHandles.current[slide.props['data-project-id'] ?? React.createRef()]]));
@@ -117,6 +119,9 @@ const ProjectCarousel = React.memo(({
         ))
     }, [slides, showToast]);
 
+    // const slideHovercards = React.useMemo(()=>{
+
+    // }, [])
 
     // const onSelect0: typeof onSelect = React.useCallback((api) => {
     //     // if(api) {
@@ -155,12 +160,19 @@ const ProjectCarousel = React.memo(({
         externalCarouselRef={emblaRef}
         externalApi={embla}
         opts={opts}
-        className="overflow-visible z-60 w-full max-w-2xl pointer-events-none"
+        className="overflow-visible z-60 w-full max-w-[calc(min(100vw,var(--container-2xl)))] pointer-events-none
+        "
         onCarouselSelect={onSelect}
-    >
+        >
         <CarouselContent
             id="embla-container"
-            className="overflow-visible pointer-events-none w-full items-center max-h-[calc(100%-(--spacing(20)))] ml-auto mr-auto max-w-[calc(100%-(--spacing(20)))]"
+            className="overflow-visible pointer-events-none
+                items-center 
+                max-2xl:bg-green-300 max-sm:bg-yellow-300
+                max-h-[calc(100%-(--spacing(20)))] 
+                "
+                // px-5
+                // max-w-[calc(100%-(--spacing(20)))] w-full
             style={{
                 willChange: 'transform',
                 transform: 'translateZ(0)'
@@ -168,9 +180,10 @@ const ProjectCarousel = React.memo(({
         >
             {...slideElems}
         </CarouselContent>
-        <CarouselPrevious ref={prevRef} size="lg" className='pointer-events-auto disabled:pointer-events-auto not-disabled:cursor-pointer disabled:cursor-not-allowed max-md:hidden' />
-        <CarouselNext ref={nextRef} className='pointer-events-auto disabled:pointer-events-auto max-md:hidden not-disabled:cursor-pointer disabled:cursor-not-allowed' />
-        <CarouselDots />
+        <CarouselPrevious ref={prevRef} size="lg" className='pointer-events-auto not-disabled:cursor-pointer disabled:cursor-not-allowed max-md:hidden' />
+        <CarouselNext ref={nextRef} className='pointer-events-auto  max-md:hidden not-disabled:cursor-pointer disabled:cursor-not-allowed' />
+
+        <CarouselNav className='z-10000 pointer-events-auto not-disabled:cursor-pointer' getHovercardContentForIndex={getHovercardContentForIndex}/>
     </Carousel>;
 });
 
