@@ -157,8 +157,17 @@ async function getFigureFromPath(path: string) {
     return await getContentFromPath('figure', figureRecord, path);
 }
 
+const BASE_URL = import.meta.env.BASE_URL;
+
+function rebasePath(path: string | undefined): string | undefined {
+    while(path && path[0] === '/')
+        path = path.slice(1);
+    if(!path) return undefined;
+    return BASE_URL + path;
+}
+
 function expandImagePath(fn: string) {
-    const result = getImagePath(imagePaths, prepath, fn);
+    const result = rebasePath(getImagePath(imagePaths, prepath, fn));
     if(!result) {
         console.warn('Could not expand path:', fn);
         return null;
