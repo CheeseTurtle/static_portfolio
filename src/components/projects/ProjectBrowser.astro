@@ -277,13 +277,8 @@ const projects: ProjectInfoWithLBSymbols[] = (await Promise.all(items.filter(x=>
     const lightboxData: ProjectInfoWithLBSymbols['lightboxData'] = pairs && sources.length ? {
         record,
         lightboxSources: sources.map(x=>[x[0], x[1], convertSymbol(x[2] as string | ProjectMediaEmbedData | null)]) as ([ProjectMediaType, string, string | ProjectMediaEmbedData])[], // as LightboxSources,
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
         lightboxCaptions: captions?.map(x=>convertSymbol(x) as string | null), // as LightboxCaptions,
     } : undefined;
-
-
-    // const titleHTML = await markdown.inline(data.title);
-    // console.log(titleHTML);
 
     return {
         id: trimID(data.id),

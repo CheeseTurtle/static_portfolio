@@ -1,15 +1,12 @@
 import React from "react";
 import { useProjectLightboxData } from "./useProject";
-import type { ProjectInfoForProvider } from "./ProjectProvider";
-// import type { LightboxCaption, LightboxSource } from "../lightbox";
+import type { ProjectInfoForProvider } from "./ProjectProviderBase";
 import type { LightboxMediaEntry, ProjectMediaEmbedData, ProjectMediaType } from "../types";
-// import LiteYouTubeEmbed from 'react-lite-youtube-embed';
 import { cn } from "@/lib/utils";
 // import { getYouTubeVideoID } from "./getYoutubeThumbnail";
 // import YouTube from 'react-youtube';
-import ReactPlayer from 'react-player';
-
-// const ReactPlayer = React.lazy(()=>import('react-player'));
+// import ReactPlayer from 'react-player';
+const ReactPlayer = React.lazy(()=>import('react-player'));
 
 
 
@@ -26,15 +23,6 @@ function findLightboxEntry<T extends ProjectMediaType>(type: T, data: LightboxDa
     return data.record[type]?.[id];
 }
 
-// function findLightboxEmbed(data: LightboxData, id: string): LightboxMediaEntry<'embed'> | undefined {
-//     const images = data.record['embed'];
-//     const result = images?.[id];
-//     return result;
-// }
-
-// function findLightboxContent(data: LightboxData, id: string): LightboxMediaEntry<'content'> | undefined {
-
-// }
 
 function findLightboxMedia<K extends ProjectMediaType>(data: LightboxData | undefined, id: string, kind?: K): [K, LightboxMediaEntry<K>] | [K | undefined, undefined] {
     if(!data) return [undefined, undefined];

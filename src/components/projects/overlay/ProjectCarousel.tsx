@@ -9,7 +9,7 @@ import { ShareButton } from "../grid/items/sharing/ShareCard";
 import type { ShowToastFn } from "../filtering/common/filterTypes";
 import type { CarouselContentItemWithTitle } from "./ProjectCarouselDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { ProjectInfoForProvider } from "../details/ProjectProvider";
+import type { ProjectInfoForProvider } from "../details/ProjectProviderBase";
 import ProjectProvider from "../details/ProjectProvider";
 
 type ProjectCarouselProps = Omit<React.ComponentProps<typeof Carousel>, 'externalCarouselRef'> & {

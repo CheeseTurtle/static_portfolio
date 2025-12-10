@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import type {EmblaCarouselType, /*EmblaEventType*/ } from "embla-carousel";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./hover-card"
 import CarouselSlider from "../projects/overlay/CarouselSlider"
-import { useWindowSize } from "@/hooks/useWindowSize"
+// import { useWindowSize } from "@/hooks/useWindowSize"
 import { useResizeObserver } from "@/hooks/useResizeObserver"
 
 type CarouselApi = UseEmblaCarouselType[1]
@@ -472,7 +472,7 @@ export function CarouselNav({getHovercardContentForIndex, className}: {getHoverc
 
   const lastWidth = React.useRef<number | undefined>(undefined);
 
-  const handleResize = React.useCallback((width: number, el: Element)=>{
+  const handleResize = React.useCallback((width: number, _el: Element)=>{
     // const minWidthForDots = numSlides = * CSS
     // console.log(width, numSlides * CSS.rem(2).to('px').value)
     // setUseSlider((width < numSlides * document.;

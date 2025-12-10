@@ -6,7 +6,6 @@ import { useStore } from "zustand";
 import type { BrowserStore, BrowserStoreInitProps, BrowserStoreState } from "./stores/browserStore";
 import { createBrowserStore } from "./stores/browserStore";
 import type { EntriesOf } from "@/lib/type-utils";
-import { useCountContext } from "./stores/countStoreContext";
 
 
 // Context setup
