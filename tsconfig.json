@@ -30,6 +30,7 @@
       "typeRoots": [
         "./node_modules/@types",
         "./src/components/story/util/types",
+        "./src/components/projects/types",
       ],
       "jsx": "react-jsx",
       "jsxImportSource": "reac",
@@ -87,6 +88,9 @@
     "src/**/*.astro",
     "eslint.config.js",
     "astro.config.mjs",
+    "src/**/*.mdx",
+    ".remarkrc.js",
+    "**/*.astro",
   ],
   "exclude": [
     "node_modules",
@@ -126,6 +130,7 @@
     "jsxImportSource": "react",
     "checkJs": false,
     // "allowJs": true,
+    "resolveJsonModule": true,
     "diagnostics": true,
     "strict": true,
     "allowImportingTsExtensions": true,

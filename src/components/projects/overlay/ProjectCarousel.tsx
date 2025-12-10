@@ -1,4 +1,4 @@
-import { Carousel, CarouselContent, CarouselDots, CarouselItem, CarouselNav, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem, CarouselNav, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { type EmblaViewportRefType } from "embla-carousel-react";
 import React, { type PointerEventHandler } from "react";
 import type { EmblaCarouselType } from "embla-carousel";
@@ -9,6 +9,8 @@ import { ShareButton } from "../grid/items/sharing/ShareCard";
 import type { ShowToastFn } from "../filtering/common/filterTypes";
 import type { CarouselContentItemWithTitle } from "./ProjectCarouselDialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { ProjectInfoForProvider } from "../details/ProjectProvider";
+import ProjectProvider from "../details/ProjectProvider";
 
 type ProjectCarouselProps = Omit<React.ComponentProps<typeof Carousel>, 'externalCarouselRef'> & {
     ref?: EmblaViewportRefType,
@@ -35,7 +37,8 @@ type ProjectCarouselItemProps = React.ComponentProps<typeof CarouselItem> & {
     onPointerDown: PointerEventHandler,
     showToast: ShowToastFn,
     handleRef?: React.RefObject<ProjectCarouselItemHandle>,
-    startTransition: ReturnType<typeof React.useTransition>[1]
+    startTransition: ReturnType<typeof React.useTransition>[1],
+    project: ProjectInfoForProvider
 }
 
 const CarouselSlideContentSkeleton = React.memo(()=>{
@@ -53,7 +56,7 @@ const CarouselSlideContentSkeleton = React.memo(()=>{
 });
 
 
-const ProjectCarouselItem = React.memo(({ handleRef, startTransition, index: i, slide, onPointerDown: clickCallback, showToast, ...props }: ProjectCarouselItemProps) => {
+const ProjectCarouselItem = React.memo(({ project, handleRef, startTransition, index: i, slide, onPointerDown: clickCallback, showToast, ...props }: ProjectCarouselItemProps) => {
     // const isCurrent = React.useDeferredValue<boolean>(isCurrentItem);
     const skeleton = React.useMemo(()=><CarouselSlideContentSkeleton/>, []);
     const [isCurrentItem, setIsCurrentItem] = React.useState<boolean>(false);
@@ -90,7 +93,9 @@ const ProjectCarouselItem = React.memo(({ handleRef, startTransition, index: i, 
                     {slide}
                 </React.Suspense> */}
                 {/* {isCurrentItem ? slide : skeleton} */}
-                {slide}
+                <ProjectProvider project={project}>
+                    {slide}
+                </ProjectProvider>
             </CardContent>
         </Card>
     </CarouselItem>;
@@ -115,7 +120,7 @@ const ProjectCarousel = React.memo(({
 
     const slideElems = React.useMemo(()=>{
         return slides.map((slide, i) => (
-            <ProjectCarouselItem handleRef={slideHandles.current[slide.props["data-project-id"]]} startTransition={startTransition} index={i} slide={slide} showToast={showToast} onPointerDown={clickCallback}></ProjectCarouselItem>
+            <ProjectCarouselItem handleRef={slideHandles.current[slide.props["data-project-id"]]} startTransition={startTransition} index={i} slide={slide} showToast={showToast} onPointerDown={clickCallback} project={slide.project}></ProjectCarouselItem>
         ))
     }, [slides, showToast]);
 

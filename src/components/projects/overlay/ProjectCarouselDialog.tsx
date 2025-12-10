@@ -7,6 +7,7 @@ import { useBrowserContext } from "../filtering/common/browserContext";
 import type { ScrollToFn, ShowToastFn } from "../filtering/common/filterTypes";
 import { useDebounceCallback } from "@/hooks/use-debounce-callback";
 import type { ProjectInfo } from "../types";
+import type { ProjectInfoForProvider } from "../details/ProjectProvider";
 // import ProjectCarousel from "./ProjectCarousel";
 
 const ProjectCarousel = React.lazy(()=>import('./ProjectCarousel'));
@@ -20,6 +21,7 @@ export type CarouselContentItem = {
 
 export type CarouselContentItemWithTitle = CarouselContentItem & {
     title: ProjectInfo['title'],
+    project: ProjectInfoForProvider,
 }
 
 type ProjectCarouselDialogProps = {
@@ -47,7 +49,7 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
     const activeProjectIndex = useBrowserContext(s => s.activeProjectIndex);
     const setActiveProjectIndex = useBrowserContext(s => s.setActiveProjectIndex);
     const visibleProjects = useBrowserContext(s=>s.visibleProjects);
-    
+
     const overlayRef = useRef<HTMLDivElement>(null);
     // const prevRef = useRef<HTMLButtonElement>(null);
     // const nextRef = useRef<HTMLButtonElement>(null);
@@ -69,7 +71,7 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
     );
     // Get slides for visible projects
     const slides = useMemo(
-        () => visibleProjects.map((p) => Object.assign({title: p.title}, allSlides[p.id])), 
+        () => visibleProjects.map((p) => Object.assign({title: p.title, project: p}, allSlides[p.id])), 
         [visibleProjects, allSlides]
     );
 

@@ -10,9 +10,8 @@ import mdx from "@astrojs/mdx";
 // import reactVite from "@vitejs/plugin-react";
 
 // https://astro.build/config
-// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+// // eslint-disable-next-line @typescript-eslint/no-unsafe-call
 export default defineConfig({
-  // @ts-ignore
   tsconfig: "./tsconfig.json",
   // prefetch: true,
   site: "https://cheeseturtle.github.io/static_profile/",
@@ -44,7 +43,7 @@ export default defineConfig({
   //   }
   // },
   vite: {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-commen
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     plugins: [tailwindcss()],
     logLevel: 'info',

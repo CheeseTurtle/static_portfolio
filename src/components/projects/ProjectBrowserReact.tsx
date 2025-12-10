@@ -1,9 +1,9 @@
-import React, { forwardRef, StrictMode, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type RefObject } from "react"
+import React, { forwardRef, Fragment, StrictMode, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type RefObject } from "react"
 import ProjectGrid, { type ProjectGridHandle } from "./grid/ProjectGrid";
 // import ProjectCarouselDialog from "./overlay/ProjectCarouselDialog";
-import type { ProjectInfo, ProjectInfoWithLBSymbols } from "./types";
+import type { LightboxMediaEntryWithLBSymbols, ProjectInfo, ProjectInfoWithLBSymbols, ProjectMediaEmbedData } from "./types";
 import parse from "html-react-parser";
-import { collectFilterRangeInfo, TAGKEYS, TAGTYPES, type FilterRangeInfo, type FilterState, type ScrollToFn, type ShowToastFn } from "./filtering/common/filterTypes";
+import { collectFilterRangeInfo, TAGTYPES, type FilterRangeInfo, type ScrollToFn, type ShowToastFn } from "./filtering/common/filterTypes";
 import AlertToast from "./toasts";
 
 import { BrowserStoreProvider, useBrowserContext, useFilterStore } from "./filtering/common/browserContext";
@@ -19,6 +19,10 @@ import { useDomReady } from "@/hooks/use-dom-ready";
 import type { FilterStoreState } from "./filtering/common/stores/filterStore";
 import ErrorBoundary from "@/hooks/ErrorBoundary";
 import FilterSheet from "./filtering/FilterSheet";
+import type { ValueOf } from "node_modules/astro/dist/type-utils";
+import getYouTubeThumbnail from "./details/getYoutubeThumbnail";
+import { createEmbed } from "./details/ProjectMedia";
+import CaptionedLightboxProvider from "./CaptionedLightboxProvider";
 
 const ProjectCarouselDialog = React.lazy(()=>import('./overlay/ProjectCarouselDialog'));
 
@@ -26,6 +30,7 @@ type ProjectBrowserProps = {
     projects: ProjectInfoWithLBSymbols[],
     contentString?: string,
     lbContentString: string,
+    // epContentString?: string,
     children?: {props?: {value: string}},
     projectTitles: string,
     projectSummaries: string,
@@ -48,32 +53,32 @@ export interface ProjectBrowserHandle {
 }
 
 
-function isEquivalentSet(s1: Set<any>, s2: Set<any>): boolean {
-    return (s1.size === s2.size) && [...s1].every(x=>s2.has(x));
-}
+// function isEquivalentSet(s1: Set<any>, s2: Set<any>): boolean {
+//     return (s1.size === s2.size) && [...s1].every(x=>s2.has(x));
+// }
 
-function isEquivalentFilterState(s1: FilterState, s2: FilterState, includeOpenProject: boolean = false): boolean {
-    if(includeOpenProject && (s1.openProjectId !== s2.openProjectId)) return false;
+// function isEquivalentFilterState(s1: FilterState, s2: FilterState, includeOpenProject: boolean = false): boolean {
+//     if(includeOpenProject && (s1.openProjectId !== s2.openProjectId)) return false;
 
-    if((s1.year === undefined) || (s1.year[0] === undefined && s1.year[1] === undefined)) {
-        if(!((s2.year === undefined) || (s2.year[0] === undefined && s2.year[1] === undefined)))
-            return false;
-    } else if(((s2.year === undefined) || (s2.year[0] === undefined && s2.year[1] === undefined)))
-        return false;
-    else if(s1.year[0] !== s2.year[0] || s1.year[1] !== s2.year[1])
-        return false;
+//     if((s1.year === undefined) || (s1.year[0] === undefined && s1.year[1] === undefined)) {
+//         if(!((s2.year === undefined) || (s2.year[0] === undefined && s2.year[1] === undefined)))
+//             return false;
+//     } else if(((s2.year === undefined) || (s2.year[0] === undefined && s2.year[1] === undefined)))
+//         return false;
+//     else if(s1.year[0] !== s2.year[0] || s1.year[1] !== s2.year[1])
+//         return false;
 
-    if(!isEquivalentSet(s1.categories, s2.categories)) return false;
+//     if(!isEquivalentSet(s1.categories, s2.categories)) return false;
 
-    for(const tagType of TAGTYPES) {
-        const tags1 = s1.tags[tagType];
-        const tags2 = s2.tags[tagType];
-        if(!isEquivalentSet(tags1, tags2)) return false;
-    }
+//     for(const tagType of TAGTYPES) {
+//         const tags1 = s1.tags[tagType];
+//         const tags2 = s2.tags[tagType];
+//         if(!isEquivalentSet(tags1, tags2)) return false;
+//     }
 
 
-    return true;
-}
+//     return true;
+// }
 
 function anyFilter(){
     const params = new URLSearchParams(window.location.search);
@@ -235,17 +240,19 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
                 {/* <div ref={sentinelRef} className="h-0 w-full"></div> */}
             </div>
         </Collapsible>
-        <div className="mt-5 overflow-y-visible w-full max-w-[100vw]" ref={filterResultsRef}>
-            <div className="pl-4 pr-4 sticky top-[-0.8px] z-1 bg-background">{resultText}</div>
-            <ProjectGrid ref={gridHandle} scrollContainer={scrollContainer} />
-        </div>
-        <React.Suspense fallback={<div className="absolute inset-0 w-screen h-screen bg-green-400"></div>}>
-            <ProjectCarouselDialog 
-                showToast={showToast}
-                scrollTo={scrollTo}
-                contentElements={contentElements}
-            />
-        </React.Suspense>
+        <CaptionedLightboxProvider>
+            <div className="mt-5 overflow-y-visible w-full max-w-[100vw]" ref={filterResultsRef}>
+                <div className="pl-4 pr-4 sticky top-[-0.8px] z-1 bg-background">{resultText}</div>
+                <ProjectGrid ref={gridHandle} scrollContainer={scrollContainer} />
+            </div>
+            <React.Suspense fallback={<div className="absolute inset-0 w-screen h-screen bg-green-400"></div>}>
+                <ProjectCarouselDialog 
+                    showToast={showToast}
+                    scrollTo={scrollTo}
+                    contentElements={contentElements}
+                />
+            </React.Suspense>
+        </CaptionedLightboxProvider>
          <FilterSheet 
             contentRef={sheetContentRef}
             triggerRef={sheetTriggerRef}
@@ -261,57 +268,120 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
 
 
 
-function getLightboxItems(lbContentString: string | undefined) {
-    if(!lbContentString) return {};
-    const parsed = parse(lbContentString);
-    if(typeof parsed === 'string')
-        throw new TypeError('LB content source/caption cannot be a bare string');
+function getLightboxItems(lbContentString: string | undefined, projects: ProjectInfoWithLBSymbols[]) {
     const ret: Record<string, React.JSX.Element> = {};
-    for(const elem of (Array.isArray(parsed) ? parsed : [parsed])) {
-        const id = elem.props['data-item-id'] as string;
-        if(id === undefined) {
-            console.log(elem);
-            throw new TypeError('Could not determine ID of lightbox content item');
+    for(const contentString of [lbContentString]) {
+        if(!contentString) continue;
+        const parsed = parse(contentString);
+        if(typeof parsed === 'string')
+            throw new TypeError('LB content source/caption cannot be a bare string');
+        for(const elem of (Array.isArray(parsed) ? parsed : [parsed])) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            const id = elem.props['data-item-id'] as string;
+            if(id === undefined) {
+                console.log(elem);
+                throw new TypeError('Could not determine ID of lightbox content item');
+            }
+            ret[id] = elem;
         }
-        ret[id] = elem;
     }
+    
+    // for(const p of projects) {
+    //     if(!p.lightboxData?.lightboxSources.length) continue;
+    //     for(const src of p.lightboxData.lightboxSources) {
+    //         if(src[0] !== 'embed') continue;
+    //         const [,srcId, srcData] = src;
+    //         ret[srcId] = createEmbed(srcData as ProjectMediaEmbedData);
+    //     }
+    // }
     return ret;
 }
 
 
 const extractSymPat = new RegExp('(?<=^%)(.+)(?=%$)');
 
-function convertProjectInfo(projects: ProjectInfoWithLBSymbols[], record: Record<string, React.JSX.Element>, projectTitles: string, projectDescriptions: string, projectSummaries: string): ProjectInfo[] {
+function convertProjectInfo(projects: ProjectInfoWithLBSymbols[], contentRecord: Record<string, React.JSX.Element>, projectTitles: string, projectDescriptions: string, projectSummaries: string): ProjectInfo[] {
     
     const titles = parseToData(projectTitles);
     const descriptions = parseToData(projectDescriptions);
     const summaries = parseToData(projectSummaries);
-
-    return projects.map(({lightboxData, ...p})=>{
+    
+    
+    return projects.map(({lightboxData, ...p}): ProjectInfo =>{
         // console.log(lightboxData);
+        let anyEmbed: boolean = false;
+        const thumbnails: (string | null)[] = [];
         if(undefined === lightboxData) return p;
+        const oldRecord = lightboxData.record;
         const lightboxCaptions = lightboxData.lightboxCaptions?.map(x=>{
             if(x === null)
                 return x;
             const m = x.match(extractSymPat);
             if(m === null) return x;
-            if(m[0] in record) return record[m[0]];
+            if(m[0] in contentRecord) return contentRecord[m[0]];
             console.warn('Record does not contain symbol:', x);
             return x;
         });
-        const lightboxSources = lightboxData.lightboxSources.map(x=>{
-            const m = x.match(extractSymPat);
-            if(m === null) return x;
-            if(m[0] in record) return record[m[0]];
-            throw new RangeError(`Record does not contain symbol '${String(x)}'`);
+        const newRecord: Exclude<ProjectInfo['lightboxData'], undefined>['record'] = {};
+        const lightboxSources = lightboxData.lightboxSources.map(([type, id, x], i)=>{
+            if(type === 'embed')
+                anyEmbed = true;
+            const oldEntry = (oldRecord[type]!)[id];
+            const caption = lightboxCaptions[i];
+            const source = (()=>{
+                if(typeof x === 'string') {
+                    const m = x.match(extractSymPat);
+                    if(m === null) return x;
+                    if(!(m[0] in contentRecord))
+                        throw new RangeError(`Record does not contain symbol '${String(x)}'`);
+                    return contentRecord[m[0]];
+                }
+                // console.info('Creating embed:', x);
+                return x.path;
+            })();
+
+            
+            let thumbnail: string | undefined;
+            
+            if(type === 'embed') {
+                // console.log('embed source:', source);
+                const url = (oldEntry as LightboxMediaEntryWithLBSymbols<'embed'>).source.path;
+                const thumbnail = getYouTubeThumbnail(url);
+                thumbnails.push(thumbnail);
+            } else {
+                thumbnails.push(null);
+            }
+
+            // @ts-expect-error: ...
+            const newEntry: ValueOf<Exclude<Exclude<ProjectInfo['lightboxData'], undefined>['record'][typeof type], undefined>> = {
+                id,
+                source: ((type === 'embed') ?
+                    {...(oldEntry as LightboxMediaEntryWithLBSymbols<'embed'>).source, elem: source as React.JSX.Element, thumbnail} 
+                    : source
+                ),
+                caption
+            }
+            if(newRecord[type])
+                newRecord[type][id] = newEntry;
+            else
+                // @ts-expect-error Record type?
+                newRecord[type] = {[id]: newEntry};
+            
+            return source;
         })
+        // console.log('RECORD:', oldRecord, newRecord);
+
+        if(anyEmbed)
+            console.log('Sources:', lightboxSources, thumbnails);
         return {
             ...p, 
             title: titles[p.id] ?? p.title,
             description: descriptions[p.id] ?? p.description,
             summary: summaries[p.id] ?? p.summary,
             lightboxData: {
-                lightboxSources, lightboxCaptions
+                record: newRecord,
+                lightboxSources, lightboxCaptions,
+                lightboxThumbs: thumbnails
             }
         };
     });
@@ -329,12 +399,14 @@ function parseToData(src: string): Record<string, React.JSX.Element> {
     const ret: Record<string, React.ReactElement<{'data-project-id': string}, any>> = {};
     
     for(const elem of (Array.isArray(elems) ? elems : [elems])) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         const id = elem.props['data-project-id'] as string;
         if(typeof id !== 'string')
             throw new TypeError('Missing or invalid project ID on data item');
         if(id in ret) 
             throw new RangeError('Duplicate project ID');
         // console.log('elem:', elem);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         ret[id] = (elem.props?.children ?? elem) as React.JSX.Element;
     }
     return ret;
@@ -343,7 +415,7 @@ function parseToData(src: string): Record<string, React.JSX.Element> {
 export default function ProjectBrowser({children, projects: projectsWithLBSymbols, contentString, lbContentString, projectTitles, projectDescriptions, projectSummaries}: ProjectBrowserProps) {
     // console.log(projectsWithLBSymbols);
     const filterRangeInfo = useMemo(() => collectFilterRangeInfo(projectsWithLBSymbols), [projectsWithLBSymbols]);
-    const lightboxContentElements: Record<string, React.JSX.Element> = React.useMemo(()=>getLightboxItems(lbContentString), [lbContentString]);
+    const lightboxContentElements: Record<string, React.JSX.Element> = React.useMemo(()=>getLightboxItems(lbContentString, projectsWithLBSymbols), [lbContentString, projectsWithLBSymbols]);
 
     // console.log('TITLES:', titles);
 
@@ -384,7 +456,7 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
 
     return <>
         <div ref={scrollContainer} id='project-browser-wrapper' className="overflow-y-scroll inset-0 w-full h-full p-0 m-0 bg-none border-none outline-none">
-        <StrictMode>
+        {/* <StrictMode> */}
             <AlertToast/>
             {/* <AlertToast message={toastMessage} onClose={() => setToastMessage(null)} /> */}
             <ErrorBoundary displayName="myBoundary" callback={(err: Error) => {
@@ -411,7 +483,7 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
                     </CountStoreProvider>
                 </BrowserStoreProvider>
             </ErrorBoundary>
-        </StrictMode>
+        {/* </StrictMode> */}
         </div>
     </>;
 } 

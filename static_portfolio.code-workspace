@@ -103,5 +103,7 @@
 		"omlet.showUnusedPropsWarnings": false,
 		"eslint.rules.customizations": [],
 		"javascript.inlayHints.parameterTypes.enabled": true,
+		// "eslint.debug": true,
+		"eslint.trace.server": "verbose",
 	},
 }

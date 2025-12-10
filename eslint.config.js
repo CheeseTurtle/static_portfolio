@@ -6,6 +6,7 @@ import json from "@eslint/json";
 import markdown from "@eslint/markdown";
 import css from "@eslint/css";
 import pluginAstro from "eslint-plugin-astro";
+import * as pluginMDX from 'eslint-plugin-mdx';
 import pluginAstroParser from 'astro-eslint-parser';
 import pluginTSeslintParser from '@typescript-eslint/parser';
 import eslint from "@eslint/js";
@@ -72,10 +73,10 @@ export default defineConfig([
   },
   {
     // files: ["**/*.{js,mjs,cjs,mts,cts,ts,jsx,tsx,d.ts,mdx}"],
-    files: ["**/*.{mts,cts,ts,tsx,d.ts,mdx}"],
+    files: ["**/*.{mts,cts,ts,tsx,d.ts}"],
     languageOptions: {
       parserOptions: {
-        extraFileExtensions: [".mdx"],
+        extraFileExtensions: [],
       },
     },
     rules: {
@@ -137,6 +138,43 @@ export default defineConfig([
     },
   },
   {
+    ...tseslint.configs.disableTypeChecked,
+    files: ["**/*.mdx"],
+  },
+  {
+    files: ["**/*.mdx"],
+    rules: {
+      "@typescript-eslint/no-unused-vars": "off",
+    }
+  },
+  pluginMDX.flat,
+  pluginMDX.flatCodeBlocks,
+  // {
+  //   ...pluginMDX.flat,
+  //   files: ["**/*.mdx"],
+  //   processor: pluginMDX.createRemarkProcessor({
+  //     lintCodeBlocks: true,
+  //     // languageMapper: {},
+  //     // cwd: __dirname,
+  //     // ignoreRemarkConfig: false,
+  //     // remarkConfigPath: './.remarkrc.js',
+  //     // remarkConfigPath: './.remarkrc.js', // Point to your remark config
+  //   }),
+  //   // languageOptions: {
+  //   //   parserOptions: {
+  //   //     // ignoreRemarkConfig: false,
+  //   //     // remarkConfigPath: './.remarkrc.js'
+  //   //   }
+  //   // }
+  // },
+  // {
+  //   ...pluginMDX.flatCodeBlocks,
+  //   rules: {
+  //     ...pluginMDX.flatCodeBlocks.rules,
+  //     // Override rules for code blocks if needed
+  //   },
+  // },
+  {
     ...css.configs.recommended,
     files: ["**/*.css"],
     plugins: {
@@ -166,9 +204,9 @@ export default defineConfig([
         // parser: "@typescript/eslint-parser",
         // parser: "@typescript-eslint/parser",
         parser: pluginTSeslintParser,
-        extraFileExtensions: [".astro", ".mdx"],
+        extraFileExtensions: [".astro"],
         projectService: {
-          allowDefaultProject: ["*.astro"],
+          allowDefaultProject: ["*.astro","**/*.astro"],
           projectFolderIgnoreList: ["**/node_modules/**", "**/dist/**"],
         },
         // project: "./tsconfig.json",

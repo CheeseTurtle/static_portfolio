@@ -1,9 +1,5 @@
-import React, { useCallback, useReducer } from "react";
-import FSLightbox from "fslightbox-react";
-import { createPortal } from "react-dom";
-import type { ProjectInfo } from "./types";
-import useMutationObserver from "@/hooks/use-mutation-observer";
-import { useDomReady } from "@/hooks/use-dom-ready";
+import React from "react";
+import type { ProjectInfo, ProjectMediaEmbedData } from "./types";
 
 
 
@@ -14,11 +10,16 @@ import { useDomReady } from "@/hooks/use-dom-ready";
 // export const convertSymbol: ConvertSymbol = x => (typeof x === 'symbol' ? ('%'+String(x)+'%') : x);
 
 
+export function convertSymbol(x: ProjectMediaEmbedData): ProjectMediaEmbedData;
 export function convertSymbol(x: symbol | string): string;
 export function convertSymbol(x: null): null;
-export function convertSymbol(x: symbol | string | null): string | null;
-export function convertSymbol(x: symbol | string | null): string | null {
-  return typeof x === 'symbol' ? `%${x.toString()}%` : x;
+export function convertSymbol(x: symbol | string | ProjectMediaEmbedData | null): string | null | ProjectMediaEmbedData;
+//export function convertSymbol(x: symbol | string | {sym: symbol, key: string, path: string, caption?: string} | null): string | null | {sym: symbol, key: string, path: string, caption?: string} {
+export function convertSymbol(x: symbol | string | ProjectMediaEmbedData | null): string | null | ProjectMediaEmbedData {
+    // if(x && typeof x === 'object') return `%${x.key}%`;
+    // if(x && typeof x !== 'symbol' && typeof x !== 'string')
+    //     throw TypeError(`Unexpected type: ${typeof x} (${x})`);
+    return typeof x === 'symbol' ? `%${x.toString()}%` : x;
 }
 
 export type CaptionedLightboxProps = {
@@ -65,6 +66,7 @@ export type LightboxAction =
     | { type: "CLOSE" }
     | { type: "SET_CONTENT", sourceKey: string, sources: LightboxSource[], captions?: LightboxCaptions }
     | { type: 'SET_PROJECT', projectId: string, projectIndex: number,}
+    // | { type: 'SET_PROJECT', projectId: null, projectIndex: null,}
     | { type: 'CLEAR_PROJECT' }
 
 export function lightboxReducer(state: LightboxState, action: LightboxAction): LightboxState {

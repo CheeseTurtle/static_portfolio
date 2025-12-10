@@ -8,10 +8,7 @@ import { useCountContext } from "./stores/countStoreContext";
 import { Flip } from "gsap/Flip";
 import {gsap} from "gsap";
 import { useFlipAnimation } from "@/hooks/useFlip";
-import { useDomReady } from "@/hooks/use-dom-ready";
-import { useDebounceCallback } from "@/hooks/use-debounce-callback";
 import { useMounted } from "@/hooks/use-mounted";
-import { useIsFirstRender } from "@/hooks/use-is-first-render";
 
 type TagButtonsProps = {
     colorClassName?: string,
@@ -23,60 +20,6 @@ type TagButtonsProps = {
     registerReset: (resetFn: () => void) => () => void
 };
 
-
-// function moveToEnd(arr: string[], item: string): string[] {
-//     const idx = arr.indexOf(item);
-//     if(idx === -1 || idx === arr.length - 1) 
-//         return arr; // No change!
-//     arr.splice(idx, 1)
-//     return arr.concat([item]);
-// }
-
-
-// function markSelected(pair: [string[], string[]], item: string): [string[], string[]] {
-//     const [selected, unselected] = pair;
-//     const idx = unselected.indexOf(item);
-//     if(idx === -1) {
-//         if(selected.includes(item)) // No change
-//             return pair;
-//         return [[...selected, item], unselected];
-//     } else { // No change to selected
-//         const arr = (idx > 0 ? unselected.slice(0, idx) : []);
-//         const idx1 = idx + 1;
-//         return [(selected.includes(item) ? selected : [...selected, item]), ((idx1 < unselected.length) ? arr.concat(unselected.slice(idx1)) : arr)];
-//     }
-// }
-
-
-// function* insertInSelectedBlock(tagBlock: string[], newTag: string, selectedTags?: Set<string>) {
-//     if(!tagBlock.length) {
-//         yield newTag;
-//         return;
-//     } else if(!selectedTags?.size) {
-//         yield newTag;
-//         for(const tag of tagBlock) {
-//             if(tag !== newTag) yield tag;
-//         }
-//         return;
-//     }
-//     let yieldedNew: boolean = false; 
-//     for(const tag of tagBlock) {
-//         if(!yieldedNew) {
-//             if(tag === newTag) {
-//                 yieldedNew = true;
-//             } else if(!selectedTags.has(tag)) {
-//                 yield newTag;
-//                 yieldedNew = true;
-//             }
-//         } else if(tag === newTag)
-//             continue;
-//         yield tag;
-//     }
-//     if(!yieldedNew) yield newTag;
-// }
-
-
-
 export default function TagButtons({toggleTag: propsToggleTag, availableTags: availableTagsSet, selectedTags, tagType, registerReset, colorClassName}: TagButtonsProps) {    
     const tagKey = useMemo(()=>getProjectKeyFromTagType(tagType), [tagType]);
     const availableTags = useMemo(() => Array.from(availableTagsSet.values()), [availableTagsSet]);
@@ -87,8 +30,6 @@ export default function TagButtons({toggleTag: propsToggleTag, availableTags: av
 
     // [selected tags, unselected tags]
     const [visualOrder, setVisualOrder] = useState<[string[],string[]]>([[],availableTags]);
-
-    // const visibleProjects = useBrowserContext(s=>s.visibleProjects);
 
     const counts = useCountContext(s=>s.current.tagCounts[tagKey], (a,b)=>{
         const bKeys = new Set<string>(Object.keys(b));
@@ -137,22 +78,12 @@ export default function TagButtons({toggleTag: propsToggleTag, availableTags: av
         propsToggleTag(tagText);
     }, [propsToggleTag, selectedTags, computeTagOrders]);
 
-    // const canToggleTag_ = useFilterContext(s=>s.canToggleTag);
-    // const canToggleTag = useCallback((tagText: string, currentlyActive: boolean)  => canToggleTag_(tagKey, tagText, currentlyActive, visibleProjects), [visibleProjects, canToggleTag_]);
-
     const canToggleTag = useCallback((tagText: string, currentlyActive: boolean) => currentlyActive || counts[tagText], [counts]);
-
-    // const sortTags = useCallback((tags: string[], inPlace: boolean = false) => {
-    //     const tagCounts = Object.fromEntries(availableTags.map(tag=>[tag, props.projects.filter(p=>p.tags[tagKey]?.has(tag)).length]));
-    //     return (inPlace ? tags : [...tags]).sort((a,b)=>tagCounts[b] - tagCounts[a]);
-    // }, [tagKey, availableTags, props.projects]);
-
 
     const unselectedOrdered = useMemo(() => {
         const [, unselected] = visualOrder;
         // if (!props.projects) return unselected;
 
-        // return sortTags(unselected, true);
         const ret = computeTagOrders(unselected, false)[1];
         // console.log('Updating memoed unselectedOrdered', unselected, ret);
         return ret;
@@ -170,7 +101,6 @@ export default function TagButtons({toggleTag: propsToggleTag, availableTags: av
         availableTags.map(
             tagText => {
                 const isPressed = selectedTags?.size ? selectedTags.has(tagText) : false;
-                // const matchCount = visibleProjects.filter(p=>p.tags[tagKey].has(tagText)).length;
                 const matchCount = counts[tagText] ?? 0;
                 return [tagText,
                     <TagButton id={CSS.escape(`tag-${tagKey}-${tagText}`)} matchCount={matchCount} disabled={!canToggleTag(tagText, isPressed)} key={tagText} colorClassName={colorClassName} isPressed={isPressed} tagText={tagText} toggleTag={toggleTag}></TagButton>
@@ -191,10 +121,6 @@ export default function TagButtons({toggleTag: propsToggleTag, availableTags: av
         );
     }, [availableChildren, tagKey]);
 
-    // useDomReady(() => {
-
-    // });
-
     const flipCleanupPending = useRef<boolean>(false);
 
     const [flipProps, _setFlipProps] = useState<string|undefined>('x,scaleX,opacity' + 'width,background-color,background');
@@ -211,9 +137,6 @@ export default function TagButtons({toggleTag: propsToggleTag, availableTags: av
 
     const { isFlipping, isFlippingRef, startFlip, endFlip } = useFlipAnimation({onFlipEnd: onEndFlip});
 
-    // const debouncedUpdatePrevState = useDebounceCallback(updatePrevState, 500);
-
-    // console.log('TARGETS:', flipTargets);
     const timeoutHandle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     useEffect(()=>{
         if(isFlippingRef.current) return;
@@ -231,12 +154,6 @@ export default function TagButtons({toggleTag: propsToggleTag, availableTags: av
                 flipCleanupPending.current = false;
             }, 500);
         }
-        
-        // if(!isFlippingRef.current) {
-        //     clearTimeout(timeoutHandle.current);
-        //     const flipTargets = flipTargetIDs.map((id) => document.getElementById(id));
-        //     prevState.current = Flip.getState(flipTargets, {simple: true, props: flipProps}); //, props: 'scaleX,left,x,background-color,background,width,opacity'});
-        // }
 
         const root = document.getElementById('project-browser-wrapper');
         if(!root) return;
@@ -299,7 +216,6 @@ export default function TagButtons({toggleTag: propsToggleTag, availableTags: av
     }, [renderedChildren, renderOrder, flipTargetIDs, startFlip, endFlip, flipProps]);
 
     const mounted = useMounted();
-    // const isFirstRender = useIsFirstRender();
     const initOrderChecked = useRef<boolean>(false);
 
 

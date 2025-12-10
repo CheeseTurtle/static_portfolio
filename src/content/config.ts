@@ -1,6 +1,9 @@
 // src/content/config.ts
 import { defineCollection, z } from 'astro:content';
 import LazyTextFileInstance from '../utils/textloader';
+import type { ProjectFrontmatter } from '@/components/projects/types';
+import type { MDXInstance } from 'astro';
+// import { MDXContent } from 'astro';
 // import type { Loader, DefaultObjectPromise } from '../components/story/util/types/types';
 // import type { ImageInputFormat } from 'astro';
 // import { glob } from 'astro/loaders';
@@ -129,6 +132,7 @@ const loremIpsumCollection = defineCollection({
 
 
 const projectCollection = defineCollection({
+  // type: "content",
   type: "content",
   schema: z.object({
     title: z.string(),
@@ -146,17 +150,23 @@ const projectCollection = defineCollection({
     }),
     images: z.array(z.union(
       [
-        z.string(), 
+        z.string(),
         z.tuple([z.string(), z.nullable(z.string()).optional()]), 
         z.tuple([z.string()]), 
-        z.object({type: z.literal('content'), path: z.string(), captionPath: z.string(),}),
-        z.object({type: z.literal('content'), path: z.string(), caption: z.string().optional(),}),
-        z.object({type: z.literal('image').optional(), path: z.string(), captionPath: z.string()}),
-        z.object({type: z.literal('image').optional(), path: z.string(), caption: z.string().optional()}),
+        z.object({id: z.string().optional(), type: z.literal('content'), path: z.string(), captionPath: z.string(),}),
+        z.object({id: z.string().optional(), type: z.literal('content'), path: z.string(), caption: z.string().optional(),}),
+        z.object({id: z.string().optional(), type: z.literal('image').optional(), path: z.string(), captionPath: z.string()}),
+        z.object({id: z.string().optional(), type: z.literal('image').optional(), path: z.string(), caption: z.string().optional()}),
+        z.object({id: z.string().optional(), type: z.literal('embed'), provider: z.literal('youtube'), path: z.string(), captionPath: z.string(),}),
+        z.object({id: z.string().optional(), type: z.literal('embed'), provider: z.literal('youtube'), path: z.string(), caption: z.string().optional(),}),
     ])).optional(),
     exclude: z.boolean().optional(),
   }),
-})
+  // loader() {
+  //   const files = import.meta.glob<MDXInstance<ProjectFrontmatter>>('/src/conent/projects/**.mdx', {exhaustive: false, eager: false});
+    
+  // },
+});
 
 
 
@@ -169,7 +179,3 @@ export const collections = {
   // backdropImages: backdropImageCollection, 
   // storySections: storySectionCollection
 };
-
-
-
-

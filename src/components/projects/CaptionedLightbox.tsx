@@ -8,7 +8,7 @@ import {gsap} from "gsap";
 import useThrottledDebounce from "@/hooks/useThrottledDebounce";
 import { cn } from "@/lib/utils";
 import type { WithRequired } from "node_modules/astro/dist/type-utils";
-import { useUnmount } from "@/hooks/use-unmount";
+// import { useUnmount } from "@/hooks/use-unmount";
 import type FsLightbox from "fslightbox-react";
 // import type { FsLightboxProps } from "fslightbox-react";
 
@@ -35,7 +35,7 @@ const FSLightbox = React.lazy(()=>import('fslightbox-react'));
 // type k2 = FsLightbox | FSLightboxType2;         // FsLightbox
 // type u2 = FsLightbox & FSLightboxType2;         // FsLightbox
 
-function useLightboxSlideObserver(snRef: React.RefObject<HTMLSpanElement | null>, captionSlide: number | undefined, setCaptionSlide: React.Dispatch<React.SetStateAction<number | undefined>>, overlayRef: React.RefObject<LightboxCaptionsOverlayHandle | null>) {
+function useLightboxSlideObserver(snRef: React.RefObject<HTMLSpanElement | null>, captionSlide: number | undefined, setCaptionSlide: React.Dispatch<React.SetStateAction<number | undefined>>, _overlayRef: React.RefObject<LightboxCaptionsOverlayHandle | null>) {
     /* div.fslightbox-container.fslightbox-full-dimension
     //   div.flightbox-nav
     //     div.fslightbox-toolbar
@@ -60,7 +60,7 @@ function useLightboxSlideObserver(snRef: React.RefObject<HTMLSpanElement | null>
         setCaptionSlideRef.current = setCaptionSlide;
     }, [setCaptionSlide]);
 
-    const callback: MutationCallback = React.useCallback((mutations: MutationRecord[], observer: MutationObserver)=>{
+    const callback: MutationCallback = React.useCallback((mutations: MutationRecord[], _observer: MutationObserver)=>{
         const clMutations = mutations.filter(x=>x.type === 'childList');
         if(!clMutations.length) return;
         // console.log('Observer / mutations:', observer, mutations);
@@ -263,14 +263,14 @@ function LightboxCaption({ref, children, divRef, sourceElem, className, index, a
     </div>;
 }
 
-type LightboxCaptionElem = React.ReactElement<LightboxCaptionProps, typeof LightboxCaption>;
-const LightboxCaptionsOverlay = (({sources, captions, open, ref, divRef, activeIndex, container}: LightboxCaptionsOverlayProps & React.RefAttributes<LightboxCaptionsOverlayHandle>) => {
+// type LightboxCaptionElem = React.ReactElement<LightboxCaptionProps, typeof LightboxCaption>;
+const LightboxCaptionsOverlay = (({sources, captions, open, ref: _ref, divRef, activeIndex, container: _container}: LightboxCaptionsOverlayProps & React.RefAttributes<LightboxCaptionsOverlayHandle>) => {
 
     const captionElemRefs = React.useRef<React.RefObject<HTMLDivElement | null>[]>([]);
-    captionElemRefs.current = sources.map((el,i)=>captionElemRefs.current[i] ?? React.createRef());
+    captionElemRefs.current = sources.map((_el,i)=>captionElemRefs.current[i] ?? React.createRef());
 
     const captionHandleRefs = React.useRef<React.RefObject<LightboxCaptionHandle | null>[]>([]);
-    captionHandleRefs.current = sources.map((el, i) => captionHandleRefs.current[i] ?? React.createRef());
+    captionHandleRefs.current = sources.map((_el, i) => captionHandleRefs.current[i] ?? React.createRef());
 
     // const captionElemMap: Record<number, LightboxCaptionElem | null> = useMemo(()=>{
     //     const pairs: [number, LightboxCaptionElem | null][] = sources.map((elem, i) => {
@@ -378,7 +378,7 @@ const LightboxCaptionsOverlay = (({sources, captions, open, ref, divRef, activeI
         return () => {
             gsap.killTweensOf(div);
         }
-    }, [open]);
+    }, [open, divRef]);
 
 
     if(!sources.length) return null;
@@ -406,7 +406,7 @@ type CaptionedLightboxProps = {
     sources?: LightboxSources;
     captions?: LightboxCaptions;
     open: boolean;
-    openRef: React.RefObject<boolean>;
+    // openRef: React.RefObject<boolean>;
     // setOpen: (value: boolean) => void | React.Dispatch<React.SetStateAction<boolean>>;
     initialSlide?: number;
     onClose?: () => void;
@@ -419,21 +419,21 @@ interface CaptionedLightboxHandle {
 
 
 export default function CaptionedLightbox({
-    openRef,
+    // openRef,
     sourceKey,
     sources,
     captions,
     open,
     initialSlide,
     onClose,
-    ref
+    ref: _ref
 }: CaptionedLightboxProps & React.RefAttributes<CaptionedLightboxHandle>) {
     const [toggler, setToggler] = React.useState(false);
     const snRef = React.useRef<HTMLSpanElement | null>(null);
 
-    useUnmount(()=>{
-        openRef.current = false;
-    });
+    // useUnmount(()=>{
+    //     openRef.current = false;
+    // });
 
     React.useEffect(()=>{
         gsap.registerPlugin(Flip);
@@ -493,6 +493,15 @@ export default function CaptionedLightbox({
     }, [captionSlide, open, setActiveCaptionIndexDebounced]);
 
     
+    
+    const sources_ = React.useMemo(()=>sources?.map(x=>{
+        console.log('Source:', x);
+        if(typeof x === 'object') {
+            return <div className="flex w-max h-max min-w-[calc(min(50vw,80cqh))] max-w-[100vw] max-h-screen min-h-[calc(min(50vh,80cqh))]">{x}</div>
+        }
+        return x
+    }), [sources]);
+
     // Only render FSLightbox if we have sources
     if (!sources || sources.length === 0) {
         containerRef.current = null;
@@ -504,11 +513,11 @@ export default function CaptionedLightbox({
         <FSLightbox
             key={sourceKey}
             toggler={toggler}
-            sources={sources}
+            sources={sources_}
             slide={initialSlide}
             onOpen={(instance)=>{ // Every open
                 console.log('OPENED LIGHTBOX');
-                openRef.current = true;
+                // openRef.current = true;
                 setCaptionSlide(initialSlide);
                 setActiveCaptionIndex(initialSlide);
                 if(isFullLightboxInstance(instance)) {
@@ -527,7 +536,7 @@ export default function CaptionedLightbox({
             }}
             onClose={(_instance) => { // Every close
                 console.log('CLOSED LIGHTBOX');
-                openRef.current = false;
+                // openRef.current = false;
                 setCaptionSlide(undefined);
                 setActiveCaptionIndexDebounced(undefined);
                 onClose?.();

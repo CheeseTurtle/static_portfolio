@@ -17,6 +17,7 @@ interface ThumbnailGalleryProps {
 export function ThumbnailRow({ thumbnails, items, onImageClick }: ThumbnailGalleryProps) {
   const itemElems = React.useMemo(()=>items.map((src, i) => {
     const thumb = thumbnails?.[i] ?? src;
+    // console.log('THUMBNAIL:', thumb);
     const onClick = onImageClick ? (evt: MouseEvent<HTMLImageElement> | MouseEvent<HTMLDivElement>) => onImageClick(evt, i) : undefined;
     return typeof thumb === 'string' ?
     (<img key={i} src={thumb} alt={`Image ${i + 1}`} className="h-32 w-auto cursor-pointer rounded-lg object-cover hover:scale-105 transition-transform" onClick={onClick} loading="lazy" decoding="async" />)

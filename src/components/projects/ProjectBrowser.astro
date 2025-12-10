@@ -4,7 +4,7 @@ import { getImagePath } from "../story/util/loadImages";
 
 import { getCollection/*, render*/ } from "astro:content";
 
-import type { ProjectEntry, ProjectFrontmatter, ProjectDataWithFactory, TagKey, ProjectImageEntry, ProjectInfoWithLBSymbols} from "./types";
+import type { ProjectEntry, ProjectFrontmatter, ProjectDataWithFactory, TagKey, ProjectInfoWithLBSymbols, LightboxMediaEntryWithLBSymbols, ProjectMediaType, AnyProjectImageEntry, ProjectMediaEmbedData } from "./types";
 import type { MDXInstance } from "astro";
 
 import {convertSymbol} from "./lightbox";
@@ -15,6 +15,10 @@ import type { AstroComponentFactory } from "astro/runtime/server/index.js";
 
 import {markdown} from '@astropub/md';
 import type {AstroMarkdownOptions} from '@astrojs/markdown-remark';
+// import ClientOnly from "./ClientOnly.astro";
+
+// import {YouTube} from 'astro-embed';
+
 
 const prepath = [
     "/public/images/story/sidebar/",
@@ -162,20 +166,44 @@ function expandImagePath(fn: string) {
     return result;
 }
 
-async function extractFnAndCaption(x: ProjectImageEntry): Promise<[string | symbol | null, string | symbol | null]> {
+
+const embedRecord: Record<string, {path: string, provider: string, thumbnail?: string, title?: string}> = {};
+
+function getEmbedFromPath(id: string, path: string, provider: string) {
+    if(id in embedRecord)
+        console.warn(`Overwriting duplicate embed entry for id '${id}':`, embedRecord[id], {path, provider});
+
+    const key = `embed_${provider}_${path}`;
+    const sym = Symbol(key);
+    const key2 = sym.toString();
+    symMap[sym] = key2;
+    const result = {sym, key: key2, path, provider};
+    embedRecord[key2] = result;
+    return result;
+}
+
+
+
+
+async function extractFnAndCaption(x: AnyProjectImageEntry): Promise<[string | symbol | null | {sym: symbol, key: string, path: string, provider: string}, string | symbol | null, string, ProjectMediaType]> {
     if(typeof x === 'string') {
-        return [x ? expandImagePath(x) : null, null];
+        return [x ? expandImagePath(x) : null, null, x, 'image'];
     } else if(Array.isArray(x)) {
-        return [x[0] ? expandImagePath(x[0]) : null, x[1] || null] as [string | null, string | null];
+        return [x[0] ? expandImagePath(x[0]) : null, x[1] || null,  x[0], 'image'] as [string | null, string | null, string, ProjectMediaType];
     }
-    const source = (x.type === 'content' ? (
-        await getFigureFromPath(x.path)
-    ) : (
-        expandImagePath(x.path)
-    ));
+
+    const source = (
+        x.type === 'embed' 
+            ? getEmbedFromPath(x.id ?? x.path, x.path, x.provider)
+            : (
+                x.type === 'content' 
+                ? await getFigureFromPath(x.path)
+                : expandImagePath(x.path)
+            )
+    );
     const caption = (x.captionPath ?
         await getCaptionFromPath(x.captionPath) : x.caption);
-    return [source ?? null, caption || null];
+    return [source ?? null, caption || null, x.id || x.path, (x.type ?? 'image')];
 }
 
 // const parse = createParser();
@@ -200,28 +228,44 @@ const projects: ProjectInfoWithLBSymbols[] = (await Promise.all(items.filter(x=>
     factories[trimID(data.id)] = factory;
     const [date, dateStr] = parseDateValue(data.date);
 
-    const pairPromises = data.images?.map(async (x: string | [string, string | undefined | null] | [string] | {path: string, caption?: string}): Promise<[string | symbol, string | symbol | null] | undefined> => {
-        const [result, caption] = await extractFnAndCaption(x);
+    const pairPromises = data.images?.map(async (x): Promise<[string | symbol | {sym: symbol, key: string, path: string, provider: string}, string | symbol | null, string, ProjectMediaType] | undefined> => {
+        const [result, caption, id, kind] = await extractFnAndCaption(x);
         if(!result) {
             if(caption) console.warn('Null or empty filepath/source given with non-null caption');
             return undefined;
         }
-        return [result, caption];
+        return [result, caption, id, kind];
     });
 
-    const pairs: [string | symbol, string | symbol | null][] | undefined = pairPromises?.length ? (await Promise.all(pairPromises)).filter(x=>(undefined!==x)) : undefined;
+    const pairs: [string | symbol | {sym: symbol, key: string, path: string, provider: string}, string | symbol | null, string, ProjectMediaType][] | undefined = pairPromises?.length ? (await Promise.all(pairPromises)).filter(x=>(undefined!==x)) : undefined;
 
-    const sources: (string | symbol)[] = [], captions: (string | symbol | null)[] = [];
+    const sources: ([ProjectMediaType, string, string | symbol | {sym: symbol, key: string, path: string, provider: string}])[] = [], captions: (string | symbol | null)[] = [];
     
-    pairs?.forEach(([fn,caption])=>{
-        sources.push(fn);
+    const record: Partial<{[T in ProjectMediaType]: Record<string, LightboxMediaEntryWithLBSymbols<T>>}> = {};
+
+    pairs?.forEach(([fn,caption,id,type])=>{
+        if(type==='embed')
+            console.info([fn,caption,id,type]);
+        sources.push([type, id, fn]);
         captions.push(caption);
+        const newEntry: LightboxMediaEntryWithLBSymbols<typeof type> = {
+            id: id,
+            source: fn,
+            caption,
+        }
+        if(record[type])
+            record[type][id] = newEntry;
+        else
+            // @ts-expect-error Record typing
+            record[type] = {[id]: newEntry};
     })
 
 
-    const lightboxData = pairs && sources.length ? {
-        lightboxSources: sources.map(x=>convertSymbol(x)), // as LightboxSources,
-        lightboxCaptions: captions?.map(x=>convertSymbol(x)), // as LightboxCaptions,
+    const lightboxData: ProjectInfoWithLBSymbols['lightboxData'] = pairs && sources.length ? {
+        record,
+        lightboxSources: sources.map(x=>[x[0], x[1], convertSymbol(x[2] as string | ProjectMediaEmbedData | null)]) as ([ProjectMediaType, string, string | ProjectMediaEmbedData])[], // as LightboxSources,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        lightboxCaptions: captions?.map(x=>convertSymbol(x) as string | null), // as LightboxCaptions,
     } : undefined;
 
 
@@ -248,6 +292,10 @@ const projects: ProjectInfoWithLBSymbols[] = (await Promise.all(items.filter(x=>
     };
 }))).sort((a,b)=>compareDates(a.date, b.date));
 
+
+// function findProject(id: string) {
+//     return projects.find(x=>x.id === id)!;
+// }
 
 
 ---
@@ -276,15 +324,32 @@ const projects: ProjectInfoWithLBSymbols[] = (await Promise.all(items.filter(x=>
     <Fragment slot="carousel-content">
     {
         Object.entries(factories).map(([id, Factory]) =>
-            <article data-project-id={id}><Factory></Factory></article>
+            <article data-project-id={id}>
+                <Factory/>
+                {/* <ClientOnly><Factory/></ClientOnly> */}
+            </article>
         )
     }
     </Fragment>
     <Fragment slot="lightbox-content">
         {
-            Object.entries(lbFactories).map(([id, Factory])=>
-                <article data-item-id={id} class:list={['backdrop-blur-xs backdrop-grayscale']}><Factory/></article>
+            Object.entries(lbFactories).map(([key, Factory])=>
+                <article data-item-id={key} class:list={['backdrop-blur-xs backdrop-grayscale']}><Factory></Factory></article>
             )
         }
     </Fragment>
+
+    <!-- <Fragment slot="lightbox-embed">
+        {
+            Object.entries(embedRecord).map(([key, {path, provider}])=>{
+                if(provider !== 'youtube')
+                    throw new TypeError('Currently, the only supported Embed provider is "youtube".');
+                const ret = <article data-item-id={key}>
+                    <YouTube id={path}></YouTube>
+                </article>;
+                console.log('YOUTUBE EMBED:', ret);
+                return ret;
+            })
+        }
+    </Fragment> -->
 </ProjectBrowserInner>

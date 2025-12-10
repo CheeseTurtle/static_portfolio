@@ -19,7 +19,7 @@ function adaptLightboxData(data: ProjectInfo['lightboxData']) {
             typeof x === 'string' ? x : <>{x}</>
         ) : null
     );
-    return {sources, captions};
+    return {sources, captions, thumbnails: data.lightboxThumbs};
 }
 
 
@@ -277,7 +277,7 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
                         <ExpandedPart id={id} expanded={expanded} ref={extraRef}>
                             {summary}
                             {lightboxData && lightboxData.sources.length > 0 && (
-                                <ThumbnailRow items={lightboxData.sources} onImageClick={handleThumbClick} />
+                                <ThumbnailRow items={lightboxData.sources} thumbnails={lightboxData.thumbnails} onImageClick={handleThumbClick} />
                             )}
                         </ExpandedPart>
                     // </Suspense>

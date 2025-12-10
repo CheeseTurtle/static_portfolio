@@ -227,7 +227,7 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
   const totalReservedHeight = collapsedGridHeight + maxExtraHeight;
 
   return (
-    <CaptionedLightboxProvider openRef={lightboxOpenRef} onClose={undefined}>
+    // <CaptionedLightboxProvider openRef={lightboxOpenRef} onClose={undefined}>
       <div
         className="grid w-full overflow-y-visible"
         style={{
@@ -245,7 +245,7 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
           aria-hidden="true"
         />
       </div>
-    </CaptionedLightboxProvider>
+    // </CaptionedLightboxProvider>
   );
 });
 

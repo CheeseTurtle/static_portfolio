@@ -16,17 +16,23 @@ const lbHTML = lp ? await lp : undefined;
 
 // console.log(Astro.slots);
 
+// const ep = Astro.slots.has('lightbox-embed') && Astro.slots.render('lightbox-embed');
+// const epHTML = ep ? await ep : undefined;
+
+// console.log(epHTML);
+
 const titlesPromise = Astro.slots.render('project-titles');
 const descriptionsPromise = Astro.slots.render('project-descriptions');
 const summariesPromise = Astro.slots.render('project-summaries');
 
 const [titles, descriptions, summaries] = await Promise.all([titlesPromise, descriptionsPromise, summariesPromise]);
 
-console.log(titles, descriptions, summaries);
+// console.log(titles, descriptions, summaries);
 
 ---
 
 <ProjectBrowserReact projects={props.projects} contentString={html} projectTitles={titles} projectDescriptions={descriptions} projectSummaries={summaries} lbContentString={lbHTML ?? ''} client:only="react">
-    <slot name="carousel-content"/>
+    <!-- <slot name="carousel-content"/>
     <slot name="lightbox-content"/>
+    <slot name="lightbox-embed"/> -->
 </ProjectBrowserReact>
