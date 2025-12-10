@@ -75,6 +75,9 @@ jobs:
       - name: List icons directory
         run: ls -l src/icons
         working-directory: ${{ env.BUILD_PATH }}
+      - name: List images
+        run: ls -l public/images
+        working-directory: ${{ env.BUILD_PATH }}
       - name: Build with Astro
         run: |
           ${{ steps.detect-package-manager.outputs.runner }} astro build \

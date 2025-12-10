@@ -9,12 +9,17 @@ import mdx from "@astrojs/mdx";
 // import preactVite from "@preact/preset-vite";
 // import reactVite from "@vitejs/plugin-react";
 
+
+const isProduction = process.env.GITHUB_PAGES === "true";
+
+
 // https://astro.build/config
 // // eslint-disable-next-line @typescript-eslint/no-unsafe-call
 export default defineConfig({
   tsconfig: "./tsconfig.json",
   // prefetch: true,
-  site: "https://cheeseturtle.github.io/static_profile/",
+  site: "https://cheeseturtle.github.io/static_profile",
+  base: isProduction ? '/static_profile/' : '/',
   // experimental: {
   //   // clientPrerender: true,
   //   // headingIdCompat: true,

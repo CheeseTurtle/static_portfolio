@@ -7,7 +7,6 @@ import { useBrowserContext } from "../filtering/common/browserContext";
 import type { ScrollToFn } from "../filtering/common/filterTypes";
 import { cn } from "@/lib/utils";
 import { useResizeObserver } from "@/hooks/useResizeObserver";
-import CaptionedLightboxProvider from "../CaptionedLightboxProvider";
 
 interface ProjectGridProps {
   scrollContainer: RefObject<any>,
@@ -32,13 +31,7 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
   
   // Get actions from store
   const clickItem = useBrowserContext(s => s.clickItem);
-  // const setCarouselOpen = useBrowserContext(s => s.setCarouselOpen);
 
-  // const activeProject = useMemo(
-  //   () => activeProjectIndex !== null ? projects[activeProjectIndex] ?? null : null,
-  //   [projects, activeProjectIndex]
-  // );
-  
   const deferredActiveProjectId = React.useDeferredValue(activeProjectId);
   const gridActiveProjectId = React.useMemo(()=>(carouselOpen ? deferredActiveProjectId : activeProjectId), [carouselOpen, deferredActiveProjectId, activeProjectId]);
 
@@ -62,21 +55,12 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
     return arr;
   }, [projects, columns]);
   
-  // const projectRefs = React.useRef<React.RefObject<ProjectItemHandle>[]>([]);
-  // projectRefs.current = projects.map((_, i) => projectRefs.current[i] ?? React.createRef());
   const projectRefs = React.useRef<Record<string, React.RefObject<ProjectItemHandle>>>({});
   projectRefs.current = Object.fromEntries(projects.map(p=>[p.id, projectRefs.current[p.id] ?? React.createRef()]));
 
-  // const extraRefs = React.useRef<React.RefObject<HTMLDivElement>[]>([]);
-  // extraRefs.current = projects.map((_, i) => extraRefs.current[i] ?? React.createRef());
   const extraRefs = React.useRef<Record<string, React.RefObject<HTMLDivElement>>>({});
   extraRefs.current = Object.fromEntries(projects.map(p=>[p.id, extraRefs.current[p.id] ?? React.createRef()]));
 
-  const lightboxOpenRef = React.useRef<boolean>(false);
-
-  // const {state: lightboxState} = useCaptionedLightbox();
-  // const lightboxOpen = lightboxState.open;
-  
   // Projects in columns
   const projectCols = cols.map((col, i) =>
     col.map((p, index): ProjectItemElement => {
@@ -86,23 +70,16 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
         const projectIndex = projects.findIndex(proj => proj.id === p.id);
         return (
           <ProjectItem 
-            // ref={projectRefs.current[refIndex]}
-            // extraRef={extraRefs.current[refIndex]}
             ref={projectRefs.current[p.id]}
             extraRef={extraRefs.current[p.id]}
             key={p.id}
             project={p}
             refIndex={refIndex}
             projectIndex={projectIndex}
-            // activeProject={activeProject}
             activeProjectId={gridActiveProjectId}
-            // activeProjectIndex={activeProjectIndex}
             openProjectId={openProjectId}
             carouselOpen={carouselOpen}
-            // lightboxOpen={lightboxOpenRef.current}
-            // lightboxOpen={lightboxOpen}
             clickItem={clickItem}
-            // setCarouselOpen={setCarouselOpen}
             scrollContainer={scrollContainer}
           />
         );
@@ -147,31 +124,12 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
 
   const gridContainerRef = React.useRef<HTMLDivElement>(null);
   
-  // const maxExtraHeight = Math.max(0, ...extraRefs.current.map(x=>x.current?.scrollHeight ? Math.ceil(x.current.scrollHeight) : 0));
   const maxExtraHeight = Math.max(0, ...Object.values(extraRefs.current).map(x=>x.current?.scrollHeight ? Math.ceil(x.current.scrollHeight) : 0));
 
   const [collapsedGridHeight, setCollapsedGridHeight] = React.useState<number>(0);
   const isMeasuringRef = React.useRef(false);
   const lastNaturalHeightRef = React.useRef<number>(0);
   
-  // // Calculate base height by subtracting any expanded content
-  // const measureBaseHeight = useCallback(() => {
-  //   if (!gridContainerRef.current) return;
-    
-  //   const currentHeight = gridContainerRef.current.scrollHeight;
-    
-  //   // Subtract the height of any currently expanded extra content
-  //   // const expandedExtraHeight = extraRefs.current.reduce((sum, ref) => {
-  //   const expandedExtraHeight = Object.values(extraRefs.current).reduce((sum, ref) => {
-  //     return sum + (ref.current?.clientHeight ?? 0);
-  //   }, 0);
-    
-  //   const calculatedBaseHeight = currentHeight - 0*expandedExtraHeight;
-  //   // console.log(calculatedBaseHeight, currentHeight, expandedExtraHeight)
-  //   setBaseHeight(calculatedBaseHeight);
-  // }, []);
-
-
   const measureBaseHeight = useCallback(() => {
     if (!gridContainerRef.current || isMeasuringRef.current) return;
     
@@ -202,9 +160,6 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
     });
   }, []);
 
-  // const deferredBaseHeight = React.useDeferredValue(baseHeight);
-  // const [, startTransition] = React.useTransition();
-
   // Initial measurement
   React.useLayoutEffect(() => {
     measureBaseHeight();
@@ -227,7 +182,6 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
   const totalReservedHeight = collapsedGridHeight + maxExtraHeight;
 
   return (
-    // <CaptionedLightboxProvider openRef={lightboxOpenRef} onClose={undefined}>
       <div
         className="grid w-full overflow-y-visible"
         style={{
@@ -235,7 +189,6 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
           minHeight: collapsedGridHeight > 0 ? `max(100vh, ${totalReservedHeight}px)` : '100vh',
         }}
       >
-        {/* <div ref={gridContainerRef} className={cn("flex w-full gap-4 p-8 pt-4 h-min overflow-y-visible")}>  */}
         <div ref={gridContainerRef} className={cn("w-full max-w-full grid grid-flow-col auto-cols-fr gap-4 p-8 pt-4 h-min overflow-y-visible sm:grid-flow-col-dense md:grid-flow-col-dense")}> 
           {projectGridContents}
         </div>
@@ -245,7 +198,6 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
           aria-hidden="true"
         />
       </div>
-    // </CaptionedLightboxProvider>
   );
 });
 

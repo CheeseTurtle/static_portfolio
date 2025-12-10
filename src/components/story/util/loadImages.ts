@@ -1,4 +1,4 @@
-import { ContentSchemaContainsSlugError } from "node_modules/astro/dist/core/errors/errors-data";
+// import { ContentSchemaContainsSlugError } from "node_modules/astro/dist/core/errors/errors-data";
 import type { AsyncDefaultLoader } from "./types/types.ts";
 
 export type ImageLoaders = Record<string, () => Promise<{
