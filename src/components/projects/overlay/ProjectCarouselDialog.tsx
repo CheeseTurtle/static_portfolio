@@ -90,7 +90,7 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
         if (!emblaApi) return;
         
         const index = emblaApi.selectedScrollSnap();
-        console.log('[Carousel] onSelect - scrolling to index:', index, 'current activeIndex:', activeProjectIndex);
+        // console.log('[Carousel] onSelect - scrolling to index:', index, 'current activeIndex:', activeProjectIndex);
 
         // Update the store's active project index
         // This will trigger URL sync automatically if carousel is open

@@ -8,7 +8,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-import type {EmblaCarouselType, /*EmblaEventType*/ } from "embla-carousel";
+import type {EmblaCarouselType, EmblaEventType, /*EmblaEventType*/ } from "embla-carousel";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./hover-card"
 import CarouselSlider from "../projects/overlay/CarouselSlider"
 // import { useWindowSize } from "@/hooks/useWindowSize"
@@ -30,7 +30,7 @@ type CarouselProps = {
   plugins?: CarouselPlugin
   orientation?: "horizontal" | "vertical"
   setApi?: (api: CarouselApi) => void,
-  onCarouselSelect?: (api: CarouselApi | undefined) => void,
+  onCarouselSelect?: (api: CarouselApi | undefined, evtType?: EmblaEventType) => void,
   externalApi?: CarouselApi,
   externalCarouselRef?: EmblaViewportRefType
 }
@@ -101,16 +101,15 @@ function Carousel({ orientation = "horizontal",
   const [canScrollPrev, setCanScrollPrev] = React.useState(false)
   const [canScrollNext, setCanScrollNext] = React.useState(false)
 
-  const onSelectInInit = React.useCallback((api?: CarouselApi) => {
+  const onSelect = React.useCallback((api: CarouselApi | undefined, evtType?: EmblaEventType) => {
     if (!api) return
     setCanScrollPrev(api.canScrollPrev());
     setCanScrollNext(api.canScrollNext());
-    // onSelect_?.(api);
-  }, [setCanScrollNext, setCanScrollPrev]);
-  const onSelect = React.useCallback((api: CarouselApi) => {
-    onSelectInInit(api);
-    onSelect_?.(api);
-  }, [onSelectInInit, onSelect_]);
+    onSelect_?.(api, evtType);
+  }, [setCanScrollNext, setCanScrollPrev, onSelect_]);
+  // const onSelect = React.useCallback((api: CarouselApi, evtType: EmblaEventType) => {
+  //   onSelectInInit(api, evtType);
+  // }, [onSelectInInit]);
 
 
   const scrollPrev = React.useCallback(() => {
@@ -194,25 +193,25 @@ function Carousel({ orientation = "horizontal",
 
   React.useEffect(() => {
     if (!api) return
-    onSelectInInit(api)
-    api.on("reInit", onSelectInInit)
-    // api.on("select", onSelect)
-
-    return () => {
-      api?.off('reInit', onSelectInInit)
-      // api?.off("select", onSelect)
-    }
-  }, [api, onSelectInInit]);
-
-  React.useEffect(() => {
-    if (!api) return
-    // onSelect(api);
+    onSelect(api)
+    api.on("reInit", onSelect)
     api.on("select", onSelect)
 
     return () => {
+      api?.off('reInit', onSelect)
       api?.off("select", onSelect)
     }
-  }, [api, onSelect])
+  }, [api, onSelect]);
+
+  // React.useEffect(() => {
+  //   if (!api) return
+  //   // onSelect(api);
+  //   api.on("select", onSelect)
+
+  //   return () => {
+  //     api?.off("select", onSelect)
+  //   }
+  // }, [api, onSelect])
 
 
   // React.useEffect(() => {

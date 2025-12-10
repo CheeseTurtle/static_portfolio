@@ -112,8 +112,8 @@ const ProjectGrid = forwardRef<ProjectGridHandle, ProjectGridProps>(({scrollCont
     const item = projectItems.find(p=>p.props.projectIndex === index);
     console.log('SCROLL TO ITEM:', index, item, jump);
     if(!item) return;
-    const itemRef = projectRefs.current?.[item.props.refIndex];
-    if(!itemRef) return;
+    const itemRef = projectRefs.current?.[item.props.project.id];
+    // if(!itemRef) return;
     itemRef?.current?.scrollIntoView(jump);
   }, [projectItems]);
 

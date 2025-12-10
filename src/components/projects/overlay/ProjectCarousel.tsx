@@ -1,7 +1,7 @@
 import { Carousel, CarouselContent, CarouselItem, CarouselNav, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { type EmblaViewportRefType } from "embla-carousel-react";
 import React, { type PointerEventHandler } from "react";
-import type { EmblaCarouselType } from "embla-carousel";
+import type { EmblaCarouselType, EmblaEventType } from "embla-carousel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DialogClose } from "./TransparentDialog";
 import { XIcon } from "lucide-react";
@@ -18,7 +18,7 @@ type ProjectCarouselProps = Omit<React.ComponentProps<typeof Carousel>, 'externa
     slides: CarouselContentItemWithTitle[],
     prevRef?: React.RefObject<HTMLButtonElement | null>,
     nextRef?: React.RefObject<HTMLButtonElement | null>,
-    onCarouselSelect: (emblaApi?: EmblaCarouselType) => void,
+    onCarouselSelect: (emblaApi: EmblaCarouselType | undefined, evtType?: EmblaEventType) => void,
     externalApi?: EmblaCarouselType,
     showToast: ShowToastFn,
     getHovercardContentForIndex: (index: number) => React.ReactNode,
@@ -57,19 +57,43 @@ const CarouselSlideContentSkeleton = React.memo(()=>{
 
 
 const ProjectCarouselItem = React.memo(({ project, handleRef, startTransition, index: i, slide, onPointerDown: clickCallback, showToast, ...props }: ProjectCarouselItemProps) => {
-    // const isCurrent = React.useDeferredValue<boolean>(isCurrentItem);
     const skeleton = React.useMemo(()=><CarouselSlideContentSkeleton/>, []);
     const [isCurrentItem, setIsCurrentItem] = React.useState<boolean>(false);
+    const isCurrent = React.useDeferredValue<boolean>(isCurrentItem);
 
-    // const setIsCurrent = React.useCallback((isCurrent: boolean) => {
-    //     startTransition(()=>{
-    //         setIsCurrentItem(isCurrent);
-    //     });
-    // }, [startTransition]);
+    const deactivationTimeout = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const activationTimeout = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+    const setIsCurrent = React.useCallback((isCurrent: boolean) => {
+        if(isCurrent) {
+            clearTimeout(deactivationTimeout.current);
+            deactivationTimeout.current = undefined;
+            if(activationTimeout.current === undefined) {
+                activationTimeout.current = setTimeout (()=>{
+                    React.startTransition(()=>
+                        setIsCurrentItem(isCurrent)
+                    );
+                    activationTimeout.current = undefined;
+                }, 200);
+            }
+            return;
+        }
+        clearTimeout(activationTimeout.current);
+        activationTimeout.current = undefined;
+        if(deactivationTimeout.current === undefined) {
+            deactivationTimeout.current = setTimeout(()=>{
+                React.startTransition(()=>
+                    setIsCurrent(false)
+                );
+                deactivationTimeout.current = undefined;
+            }, 2500);
+        }
+    }, []);
 
     React.useImperativeHandle(handleRef, ()=>({
-        setIsCurrent: setIsCurrentItem
-    }), []);
+        // setIsCurrent: setIsCurrentItem
+        setIsCurrent
+    }), [setIsCurrent]);
 
     return <CarouselItem key={i} id={`slide-${i}`} className="pointer-events-auto h-min" {...props}>
         <Card className="relative w-full flex pointer-events-auto max-h-[calc(100vh-(--spacing(25)))] overflow-y-scroll">
@@ -89,12 +113,13 @@ const ProjectCarouselItem = React.memo(({ project, handleRef, startTransition, i
                 {/* <DialogClose aria-label="Close carousel" data-slot="dialog-close" className="sr-only" /> */}
                 {/* above sr-only DialogClose is a compact additional accessible control -- main visual close still has icon */}
                 {/* <ShareButton className="absolute top-4 right-14 text-sm" showToast={showToast} openProjectId={slide.props["data-project-id"]} /> */}
-                {/* <React.Suspense>
-                    {slide}
-                </React.Suspense> */}
-                {/* {isCurrentItem ? slide : skeleton} */}
                 <ProjectProvider project={project}>
-                    {slide}
+                    {isCurrent ? 
+                        <React.Suspense fallback={skeleton}>
+                            {slide}
+                        </React.Suspense>
+                        : skeleton
+                    }
                 </ProjectProvider>
             </CardContent>
         </Card>
@@ -115,7 +140,8 @@ const ProjectCarousel = React.memo(({
     getHovercardContentForIndex,
 }: ProjectCarouselProps) => {
     const slideHandles = React.useRef<Record<string, React.RefObject<ProjectCarouselItemHandle>>>({});
-    slideHandles.current = Object.fromEntries(slides.map((slide) => [slide.props["data-project-id"], slideHandles.current[slide.props['data-project-id'] ?? React.createRef()]]));
+    slideHandles.current = Object.fromEntries(slides.map((slide) => [slide.props["data-project-id"], slideHandles.current[slide.props['data-project-id']] ?? React.createRef()]));
+    
     const [_isPending, startTransition] = React.useTransition();
 
     const slideElems = React.useMemo(()=>{
@@ -124,41 +150,37 @@ const ProjectCarousel = React.memo(({
         ))
     }, [slides, showToast]);
 
-    // const slideHovercards = React.useMemo(()=>{
+    const onSelect0: typeof onSelect = React.useCallback((api, _evtType) => {
+        if(!api) return;
+        const index = api.selectedScrollSnap();
+        const prevIndex = api.previousScrollSnap();
 
-    // }, [])
+        const currId = slides[index]?.props['data-project-id'];
+        const currHandle = currId ? slideHandles.current[currId] : undefined;
 
-    // const onSelect0: typeof onSelect = React.useCallback((api) => {
-    //     // if(api) {
-    //     //     const index = api.selectedScrollSnap();
-    //     //     const prevIndex = api.previousScrollSnap();
+        // console.log('api/currHandle:', api, currHandle);
 
-    //     //     const currId = slides[index]?.props['data-project-id'];
-    //     //     const currHandle = currId ? slideHandles.current[currId] : undefined;
+        // if(!currHandle) return;
+        const prevId = slides[prevIndex]?.props['data-project-id'];
+        const prevHandle = (prevIndex === index || !prevId) ? undefined : slideHandles.current[prevId];
+        // console.log(currHandle, prevHandle);
+        startTransition(()=>{
+            try {
+                prevHandle?.current?.setIsCurrent(false);
+            } finally {
+                currHandle?.current?.setIsCurrent(true);
+            }
+        });
+    }, [slides]);
 
-    //     //     if(currHandle) {
-    //     //         const prevId = slides[prevIndex]?.props['data-project-id'];
-    //     //         const prevHandle = (prevIndex === index || !prevId) ? undefined : slideHandles.current[prevId];
-    //     //         console.log(currHandle, prevHandle);
-    //     //         React.startTransition(()=>{
-    //     //             try {
-    //     //                 prevHandle?.current?.setIsCurrent(false);
-    //     //             } finally {
-    //     //                 currHandle?.current?.setIsCurrent(true);
-    //     //             }
-    //     //         });
-    //     //     }
-    //     // }
-    // }, [slides]);
-
-    // const onSelect_: typeof onSelect = React.useCallback(api=>{
-    //     try {
-    //         onSelect0(api);
-    //     } finally {
-    //         // startTransition(()=>onSelect(api));
-    //         onSelect(api);
-    //     }
-    // }, [onSelect, onSelect0]);
+    const onSelect_: typeof onSelect = React.useCallback((api, evtType) => {
+        try {
+            onSelect0(api, evtType);
+        } finally {
+            // startTransition(()=>onSelect(api));
+            onSelect(api, evtType);
+        }
+    }, [onSelect, onSelect0]);
 
     return <Carousel
         ref={emblaRef}
@@ -167,7 +189,7 @@ const ProjectCarousel = React.memo(({
         opts={opts}
         className="overflow-visible z-60 w-full max-w-[calc(min(100vw,var(--container-2xl)))] pointer-events-none
         "
-        onCarouselSelect={onSelect}
+        onCarouselSelect={onSelect_}
         >
         <CarouselContent
             id="embla-container"
