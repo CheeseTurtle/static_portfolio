@@ -65,7 +65,6 @@ export function createEmbed(source: ProjectMediaEmbedData, _lazyLoad?: boolean) 
     //   />
     // </div>
     const embed = <div className="w-full aspect-video flex content-center text-center justify-stretch justify-items-stretch items-stretch align-middle">
-        {/* <React.Suspense fallback={<div className="">Loading video</div>}> */}
         <ReactPlayer src={source.path} light controls
 
             onError={(evt)=>{
@@ -73,8 +72,6 @@ export function createEmbed(source: ProjectMediaEmbedData, _lazyLoad?: boolean) 
             }}
             style={{ width: '100%', height: 'auto', aspectRatio: '16/9' }}
         />
-         {/* fallback={<div>Turtle turtle, {source.path}</div>}/> */}
-        {/* </React.Suspense> */}
     </div>
     // const embed = <iframe id="ytplayer" width="640" height="360"
     //     src="https://www.youtube.com/embed/M7lc1UVf-VE?autoplay=1&origin=http://example.com"

@@ -208,6 +208,7 @@ function LightboxCaption({ref, children, divRef, sourceElem, className, index, a
 
     const activated = React.useRef<boolean | undefined>(undefined);
     React.useLayoutEffect(()=>{
+        console.log('LightboxCaption layout effect begin')
         const div = divRef.current;
         if(!div) return;
         if(active === activated.current) return;
@@ -244,6 +245,7 @@ function LightboxCaption({ref, children, divRef, sourceElem, className, index, a
                 }
             });
         }
+        console.log('LightboxCaption layout effect end')
         return ()=>gsap.killTweensOf(div);
     }, [active, divRef]);
 

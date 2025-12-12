@@ -7,7 +7,7 @@ import { useBrowserContext } from "../filtering/common/browserContext";
 import type { ScrollToFn, ShowToastFn } from "../filtering/common/filterTypes";
 import { useDebounceCallback } from "@/hooks/use-debounce-callback";
 import type { ProjectInfo } from "../types";
-import type { ProjectInfoForProvider } from "../details/ProjectProvider";
+import type { ProjectInfoForProvider } from "../details/ProjectProviderBase";
 // import ProjectCarousel from "./ProjectCarousel";
 
 const ProjectCarousel = React.lazy(()=>import('./ProjectCarousel'));
@@ -51,15 +51,16 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
     const visibleProjects = useBrowserContext(s=>s.visibleProjects);
 
     const overlayRef = useRef<HTMLDivElement>(null);
-    // const prevRef = useRef<HTMLButtonElement>(null);
-    // const nextRef = useRef<HTMLButtonElement>(null);
+    const prevRef = useRef<HTMLButtonElement>(null);
+    const nextRef = useRef<HTMLButtonElement>(null);
 
     // Embla setup
     const containerRef = useRef<HTMLDivElement>(null);
-
     const container = containerRef.current;
     const opts: EmblaOptionsType = useMemo(() => ({
         container: container ?? undefined,
+        duration: 20,
+        watchFocus: false,
     }), [container]);
     
     const [emblaRef, embla] = useEmblaCarousel(opts);
@@ -151,7 +152,9 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
     };
 
     const dialogOnClick: MouseEventHandler<HTMLDivElement> = React.useCallback((e) => {
-        setOpen(false); e.preventDefault();}, [setOpen]);
+        e.preventDefault();
+        setOpen(false);
+    }, [setOpen]);
 
     const onOpenChange_ = React.useCallback((open: boolean) => {
             console.log('Open changed:', open);
@@ -204,7 +207,7 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
                             //     console.log('Key up:', evt);
                             // }}
                             >
-                        <React.Suspense fallback={<div className="w-full h-full bg-orange-400">Turtles</div>}>
+                        <React.Suspense /*fallback={<div className="w-full h-full bg-orange-400">Turtles</div>}*/>
                             <DialogOverlay 
                                 id="carousel-dialog-overlay"
                                 ref={overlayRef} 
@@ -218,8 +221,10 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
                                     <DialogTitle>Project Carousel</DialogTitle>
                                 </DialogHeader>
                             </VisuallyHidden>
-                            <React.Suspense fallback={<div className="w-full h-full bg-yellow-300">Turtles</div>}>
-                                <ProjectCarousel ref={emblaRef} slides={slides} onCarouselSelect={onSelect} externalApi={embla} showToast={showToast} getHovercardContentForIndex={getHovercardContentForIndex}/>
+                            <React.Suspense /*fallback={<div className="w-full h-full bg-yellow-300">Turtles</div>}*/>
+                                <ProjectCarousel ref={emblaRef} slides={slides} onCarouselSelect={onSelect} externalApi={embla} showToast={showToast} getHovercardContentForIndex={getHovercardContentForIndex}
+                                    prevRef={prevRef} nextRef={nextRef}
+                                />
                             </React.Suspense>
                         </React.Suspense>
                     </DialogContent>

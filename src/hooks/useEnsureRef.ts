@@ -67,15 +67,17 @@ import * as React from "react";
 //     return refObj.current!;
 // }
 
-type UseEnsureRef = {
+export type UseEnsureRef = {
     <T extends undefined>(ref?: React.RefObject<T>, defaultInitialValue?: T): React.RefObject<T>,
     <T>(ref: React.RefObject<T> | undefined, defaultInitialValue: T): React.RefObject<T>
 };
 
-const useEnsureRef: UseEnsureRef = <T,>(
+export const useEnsureRef: UseEnsureRef = <T,>(
     ref: React.RefObject<T> | undefined, 
     defaultInitialValue?: T
 ): React.RefObject<T> => {
     const fallbackRef = React.useRef<T>(defaultInitialValue as T);
     return ref ?? fallbackRef;
 };
+
+export default useEnsureRef;

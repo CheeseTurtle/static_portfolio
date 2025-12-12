@@ -41,3 +41,21 @@
 /* .embla__slide:last-child {
 	margin-right: 0;
 } */
+
+
+
+
+.project-carousel-item-card.enable-text-selection .project-carousel-item-text {
+	/* &:not(:has(>article,p)), &>article:not(:has(p)), &>article p { */
+	&:not(:has(>article,p)), &>article {
+		user-select: text;
+		background-color: var(--color-gray-200);
+	}
+}
+
+.dark .project-carousel-item-card.enable-text-selection .project-carousel-item-text {
+	/* &:not(:has(>article,p)), &>article:not(:has(p)), &>article p { */
+	&:not(:has(>article,p)), &>article {
+		background-color: var(--color-gray-800);
+	}
+}

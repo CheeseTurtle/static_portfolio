@@ -28,6 +28,7 @@ export const BadgeRow = React.memo(({badgeType, badgeItems, ...props}: BadgeRowP
 
   // Measure which badges fit
   useLayoutEffect(() => {
+    console.log('BadgeRow layout effect begin')
     const container = containerRef.current;
     if (!container) return;
 
@@ -58,7 +59,7 @@ export const BadgeRow = React.memo(({badgeType, badgeItems, ...props}: BadgeRowP
     const ro = new ResizeObserver(handleResize);
     ro.observe(container);
     window.addEventListener("resize", handleResize);
-
+    console.log('BadgeRow layout effect end')
     return () => {
       ro.disconnect();
       window.removeEventListener("resize", handleResize);

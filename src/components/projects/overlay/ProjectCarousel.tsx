@@ -11,6 +11,11 @@ import type { CarouselContentItemWithTitle } from "./ProjectCarouselDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ProjectInfoForProvider } from "../details/ProjectProviderBase";
 import ProjectProvider from "../details/ProjectProvider";
+import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
+import ProjectCarouselContextMenuContent, { type ProjectCarouselContextMenuContentHandle } from "./contextMenu";
+import { cn } from "@/lib/utils";
+import SelectionToolbar from "./SelectionToolbar";
+import useSelection from "./useSelection";
 
 type ProjectCarouselProps = Omit<React.ComponentProps<typeof Carousel>, 'externalCarouselRef'> & {
     ref?: EmblaViewportRefType,
@@ -28,6 +33,8 @@ type ProjectCarouselProps = Omit<React.ComponentProps<typeof Carousel>, 'externa
 
 type ProjectCarouselItemHandle = {
     setIsCurrent: (isCurrent: boolean) => void,
+    // closeMenu: () => void,
+    getTextElements: () => HTMLElement[],
 }
 
 type ProjectCarouselItemProps = React.ComponentProps<typeof CarouselItem> & {
@@ -38,8 +45,12 @@ type ProjectCarouselItemProps = React.ComponentProps<typeof CarouselItem> & {
     showToast: ShowToastFn,
     handleRef?: React.RefObject<ProjectCarouselItemHandle>,
     startTransition: ReturnType<typeof React.useTransition>[1],
-    project: ProjectInfoForProvider
+    project: ProjectInfoForProvider,
+    selectableText: number,
+    setSelectableText: React.Dispatch<React.SetStateAction<number>>,
 }
+
+
 
 const CarouselSlideContentSkeleton = React.memo(()=>{
     return (
@@ -56,7 +67,8 @@ const CarouselSlideContentSkeleton = React.memo(()=>{
 });
 
 
-const ProjectCarouselItem = React.memo(({ project, handleRef, startTransition, index: i, slide, onPointerDown: clickCallback, showToast, ...props }: ProjectCarouselItemProps) => {
+
+const ProjectCarouselItem = React.memo(({ selectableText, setSelectableText, project, handleRef, startTransition, index: i, slide, onPointerDown: clickCallback, showToast, ...props }: ProjectCarouselItemProps) => {
     const skeleton = React.useMemo(()=><CarouselSlideContentSkeleton/>, []);
     const [isCurrentItem, setIsCurrentItem] = React.useState<boolean>(false);
     const isCurrent = React.useDeferredValue<boolean>(isCurrentItem);
@@ -70,9 +82,9 @@ const ProjectCarouselItem = React.memo(({ project, handleRef, startTransition, i
             deactivationTimeout.current = undefined;
             if(activationTimeout.current === undefined) {
                 activationTimeout.current = setTimeout (()=>{
-                    React.startTransition(()=>
+                    // React.startTransition(()=>
                         setIsCurrentItem(isCurrent)
-                    );
+                    // );
                     activationTimeout.current = undefined;
                 }, 200);
             }
@@ -82,53 +94,98 @@ const ProjectCarouselItem = React.memo(({ project, handleRef, startTransition, i
         activationTimeout.current = undefined;
         if(deactivationTimeout.current === undefined) {
             deactivationTimeout.current = setTimeout(()=>{
-                React.startTransition(()=>
+                // React.startTransition(()=>
                     setIsCurrent(false)
-                );
+                // );
                 deactivationTimeout.current = undefined;
             }, 2500);
         }
     }, []);
 
+    
+    const menuRef = React.useRef<ProjectCarouselContextMenuContentHandle>(null);
+    
+    // const closeMenu = menuRef.current?.close;
+    // const closeMenu = React.useCallback(()=>menuRef.current?.close(), []);
+    
+    // const clickCallback_: typeof clickCallback = React.useCallback((evt)=>{
+    //     // try {
+    //     //     closeMenu();
+    //     // } finally {
+    //     //     clickCallback(evt);
+    //     // }
+    //     // evt.preventDefault();
+    // }, [closeMenu, clickCallback]);
+
+    const divRef = React.useRef<HTMLDivElement>(null);
+    const getTextElements = React.useCallback((): HTMLElement[] =>{
+        const div = divRef.current;
+        if(!div) return [];
+        return Array.from(div.querySelectorAll('.project-carousel-item-text'));
+    }, []);
+    
     React.useImperativeHandle(handleRef, ()=>({
         // setIsCurrent: setIsCurrentItem
-        setIsCurrent
-    }), [setIsCurrent]);
+        getTextElements,
+        setIsCurrent, //closeMenu
+    }), [setIsCurrent, /*closeMenu,*/ getTextElements]);
 
-    return <CarouselItem key={i} id={`slide-${i}`} className="pointer-events-auto h-min" {...props}>
-        <Card className="relative w-full flex pointer-events-auto max-h-[calc(100vh-(--spacing(25)))] overflow-y-scroll">
-            <CardHeader className="">
-                <CardTitle>
-                    <div className="text-wrap mr-50">
-                        {slide.title}
-                    </div>
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="pointer-events-auto" onPointerDown={clickCallback}>
-                <DialogClose data-slot="dialog-close"
-                    className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"><XIcon></XIcon></DialogClose>
-                <ShareButton className="absolute right-12 top-3" showToast={showToast} openProjectId={slide.props["data-project-id"]} />    
+    // const closeMenu_ = React.useEffectEvent(closeMenu);
 
-                {/* accessible close: give button an explicit aria-label */}
-                {/* <DialogClose aria-label="Close carousel" data-slot="dialog-close" className="sr-only" /> */}
-                {/* above sr-only DialogClose is a compact additional accessible control -- main visual close still has icon */}
-                {/* <ShareButton className="absolute top-4 right-14 text-sm" showToast={showToast} openProjectId={slide.props["data-project-id"]} /> */}
-                <ProjectProvider project={project}>
-                    {isCurrent ? 
-                        <React.Suspense fallback={skeleton}>
-                            {slide}
-                        </React.Suspense>
-                        : skeleton
-                    }
-                </ProjectProvider>
-            </CardContent>
-        </Card>
-    </CarouselItem>;
+    // React.useEffect(()=>{
+    //     if(!isCurrentItem)
+    //         closeMenu();
+    // }, [isCurrentItem, closeMenu]);
+
+    // data-enable-text-selection={!!selectableText}
+
+    return <CarouselItem key={i} id={`slide-${i}`} className="project-carousel-item pointer-events-auto h-min" {...props}>
+        <ContextMenu>
+            <ContextMenuTrigger disabled={selectableText==1} asChild>
+                <Card ref={divRef} className={cn(
+                    "project-carousel-item-card relative w-full flex pointer-events-auto max-h-[calc(100vh-(--spacing(25)))] overflow-y-scroll select-none",
+                    selectableText ? 'enable-text-selection' : undefined
+                )}>
+                    {/* <div className="h-max w-full flex flex-col"> */}
+                        <CardHeader className="">
+                            <CardTitle className="">
+                                <div className="text-wrap mr-50">
+                                    <span className="project-carousel-item-text">{slide.title}</span>
+                                </div>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="project-carousel-item-card-content pointer-events-auto">
+                            <DialogClose data-slot="dialog-close"
+                                className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"><XIcon></XIcon></DialogClose>
+                            <ShareButton className="absolute right-12 top-3" disabled={!isCurrent} showToast={showToast} openProjectId={slide.props["data-project-id"]} />    
+
+                            {/* accessible close: give button an explicit aria-label */}
+                            {/* <DialogClose aria-label="Close carousel" data-slot="dialog-close" className="sr-only" /> */}
+                            {/* above sr-only DialogClose is a compact additional accessible control -- main visual close still has icon */}
+                            {/* <ShareButton className="absolute top-4 right-14 text-sm" showToast={showToast} openProjectId={slide.props["data-project-id"]} /> */}
+                            <ProjectProvider project={project}>
+                                {isCurrent ? 
+                                    <React.Suspense fallback={skeleton}>
+                                        <div className="project-carousel-item-text w-full h-full overflow-y-visible overflow-x-hidden">
+                                            {slide}
+                                        </div>
+                                    </React.Suspense>
+                                    : skeleton
+                                }
+                            </ProjectProvider>
+                        </CardContent>
+                        {/* <SelectionToolbar open={true} onOpenChange={undefined} buttonGroupProps={undefined}/> */}
+                    {/* </div> */}
+                </Card>
+            </ContextMenuTrigger>
+            <ProjectCarouselContextMenuContent isProjectActive={isCurrent} handleRef={menuRef} selectableText={selectableText} setSelectableText={setSelectableText} />
+        </ContextMenu>
+    </CarouselItem>
 });
 
 
 const clickCallback: PointerEventHandler = (evt) => evt.stopPropagation();
-const ProjectCarousel = React.memo(({
+const ProjectCarousel = (({
     ref: emblaRef,
     externalApi: embla,
     opts,
@@ -141,14 +198,34 @@ const ProjectCarousel = React.memo(({
 }: ProjectCarouselProps) => {
     const slideHandles = React.useRef<Record<string, React.RefObject<ProjectCarouselItemHandle>>>({});
     slideHandles.current = Object.fromEntries(slides.map((slide) => [slide.props["data-project-id"], slideHandles.current[slide.props['data-project-id']] ?? React.createRef()]));
-    
+
     const [_isPending, startTransition] = React.useTransition();
 
+    const [selectableText, setSelectableText] = React.useState<number>(0);
+    
     const slideElems = React.useMemo(()=>{
         return slides.map((slide, i) => (
-            <ProjectCarouselItem handleRef={slideHandles.current[slide.props["data-project-id"]]} startTransition={startTransition} index={i} slide={slide} showToast={showToast} onPointerDown={clickCallback} project={slide.project}></ProjectCarouselItem>
+            <ProjectCarouselItem handleRef={slideHandles.current[slide.props["data-project-id"]]} startTransition={startTransition} index={i} slide={slide} showToast={showToast} onPointerDown={clickCallback} project={slide.project} selectableText={selectableText} setSelectableText={setSelectableText}></ProjectCarouselItem>
         ))
-    }, [slides, showToast]);
+    }, [slides, showToast, selectableText]);
+    
+    const {targetElements, setSelection, anySelection, fullSelection} = useSelection();
+
+    const setTargetElements = React.useCallback((slide: ProjectCarouselItemHandle) => {
+        const newElements = slide.getTextElements();
+        targetElements.current = newElements.map((el,i)=>{
+            const ref = targetElements.current[i] ?? React.createRef();
+            ref.current = el;
+            return ref;
+        });
+    }, [targetElements]);
+
+    const selectAll = React.useCallback(()=>setSelection(true), [setSelection]);
+    const selectNone = React.useCallback(()=>setSelection(false), [setSelection]);
+
+    const toolbarOpen = React.useMemo(()=>selectableText===1, [selectableText]);
+    // const closeToolbar = React.useCallback(()=>setSelectableText(0), )
+    const onOpenChange = React.useCallback((open: boolean) => setSelectableText(open ? 1 : 0), []);
 
     const onSelect0: typeof onSelect = React.useCallback((api, _evtType) => {
         if(!api) return;
@@ -157,8 +234,6 @@ const ProjectCarousel = React.memo(({
 
         const currId = slides[index]?.props['data-project-id'];
         const currHandle = currId ? slideHandles.current[currId] : undefined;
-
-        // console.log('api/currHandle:', api, currHandle);
 
         // if(!currHandle) return;
         const prevId = slides[prevIndex]?.props['data-project-id'];
@@ -169,9 +244,10 @@ const ProjectCarousel = React.memo(({
                 prevHandle?.current?.setIsCurrent(false);
             } finally {
                 currHandle?.current?.setIsCurrent(true);
+                if(currHandle?.current) setTargetElements(currHandle.current);
             }
         });
-    }, [slides]);
+    }, [slides, setTargetElements]);
 
     const onSelect_: typeof onSelect = React.useCallback((api, evtType) => {
         try {
@@ -182,36 +258,65 @@ const ProjectCarousel = React.memo(({
         }
     }, [onSelect, onSelect0]);
 
-    return <Carousel
-        ref={emblaRef}
-        externalCarouselRef={emblaRef}
-        externalApi={embla}
-        opts={opts}
-        className="overflow-visible z-60 w-full max-w-[calc(min(100vw,var(--container-2xl)))] pointer-events-none
-        "
-        onCarouselSelect={onSelect_}
-        >
-        <CarouselContent
-            id="embla-container"
-            className="overflow-visible pointer-events-none
-                items-center 
-                max-2xl:bg-green-300 max-sm:bg-yellow-300
-                max-h-[calc(100%-(--spacing(20)))] 
-                "
-                // px-5
-                // max-w-[calc(100%-(--spacing(20)))] w-full
-            style={{
-                willChange: 'transform',
-                transform: 'translateZ(0)'
-            }}
-        >
-            {...slideElems}
-        </CarouselContent>
-        <CarouselPrevious ref={prevRef} size="lg" className='pointer-events-auto not-disabled:cursor-pointer disabled:cursor-not-allowed max-md:hidden' />
-        <CarouselNext ref={nextRef} className='pointer-events-auto  max-md:hidden not-disabled:cursor-pointer disabled:cursor-not-allowed' />
+    React.useEffect(()=>{
+        if(!embla) return;
+        embla.reInit({watchDrag: !toolbarOpen});
+    }, [toolbarOpen, embla]);
 
-        <CarouselNav className='z-10000 pointer-events-auto not-disabled:cursor-pointer' getHovercardContentForIndex={getHovercardContentForIndex}/>
-    </Carousel>;
+
+    return <>
+        <ProjectCarouselInner ref={emblaRef} externalApi={embla} opts={opts} prevRef={prevRef} nextRef={nextRef} getHovercardContentForIndex={getHovercardContentForIndex} onCarouselSelect={onSelect_} slideElems={slideElems}/>
+        {/* <div className="flex w-full z-10001"> */}
+        <SelectionToolbar open={toolbarOpen} onOpenChange={onOpenChange} setTextSelectionMode={setSelectableText} anySelection={anySelection} fullSelection={fullSelection} buttonGroupProps={undefined} selectAll={selectAll} selectNone={selectNone}/>
+        {/* </div> */}
+    </>
+});
+
+const ProjectCarouselInner = React.memo(({
+    ref: emblaRef,
+    externalApi: embla,
+    opts,
+    onCarouselSelect,
+    prevRef,
+    nextRef,
+    getHovercardContentForIndex,
+    slideElems,
+}: Omit<ProjectCarouselProps, 'slides' | 'showToast'> & {
+    slideElems: React.JSX.Element[]
+}) => {
+    return <>
+        <Carousel
+            ref={emblaRef}
+            externalCarouselRef={emblaRef}
+            externalApi={embla}
+            opts={opts}
+            className="overflow-visible z-60 w-full max-w-[calc(min(100vw,var(--container-2xl)))] pointer-events-none"
+            onCarouselSelect={onCarouselSelect}
+            >
+            <CarouselContent
+                id="embla-container"
+                className="overflow-visible pointer-events-none
+                    items-center 
+                    max-h-[calc(100%-(--spacing(20)))]
+                    [will-change]-transform transform-[translateZ(0)]
+                    "
+                    // max-2xl:bg-green-300 max-sm:bg-yellow-300
+                    // px-5
+                    // max-w-[calc(100%-(--spacing(20)))] w-full
+                style={{
+                    willChange: 'transform',
+                    transform: 'translateZ(0)'
+                }}
+            >
+                {...slideElems}
+            </CarouselContent>
+            <CarouselPrevious ref={prevRef} size="lg" className='pointer-events-auto not-disabled:cursor-pointer disabled:cursor-not-allowed max-md:hidden' />
+            <CarouselNext ref={nextRef} className='pointer-events-auto  max-md:hidden not-disabled:cursor-pointer disabled:cursor-not-allowed' />
+
+            <CarouselNav className='z-10000 pointer-events-auto not-disabled:cursor-pointer' getHovercardContentForIndex={getHovercardContentForIndex}/>
+
+        </Carousel>
+    </>
 });
 
 export default ProjectCarousel;

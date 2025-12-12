@@ -44,6 +44,7 @@ type ProjectItemProps = {
     // setCarouselOpen: (open: boolean) => void;
     extraRef?: React.RefObject<HTMLDivElement | null>,
     scrollContainer: React.RefObject<HTMLDivElement | null>,
+    setSizeChanging: (index: number, changing: boolean) => void,
 };
 
 export type ProjectItemElement = React.ReactElement<ProjectItemProps & RefAttributes<ProjectItemHandle>>;
@@ -64,6 +65,7 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
     clickItem,
     extraRef: extraRef_,
     scrollContainer,
+    setSizeChanging,
     // ref
 // }: ProjectItemProps & {ref?: React.Ref<ProjectItemHandle>}) => {
 }: ProjectItemProps, ref) => {
@@ -151,44 +153,10 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
         },
         onClick }), [onClick, scrollContainer, expanded, extraRef]);
 
-    /*
-    // const lightboxIsOpen = useEffectEvent(()=>lightboxOpen);
 
-    // // Handle expand/collapse animation
-    // useEffect(() => {
-    //     const el = extraRef.current;
-    //     if (!el) return;
 
-    //     console.log(`PROJECT ITEM '${id}' EXPANDED:`, expanded, lightboxIsOpen());
-
-    //     if (expanded) {
-    //         // Expand: animate from 0 to scrollHeight
-    //         gsap.killTweensOf(el);
-    //         gsap.fromTo(
-    //             el,
-    //             { height: el.clientHeight, opacity: el.style.opacity },
-    //             {
-    //                 height: el.scrollHeight,
-    //                 opacity: 1,
-    //                 duration: 0.3,
-    //                 ease: "power1.out",
-    //                 onComplete: () => { 
-    //                     gsap.set(el, { height: "auto" });
-    //                 },
-    //             }
-    //         );
-    //     } else if (el.clientHeight !== 0) {
-    //         // Collapse: animate from current height to 0
-    //         gsap.killTweensOf(el);
-    //         const currentHeight = el.clientHeight;
-    //         gsap.fromTo(
-    //             el,
-    //             { height: currentHeight, opacity: el.style.opacity },
-    //             { height: 0, opacity: 0, duration: 0.3, ease: "power1.in" }
-    //         );
-    //     }
-    // }, [id, expanded, extraRef]);
-    */
+    const deferredExpanded = React.useDeferredValue(expanded);
+    const expanded_ = React.useMemo(()=>carouselOpen ? deferredExpanded : expanded, [carouselOpen, deferredExpanded, expanded]);
 
     const shouldExpand = React.useRef<boolean>(false);
 
@@ -199,7 +167,8 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
         const isMouse = pointerType === 'mouse';
         if(!isMouse) return;
         shouldExpand.current = true;
-        startTransition(()=>{if(shouldExpand.current) clickItem(id, projectIndex, 'active')});
+        // startTransition(()=>{if(shouldExpand.current) clickItem(id, projectIndex, 'active')});
+        clickItem(id, projectIndex, 'active')
     }, [clickItem, carouselOpen, lightboxOpen, projectIndex, id]);
 
     const onUnhover: PointerEventHandler<HTMLDivElement> =  useCallback((evt) => {
@@ -209,7 +178,8 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
         const isMouse = pointerType === 'mouse';
         if(!isMouse) return;
         shouldExpand.current = false;
-        startTransition(()=>{if(!shouldExpand.current) clearActiveItem()});
+        // startTransition(()=>{if(!shouldExpand.current) clearActiveItem()});
+        clearActiveItem()
     }, [clearActiveItem, carouselOpen, lightboxOpen]);
 
 
@@ -223,6 +193,8 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
         lightboxDispatch({type: 'SET_CONTENT', sourceKey: id, ...lightboxData});
         lightboxDispatch({type: 'OPEN', slide: index + 1});
     }, [lightboxDispatch, lightboxData, id, projectIndex]);
+
+    const setSizeChanging_ = React.useCallback((changing: boolean)=>setSizeChanging(projectIndex, changing), [setSizeChanging, projectIndex]);
 
     // const fallback = <div className="w-full min-h-20 h-max bg-blue-500">
     //     {
@@ -274,7 +246,7 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
                 {/* Expanded content */}
                 {summary && (
                     // <Suspense fallback={fallback}>
-                        <ExpandedPart id={id} expanded={expanded} ref={extraRef}>
+                        <ExpandedPart id={id} expanded={expanded_} ref={extraRef} setSizeChanging={setSizeChanging_}>
                             {summary}
                             {lightboxData && lightboxData.sources.length > 0 && (
                                 <ThumbnailRow items={lightboxData.sources} thumbnails={lightboxData.thumbnails} onImageClick={handleThumbClick} />

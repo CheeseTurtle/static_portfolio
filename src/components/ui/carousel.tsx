@@ -11,19 +11,14 @@ import { Button } from "@/components/ui/button"
 import type {EmblaCarouselType, EmblaEventType, /*EmblaEventType*/ } from "embla-carousel";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./hover-card"
 import CarouselSlider from "../projects/overlay/CarouselSlider"
-// import { useWindowSize } from "@/hooks/useWindowSize"
 import { useResizeObserver } from "@/hooks/useResizeObserver"
+import useThrottledDebounce from "@/hooks/useThrottledDebounce"
 
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
 type CarouselOptions = UseCarouselParameters[0]
 type CarouselPlugin = UseCarouselParameters[1]
 
-
-// const TWEEN_FACTOR_BASE = 0.84
-
-// const numberWithinRange = (number: number, min: number, max: number): number =>
-//   Math.min(Math.max(number, min), max);
 
 type CarouselProps = {
   opts?: CarouselOptions
@@ -61,9 +56,6 @@ function Carousel({ orientation = "horizontal",
   opts, setApi, plugins, className, children, onCarouselSelect: onSelect_,
   ...props
 }: React.ComponentProps<"div"> & CarouselProps) {
-  // const containerRef = React.useRef<HTMLDivElement | null>(null);
-  // console.log('useEmblaCarousel with opts:', opts, props, externalApi, externalCarouselRef);
-  // console.log()
 
   const [internalCarouselRef, internalApi] = useEmblaCarousel(
     externalApi ? undefined : { // Only initialize if no external api
@@ -76,28 +68,6 @@ function Carousel({ orientation = "horizontal",
   const carouselRef = externalCarouselRef ?? internalCarouselRef;
   const api = externalApi ?? internalApi;
   
-  // const [carouselRef, api] = (()=>{
-  //   if(externalApi !== undefined && externalCarouselRef !== undefined)
-  //     return [externalCarouselRef, externalApi];
-  //   if(externalApi !== undefined || externalCarouselRef !== undefined)
-  //     throw TypeError();
-
-  //   return useEmblaCarousel(
-  //     {
-  //       ...opts,
-  //       // container: '#embla-container',
-  //       // container: containerRef,
-  //       axis: (orientation === "horizontal") ? "x" : "y",
-  //     },
-  //     plugins
-  //   );
-  // })();
-
-  // React.useEffect(() => {
-  //   console.log('(CAROUSEL) API:', api, carouselRef);
-  // }, [api, carouselRef]);
-
-  // const tweenFactor = React.useRef(0);
   const [canScrollPrev, setCanScrollPrev] = React.useState(false)
   const [canScrollNext, setCanScrollNext] = React.useState(false)
 
@@ -107,10 +77,6 @@ function Carousel({ orientation = "horizontal",
     setCanScrollNext(api.canScrollNext());
     onSelect_?.(api, evtType);
   }, [setCanScrollNext, setCanScrollPrev, onSelect_]);
-  // const onSelect = React.useCallback((api: CarouselApi, evtType: EmblaEventType) => {
-  //   onSelectInInit(api, evtType);
-  // }, [onSelectInInit]);
-
 
   const scrollPrev = React.useCallback(() => {
     api?.scrollPrev()
@@ -133,59 +99,6 @@ function Carousel({ orientation = "horizontal",
     [scrollPrev, scrollNext]
   )
 
-
-  // const setTweenFactor = React.useCallback((emblaApi: EmblaCarouselType) => {
-  //   tweenFactor.current = TWEEN_FACTOR_BASE * emblaApi.scrollSnapList().length
-  // }, [])
-
-  // const tweenOpacity = React.useCallback(
-  //   (emblaApi: EmblaCarouselType, eventName?: EmblaEventType) => {
-  //     const engine = emblaApi.internalEngine()
-  //     const scrollProgress = emblaApi.scrollProgress()
-  //     const slidesInView = emblaApi.slidesInView()
-  //     const isScrollEvent = eventName === 'scroll'
-  //     // console.log(emblaApi.scrollSnapList(), engine.scrollSnapList, engine.scrollSnaps, engine.slideIndexes, emblaApi.slideNodes())
-
-  //     emblaApi.scrollSnapList().forEach((scrollSnap, snapIndex) => {
-  //       let diffToTarget = scrollSnap - scrollProgress
-  //       const slidesInSnap = engine.slideRegistry[snapIndex]
-
-  //       slidesInSnap.forEach((slideIndex) => {
-  //         if (isScrollEvent && !slidesInView.includes(slideIndex)) return
-
-  //         if (engine.options.loop) {
-  //           engine.slideLooper.loopPoints.forEach((loopItem) => {
-  //             const target = loopItem.target()
-
-  //             if (slideIndex === loopItem.index && target !== 0) {
-  //               const sign = Math.sign(target)
-
-  //               if (sign === -1) {
-  //                 diffToTarget = scrollSnap - (1 + scrollProgress)
-  //               }
-  //               if (sign === 1) {
-  //                 diffToTarget = scrollSnap + (1 - scrollProgress)
-  //               }
-  //             }
-  //           })
-  //         }
-
-  //         const tweenValue = 1 - Math.abs(diffToTarget * tweenFactor.current)
-  //         const opacity = numberWithinRange(tweenValue, 0, 1)
-  //         // console.log(slideIndex, opacity)
-  //         const slide = emblaApi.slideNodes()[slideIndex];
-  //         slide.style.opacity = opacity.toString()
-  //         if(opacity === 0) {
-  //           slide.style.visibility = 'hidden';
-  //         } else {
-  //           slide.style.visibility = 'visible';
-  //         }
-  //       })
-  //     })
-  //   },
-  //   []
-  // )
-
   React.useEffect(() => {
     if (!api || !setApi) return
     setApi(api)
@@ -203,36 +116,6 @@ function Carousel({ orientation = "horizontal",
     }
   }, [api, onSelect]);
 
-  // React.useEffect(() => {
-  //   if (!api) return
-  //   // onSelect(api);
-  //   api.on("select", onSelect)
-
-  //   return () => {
-  //     api?.off("select", onSelect)
-  //   }
-  // }, [api, onSelect])
-
-
-  // React.useEffect(() => {
-  //   if (!api) return;
-
-  //   setTweenFactor(api);
-  //   tweenOpacity(api);
-  //   api
-  //     .on('reInit', setTweenFactor)
-  //     .on('scroll', tweenOpacity)
-  //     .on('reInit', tweenOpacity)
-  //     .on('slideFocus', tweenOpacity);
-
-  //   return () => {
-  //     api
-  //       .off('reInit', setTweenFactor)
-  //     .off('scroll', tweenOpacity)
-  //     .off('reInit', tweenOpacity)
-  //     .off('slideFocus', tweenOpacity);
-  //   }
-  // }, [api, tweenOpacity, setTweenFactor]);
 
   const contextValue: CarouselContextProps = React.useMemo(() => ({
     carouselRef,
@@ -248,14 +131,11 @@ function Carousel({ orientation = "horizontal",
     canScrollNext,
   }), [carouselRef, api, opts, orientation, scrollPrev, scrollNext, canScrollNext, canScrollPrev, setApi, plugins]);
 
-  // console.log('context value:', contextValue);
-
   return (
     <CarouselContext.Provider
       value={contextValue}
     >
       <div
-        // ref={carouselRef}
         onKeyDownCapture={handleKeyDown}
         className={cn("relative", className)}
         role="region"
@@ -274,28 +154,16 @@ function CarouselContent({ children, className, ...props }: React.ComponentProps
   const obj = useCarousel()
   const { carouselRef, orientation, api: _api }  = obj;
 
-  // React.useEffect(()=>{
-  //   console.log('(CONTENT) API:', api, obj);
-  // }, [api, obj]);
-
   return (
     <div
-    // className="overflow-hidden"
-    // id="embla-container"
     data-slot="carousel-content"
     ref={carouselRef}
     {...props}
-    //  <div
-    //   ref={carouselRef}
-    //   id="embla-container"
     className={cn(
       "flex",
-      // orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col",
       orientation === 'horizontal' ? '' : 'flex-col',
       className
     )}
-    // {/* {...props} */}
-    // {/* /> */}
     >
       {children}
     </div>
@@ -303,12 +171,6 @@ function CarouselContent({ children, className, ...props }: React.ComponentProps
 }
 
 function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
-  // const obj = useCarousel()
-  // const { orientation }  = obj;
-
-  // React.useEffect(()=>{
-  //   console.log('(ITEM) API:', api, obj);
-  // }, [api, obj]);
 
   return (
     <div
@@ -332,30 +194,42 @@ function CarouselPrevious({
   className,
   variant = "outline",
   size = "icon",
+  ref,
   ...props
 }: React.ComponentProps<typeof Button>) {
   const obj = useCarousel();
   const { orientation, scrollPrev, canScrollPrev } = obj;
 
   return (
-    <Button
-      data-slot="carousel-previous"
-      variant={variant}
-      size={size}
-      className={cn(
-        "absolute size-8 rounded-full",
-        orientation === "horizontal"
-          ? "top-1/2 -left-12 -translate-y-1/2"
-          : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
-        className
-      )}
-      disabled={!canScrollPrev}
-      onClick={scrollPrev}
-      {...props}
-    >
-      <ArrowLeft />
-      <span className="sr-only">Previous slide</span>
-    </Button>
+    <div className={cn(
+      "absolute size-8 rounded-full",
+      orientation === "horizontal"
+            ? "top-1/2 -left-12 -translate-y-1/2"
+            : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
+      className,
+      "bg-none border-none ring-none shadow-none outline-none"
+    )}>
+      <Button
+        data-slot="carousel-previous"
+        variant={variant}
+        size={size}
+        ref={ref}
+        className={cn(
+          "relative w-full h-full rounded-full size-8",
+          // "absolute size-8 rounded-full",
+          // orientation === "horizontal"
+          //   ? "top-1/2 -left-12 -translate-y-1/2"
+          //   : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
+          className
+        )}
+        disabled={!canScrollPrev}
+        onClick={scrollPrev}
+        {...props}
+      >
+        <ArrowLeft />
+        <span className="sr-only">Previous slide</span>
+      </Button>
+    </div>
   )
 }
 
@@ -363,76 +237,93 @@ function CarouselNext({
   className,
   variant = "outline",
   size = "icon",
+  ref,
   ...props
 }: React.ComponentProps<typeof Button>) {
   const { orientation, scrollNext, canScrollNext } = useCarousel();
 
   return (
-    <Button
-      data-slot="carousel-next"
-      variant={variant}
-      size={size}
-      className={cn(
-        "absolute size-8 rounded-full",
-        orientation === "horizontal"
-          ? "top-1/2 -right-12 -translate-y-1/2"
-          : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
-        className
-      )}
-      disabled={!canScrollNext}
-      onClick={scrollNext}
-      {...props}
-    >
-      <ArrowRight />
-      <span className="sr-only">Next slide</span>
-    </Button>
+    <div className={cn(
+      "absolute size-8 rounded-full",
+      orientation === "horizontal"
+        ? "top-1/2 -right-12 -translate-y-1/2"
+        : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
+      className,
+      "bg-none border-none ring-none shadow-none outline-none"
+    )}>
+      <Button
+        data-slot="carousel-next"
+        variant={variant}
+        size={size}
+        ref={ref}
+        className={cn(
+          "relative w-full h-full rounded-full size-8",
+          // "absolute size-8 rounded-full",
+          // orientation === "horizontal"
+          //   ? "top-1/2 -right-12 -translate-y-1/2"
+          //   : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
+          className
+        )}
+        disabled={!canScrollNext}
+        onClick={scrollNext}
+        {...props}
+      >
+        <ArrowRight />
+        <span className="sr-only">Next slide</span>
+      </Button>
+    </div>
   )
 }
 
 
 
 
-type CarouselDotButtonPropType = {index: number, selected: boolean, getHovercardContentForIndex: (index: number)=>React.ReactNode} & React.ComponentPropsWithRef<'button'>;
+type CarouselDotButtonPropType = {hoverIndex: number | undefined, setHoverIndex: (index: number | undefined) => void, clearHoverIndex: ()=>void, index: number, selected: boolean, getHovercardContentForIndex: (index: number)=>React.ReactNode} & React.ComponentPropsWithRef<'button'>;
 
-// export const DotButton: React.FC<PropType> = (props) => {
-function CarouselDotButton (props: CarouselDotButtonPropType) {
-  const { getHovercardContentForIndex, children, selected, index, className, ...restProps } = props
+function CarouselDotButton ({getHovercardContentForIndex, hoverIndex, setHoverIndex, clearHoverIndex, children, className, index, selected, ...props}: CarouselDotButtonPropType) {
+
+  const isHovered = React.useMemo(()=>hoverIndex===index, [hoverIndex, index]);
 
   const button =
-    <button type="button" {...restProps} data-selected={selected} className={cn(
+    <button type="button" {...props} data-selected={selected} className={cn(
         "appearance-none bg-transparent touch-manipulation inline-flex cursor-pointer border-0 p-0 m-0",
         "w-[2.6rem] h-[2.6rem] flex items-center justify-center rounded-full",
         "tap-highlight-transparent", // you’ll need to define this yourself (see note below)
         "after:content-[''] after:flex after:items-center after:justify-center after:rounded-full",
         "after:w-[1.4rem] after:h-[1.4rem]",
+        "dark:after:shadow-[inset_0_0_0_0.2rem_rgb(234_234_234)]",
+        "dark:data-[selected=true]:after:shadow-[inset_0_0_0_0.2rem_var(--color-mint-50)]",
         "after:shadow-[inset_0_0_0_0.2rem_rgb(234_234_234)]",
         "data-[selected=true]:after:shadow-[inset_0_0_0_0.2rem_var(--color-mint-50)]",
-        (selected ? 'bg-accent-foreground' : ''),
+        (selected ? 'bg-accent dark:bg-accent-foreground' : ''),
         className
     )}>
       {children}
     </button>;
 
-  // if(hovercardContents)
-    return <HoverCard>
-      <HoverCardTrigger asChild>{button}</HoverCardTrigger>
-      <HoverCardContent>{getHovercardContentForIndex(index)}</HoverCardContent>
-    </HoverCard>
-  // return button;
+    const hovercardContent = React.useMemo(()=>getHovercardContentForIndex(index), [index, getHovercardContentForIndex]);
+
+    const onHover = React.useCallback(()=>setHoverIndex(index), [setHoverIndex, index]);
+    const onUnhover = React.useCallback(clearHoverIndex, [clearHoverIndex]);
+    if(hovercardContent)
+      return <HoverCard open={isHovered} defaultOpen={false}>
+        <HoverCardTrigger asChild onPointerOver={onHover} onPointerOut={onUnhover}>{button}</HoverCardTrigger>
+        <HoverCardContent>{hovercardContent}</HoverCardContent>
+      </HoverCard>
+    return button;
 }
 
 
 function CarouselDots({getHovercardContentForIndex}: {getHovercardContentForIndex: (index: number)=>React.ReactNode}) {
 
-  // const obj = useCarousel();
-  const obj = useCarousel();
-  const {api} = obj;
-
-  // React.useEffect(()=>{
-  //   console.log('(DOTS) API:', api, obj);
-  // }, [api, obj]);
+  const {api} = useCarousel();
   
-  const { selectedIndex, slideIndices, onDotButtonClick } = useDotButton(api);
+  const { selectedIndex, slideIndices, onDotButtonClick, hoveredIndex, setHoveredIndex } = useDotButton(api);
+
+  const setHoveredIndexDeferred = useThrottledDebounce(setHoveredIndex, 150, 250);
+
+  const clearHoverIndex = React.useCallback(()=>setHoveredIndexDeferred(undefined), [setHoveredIndexDeferred]);
+
 
   return <div 
     data-role='carousel-dot-buttons' 
@@ -445,8 +336,10 @@ function CarouselDots({getHovercardContentForIndex}: {getHovercardContentForInde
         onClick={() => onDotButtonClick(index)}
         selected={index === selectedIndex}
         getHovercardContentForIndex={getHovercardContentForIndex}
-        // hovercardContents={hovercardContents?.[index]}
         index={index}
+        setHoverIndex={setHoveredIndexDeferred}
+        clearHoverIndex={clearHoverIndex}
+        hoverIndex={hoveredIndex}
         />
     )}
 
@@ -457,29 +350,20 @@ export function CarouselNav({getHovercardContentForIndex, className}: {getHoverc
   
   const {api} = useCarousel();
   
-  const { selectedIndex, slideIndices, onDotButtonClick } = useDotButton(api);
-
-  
-  // const {width} = useWindowSize();
+  const { selectedIndex, slideIndices, onDotButtonClick, hoveredIndex, setHoveredIndex } = useDotButton(api);
 
   const [useSlider, setUseSlider] = React.useState<boolean>(false);
   
   const numSlides = React.useMemo(()=>slideIndices.length, [slideIndices]);
 
   const navRef = React.useRef<HTMLDivElement>(null);
-  // const navDiv = navRef.current;
 
   const lastWidth = React.useRef<number | undefined>(undefined);
 
   const handleResize = React.useCallback((width: number, _el: Element)=>{
-    // const minWidthForDots = numSlides = * CSS
-    // console.log(width, numSlides * CSS.rem(2).to('px').value)
-    // setUseSlider((width < numSlides * document.;
-    // console.log(CSS);
     const computed = getComputedStyle(document.documentElement);
     const rem = parseFloat(computed.fontSize);
     const minWidthForDots = numSlides * 1.6 * rem;
-    console.log(width, minWidthForDots);
     setUseSlider(width < minWidthForDots);
     lastWidth.current = width;
   }, [numSlides]);
@@ -497,8 +381,6 @@ export function CarouselNav({getHovercardContentForIndex, className}: {getHoverc
   }), [handleResize]);
   useResizeObserver(options);
 
-
-
   const handleResize_ = React.useEffectEvent(handleResize);
   React.useLayoutEffect(()=>{
     if(lastWidth.current === undefined) return;
@@ -507,6 +389,13 @@ export function CarouselNav({getHovercardContentForIndex, className}: {getHoverc
     handleResize_(navRef.current.clientWidth || lastWidth.current, navRef.current);
   }, [numSlides]);
   
+  
+
+  const setHoveredIndexDeferred = useThrottledDebounce(setHoveredIndex, 150, 250);
+
+  const clearHoverIndex = React.useCallback(()=>setHoveredIndexDeferred(undefined), [setHoveredIndexDeferred]);
+
+  const onValueChange = React.useCallback(([value]: [number])=>onDotButtonClick(value), [onDotButtonClick]);
 
   return <div 
     ref={navRef}
@@ -527,16 +416,18 @@ export function CarouselNav({getHovercardContentForIndex, className}: {getHoverc
             onClick={() => onDotButtonClick(index)}
             selected={index === selectedIndex}
             index={index}
-            // hovercardContents={hovercardContents?.[index]}
             getHovercardContentForIndex={getHovercardContentForIndex}
+            setHoverIndex={setHoveredIndexDeferred}
+            hoverIndex={hoveredIndex}
+            clearHoverIndex={clearHoverIndex}
             />
         )}
       </div>
-
+      
       <div className={cn('flex',
         useSlider ? 'visible' : 'hidden'
       )} data-role='carousel-slider h-[2.6rem]'>
-        <CarouselSlider  className="pointer-events-auto py-[1.4rem]" defaultValue={[selectedIndex]} onValueChange={([value])=>onDotButtonClick(value)} getHovercardContentForIndex={getHovercardContentForIndex} numSlides={slideIndices.length} />
+        <CarouselSlider  className="pointer-events-auto py-[1.4rem]" defaultValue={[selectedIndex]} onValueChange={onValueChange} getHovercardContentForIndex={getHovercardContentForIndex} numSlides={slideIndices.length} />
       </div>
 
   </div> 
@@ -544,25 +435,27 @@ export function CarouselNav({getHovercardContentForIndex, className}: {getHoverc
 
 
 
-type UseDotButtonType = {
-  selectedIndex: number
-  // scrollSnaps: number[]
-  // scrollSnapList: number[]
-  onDotButtonClick: (index: number) => void
-  slideIndices: number[]
-  slideNodes: HTMLElement[],
-  setSelectedIndex: React.Dispatch<React.SetStateAction<number>>,
-  setSlideIndices: React.Dispatch<React.SetStateAction<number[]>>,
-  setSlideNodes: React.Dispatch<React.SetStateAction<HTMLElement[]>>,
-}
+// type UseDotButtonType = {
+//   selectedIndex: number
+//   // scrollSnaps: number[]
+//   // scrollSnapList: number[]
+//   onDotButtonClick: (index: number) => void
+//   slideIndices: number[]
+//   slideNodes: HTMLElement[],
+//   setSelectedIndex: React.Dispatch<React.SetStateAction<number>>,
+//   setSlideIndices: React.Dispatch<React.SetStateAction<number[]>>,
+//   setSlideNodes: React.Dispatch<React.SetStateAction<HTMLElement[]>>,
+// }
+
 
 export const useDotButton = (
   emblaApi: EmblaCarouselType | undefined,
   onButtonClick?: (emblaApi: EmblaCarouselType) => void,
-): UseDotButtonType => {
+) => {
   const [selectedIndex, setSelectedIndex] = React.useState<number>(0)
   const [slideIndices, setSlideIndices] = React.useState<number[]>([])
   const [slideNodes, setSlideNodes] = React.useState<HTMLElement[]>([])
+  const [hoveredIndex, setHoveredIndex] = React.useState<number|undefined>(undefined);
 
   // const {api: emblaApi} = useCarousel();
 
@@ -609,7 +502,9 @@ export const useDotButton = (
     setSlideIndices,
     setSlideNodes,
     slideNodes,
-    slideIndices
+    slideIndices,
+    hoveredIndex,
+    setHoveredIndex,
   }
 }
 

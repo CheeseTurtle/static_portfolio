@@ -6,6 +6,7 @@ import React from "react";
 // import {type ImageLoader, getImageLoader} from "@/components/story/util/loadImages";
 
 import imagesLoaded from 'imagesloaded';
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ThumbnailGalleryProps {
   items: (string | React.ReactNode)[]; // array of image URLs
@@ -24,6 +25,13 @@ export function ThumbnailRow({ thumbnails, items, onImageClick }: ThumbnailGalle
     : (<div key={i} className="h-32 w-auto cursor-pointer rounded-lg object-cover hover:scale-105 transition-transform" onClick={onClick}>{thumb}</div>)}
   ), [items, onImageClick, thumbnails]);
 
+  const numPlaceholderColumns = React.useMemo(()=>Math.min(items.length, 2), [items]);
+
+  const itemPlaceholders = React.useMemo(()=><div className="grid grid-flow-col auto-cols-fr gap-4 w-[calc(100cqw-4*var(--spacing))] h-32 py-2">
+    {numPlaceholderColumns ? (new Array(numPlaceholderColumns)).fill(undefined).map(
+      (_, i)=><Skeleton key={i} className="w-auto h-auto rounded-4xl"></Skeleton>
+    ) : null}
+  </div>, [numPlaceholderColumns]);
 
   const divRef = React.useRef<HTMLDivElement>(null);
 
@@ -32,9 +40,10 @@ export function ThumbnailRow({ thumbnails, items, onImageClick }: ThumbnailGalle
   React.useEffect(()=>{
     if(!divRef.current || !items?.length) return;
     
-    const onCompletion: ImagesLoaded.ImagesLoadedCallback = () => {
+    const onCompletion: ImagesLoaded.ImagesLoadedCallback = (instance) => {
       // if(!alreadyMounted.current) console.log('Completed loading', alreadyMounted.current);
-      alreadyMounted.current = true;
+      if(instance && instance.images.length)
+        alreadyMounted.current = true;
     }
     
     // const onProgress: ImagesLoaded.ImagesLoadedListener = (_instance, image) => {
@@ -51,10 +60,10 @@ export function ThumbnailRow({ thumbnails, items, onImageClick }: ThumbnailGalle
     }
   }, [items]);
 
-  React.useInsertionEffect(()=>{
-    if(!items?.length || alreadyMounted.current) return;
-    // console.log('Beginning loading');  
-  }, [items]);
+  // React.useInsertionEffect(()=>{
+  //   if(!items?.length || alreadyMounted.current) return;
+  //   // console.log('Beginning loading');  
+  // }, [items]);
 
   React.useInsertionEffect(()=>{
     // const handle = requestAnimationFrame(()=>{
@@ -71,10 +80,12 @@ export function ThumbnailRow({ thumbnails, items, onImageClick }: ThumbnailGalle
 
   // TODO: scrollHideDelay, type
   return (
-      <ScrollArea className="overflow-y-hidden overflow-x-auto w-full" type="auto" style={{shapeRendering: "optimizeSpeed", textRendering: "optimizeSpeed", colorRendering: "optimizeSpeed", imageRendering: "auto", contentVisibility: "auto"}}>
+      <ScrollArea className="overflow-y-hidden overflow-x-auto w-full @container/thumb-scroll" type="auto" style={{shapeRendering: "optimizeSpeed", textRendering: "optimizeSpeed", colorRendering: "optimizeSpeed", imageRendering: "auto", contentVisibility: "auto"}}>
           <div ref={divRef} className="inline-flex space-x-4 py-2 px-2 box-border w-fit">
-            {itemElems}
-            <div className="flex-none w-2 mx-[-4]" />
+            {alreadyMounted ? <>
+              {itemElems} 
+              <div className="flex-none w-2 mx-[-4]" />
+            </> : itemPlaceholders}
           </div>
         <ScrollBar orientation="horizontal"></ScrollBar>
       </ScrollArea>

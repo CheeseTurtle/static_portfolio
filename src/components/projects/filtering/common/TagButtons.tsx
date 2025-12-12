@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import React, { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import TagButton, { type TagButtonProps } from "./TagButton";
 import type { TagType } from "../FilterForm";
 import type { ProjectInfo } from "../../types";
@@ -137,22 +137,29 @@ export default function TagButtons({toggleTag: propsToggleTag, availableTags: av
 
     const { isFlipping, isFlippingRef, startFlip, endFlip } = useFlipAnimation({onFlipEnd: onEndFlip});
 
+    // const [_isPending, startTransition] = React.useTransition();
+
     const timeoutHandle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     useEffect(()=>{
         if(isFlippingRef.current) return;
         function callback() {
-            if(isFlippingRef.current) {
-                console.log('Flipping')
-                flipCleanupPending.current = true;
-                return;
-            }
 
-            clearTimeout(timeoutHandle.current);
-            timeoutHandle.current = setTimeout(()=>{
-                const flipTargets = flipTargetIDs.map((id) => document.getElementById(id));
-                prevState.current = Flip.getState(flipTargets, {simple: true, props: flipProps}); //, props: 'scaleX,left,x,background-color,background,width,opacity'});
-                flipCleanupPending.current = false;
-            }, 500);
+            // startTransition(()=>{
+                if(isFlippingRef.current) {
+                    console.log('Flipping')
+                    flipCleanupPending.current = true;
+                    return;
+                }
+
+                clearTimeout(timeoutHandle.current);
+                timeoutHandle.current = setTimeout(()=>{
+                    // React.startTransition(()=>{
+                        const flipTargets = flipTargetIDs.map((id) => document.getElementById(id));
+                        prevState.current = Flip.getState(flipTargets, {simple: true, props: flipProps}); //, props: 'scaleX,left,x,background-color,background,width,opacity'});
+                        flipCleanupPending.current = false;
+                    // })
+                }, 500);
+            // });
         }
 
         const root = document.getElementById('project-browser-wrapper');
@@ -177,37 +184,39 @@ export default function TagButtons({toggleTag: propsToggleTag, availableTags: av
     useEffect(()=>{
         const prev = prevRenderedChildren.current;
         const flipTargets = flipTargetIDs.map((id) => document.getElementById(id));
-        if(prev) {
-            // console.log('TARGETS:', flipTargets);
-            if(!prevState.current) {
-                prevState.current = Flip.getState(flipTargets, {simple: true, props: flipProps}); //, props: 'scaleX,left,x,background-color,background,width,opacity'});
-            } else if(
-                (prev.length !== renderedChildren.length)
-                ||
-                (prev.length && prev.some((x,i)=>renderedChildren[i].key !== x.key))
-            ) {
-                // Transition with GSAP Flip
-                // console.log('Rendered children changed order:', renderedChildren, prev);
+        // startTransition(()=>{
+            if(prev) {
+                // console.log('TARGETS:', flipTargets);
+                if(!prevState.current) {
+                    prevState.current = Flip.getState(flipTargets, {simple: true, props: flipProps}); //, props: 'scaleX,left,x,background-color,background,width,opacity'});
+                } else if(
+                    (prev.length !== renderedChildren.length)
+                    ||
+                    (prev.length && prev.some((x,i)=>renderedChildren[i].key !== x.key))
+                ) {
+                    // Transition with GSAP Flip
+                    // console.log('Rendered children changed order:', renderedChildren, prev);
 
-                startFlip();
+                    startFlip();
 
-                const newState = Flip.getState(flipTargets, {simple: true, props: flipProps}); // , props: 'scaleX,left,x,background-color,background,width,opacity'});
-                const prevState_ = prevState.current;
+                    const newState = Flip.getState(flipTargets, {simple: true, props: flipProps}); // , props: 'scaleX,left,x,background-color,background,width,opacity'});
+                    const prevState_ = prevState.current;
 
-                // gsap.killTweensOf(flipTargets);
-                Flip.from(prevState_, {duration: 0.2, ease: 'power2.inOut', 
-                    simple: true,
-                    nested: true,
-                    props: flipProps,
-                    absolute: false,
-                    onComplete: () => endFlip(),
-                    onInterrupt: () => endFlip()
-                });
-                // console.log('FLIP:', prevState.current, newState);
-                prevState.current = newState;
+                    // gsap.killTweensOf(flipTargets);
+                    Flip.from(prevState_, {duration: 0.2, ease: 'power2.inOut', 
+                        simple: true,
+                        nested: true,
+                        props: flipProps,
+                        absolute: false,
+                        onComplete: () => endFlip(),
+                        onInterrupt: () => endFlip()
+                    });
+                    // console.log('FLIP:', prevState.current, newState);
+                    prevState.current = newState;
+                }
             }
-        }
-        prevRenderedChildren.current = renderedChildren;
+            prevRenderedChildren.current = renderedChildren;
+        // });
         // return ()=>{
         //     // Flip.killFlipsOf(flipTargets, true);
         //     // gsap.killTweensOf(flipTargets);
@@ -226,13 +235,14 @@ export default function TagButtons({toggleTag: propsToggleTag, availableTags: av
         }
     });
     useLayoutEffect(()=>{
+        console.log('TagButtons layout effect begin')
         // console.log(mounted, initOrderChecked.current);
         if(!mounted || initOrderChecked.current) return;
         checkLayout();
         // if(selectedTags?.size)
         //     setVisualOrder(([selected, unselected]) => [computeTagOrders([...selectedTags])[1],unselected.filter(x=>!selectedTags.has(x))] as [string[], string[]]);
         initOrderChecked.current = true;
-
+        console.log('TagButtons layout effect end')
     }, [mounted, setVisualOrder, computeTagOrders]);
 
     useEffect(() => {

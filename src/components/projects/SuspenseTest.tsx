@@ -411,9 +411,7 @@ function Transitioned() {
     }, [tvalue]);
 
     const onClick1: React.MouseEventHandler = React.useCallback((_evt) => {
-        // startTransition(() => {
         setValue(v => (v >= 20 ? 1 : v + 5 - (v % 2)));
-        // })
     }, []);
 
     const onClick2: React.MouseEventHandler = React.useCallback((_evt) => {
