@@ -488,7 +488,7 @@ export default function CaptionedLightbox({
         const container = containerRef.current;
         console.log('CONTAINER:', container)
         if(!container) return;
-        const listener = (evt: MouseEvent) => {
+        const listener = (_evt: MouseEvent) => {
             console.log('LISTENER TRIGGERED')
             captionsHandleRef.current?.hide();
         }

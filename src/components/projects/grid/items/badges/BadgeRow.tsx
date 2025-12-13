@@ -26,13 +26,18 @@ export const BadgeRow = React.memo(({badgeType, badgeItems, ...props}: BadgeRowP
     hiddenCountRef.current = hiddenCount;
   }, [hiddenCount]);
 
+  const badgeItemsRef = React.useRef<typeof badgeItems>(badgeItems);
+
   // Measure which badges fit
   useLayoutEffect(() => {
-    console.log('BadgeRow layout effect begin')
+    // if(badgeItems === badgeItemsRef.current) return;
+    // console.log('BadgeRow layout effect begin', badgeItems, badgeItemsRef.current, badgeItems === badgeItemsRef.current);
+    badgeItemsRef.current = badgeItems;
     const container = containerRef.current;
     if (!container) return;
 
     const handleResize = () => {
+      // console.log('Begin badge row handle resize')
       const containerWidth = container.offsetWidth;
       if(lastContainerWidth.current === containerWidth)
         return;
@@ -53,18 +58,20 @@ export const BadgeRow = React.memo(({badgeType, badgeItems, ...props}: BadgeRowP
 
       if(count <= maxCount) setVisibleCount(count);
       lastContainerWidth.current = containerWidth;
+
+      // console.log('End badge row handle resize')
     };
 
     handleResize();
     const ro = new ResizeObserver(handleResize);
     ro.observe(container);
     window.addEventListener("resize", handleResize);
-    console.log('BadgeRow layout effect end')
+    // console.log('BadgeRow layout effect end')
     return () => {
       ro.disconnect();
       window.removeEventListener("resize", handleResize);
     };
-  }, [badgeArray]);
+  }, [badgeItems]);
 
   return (
     <div ref={containerRef} className="flex gap-1 overflow-hidden" data-slot='badge-row' data-badge-type={badgeType} {...props}>

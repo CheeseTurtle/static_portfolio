@@ -28,7 +28,7 @@ export function useAnimationFrameRequest(initialHandle?: number) {
         return true
     }, [])
 
-    return [requestAnimFrame, cancelAnimFrame]
+    return [requestAnimFrame, cancelAnimFrame] as [typeof requestAnimFrame, typeof cancelAnimFrame]
 }
 
 
@@ -65,5 +65,5 @@ export function useIdleCallbackRequest(initialHandle?: number) {
         return true
     }, [])
 
-    return [requestCallback, cancelCallback]
+    return [requestCallback, cancelCallback] as [typeof requestCallback, typeof cancelCallback]
 }

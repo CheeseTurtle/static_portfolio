@@ -201,11 +201,12 @@ function CarouselPrevious({
   return (
     <div className={cn(
       "absolute size-8 rounded-full",
+      "cursor-pointer has-disabled:cursor-not-allowed",
       orientation === "horizontal"
             ? "top-1/2 -left-12 -translate-y-1/2"
             : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
       className,
-      "bg-none border-none ring-none shadow-none outline-none"
+      "bg-none border-none ring-none shadow-none outline-none",
     )}>
       <Button
         data-slot="carousel-previous"
@@ -214,6 +215,8 @@ function CarouselPrevious({
         ref={ref}
         className={cn(
           "relative w-full h-full rounded-full size-8",
+          "not-disabled:cursor-pointer",
+          "disabled:cursor-not-allowed",
           // "absolute size-8 rounded-full",
           // orientation === "horizontal"
           //   ? "top-1/2 -left-12 -translate-y-1/2"
@@ -243,6 +246,7 @@ function CarouselNext({
   return (
     <div className={cn(
       "absolute size-8 rounded-full",
+      "cursor-pointer has-disabled:cursor-not-allowed",
       orientation === "horizontal"
         ? "top-1/2 -right-12 -translate-y-1/2"
         : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
@@ -256,6 +260,8 @@ function CarouselNext({
         ref={ref}
         className={cn(
           "relative w-full h-full rounded-full size-8",
+          "not-disabled:cursor-pointer",
+          "disabled:cursor-not-allowed",
           // "absolute size-8 rounded-full",
           // orientation === "horizontal"
           //   ? "top-1/2 -right-12 -translate-y-1/2"
@@ -400,7 +406,7 @@ export function CarouselNav({getHovercardContentForIndex, className}: {getHoverc
   // className="flex flex-wrap justify-end items-center mr-[calc((2.6rem-1.4rem)/(-2))]"
   className={className}
   >
-      <div className={
+      {!useSlider && <div className={
         cn('flex',
         useSlider ? 'hidden' : 'visible'
       )}
@@ -420,44 +426,25 @@ export function CarouselNav({getHovercardContentForIndex, className}: {getHoverc
             clearHoverIndex={clearHoverIndex}
             />
         )}
-      </div>
+      </div>}
       
-      <div className={cn('flex',
+      {useSlider && <div className={cn('flex',
         useSlider ? 'visible' : 'hidden'
       )} data-role='carousel-slider h-[2.6rem]'>
         <CarouselSlider  className="pointer-events-auto py-[1.4rem]" defaultValue={[selectedIndex]} onValueChange={onValueChange} getHovercardContentForIndex={getHovercardContentForIndex} numSlides={slideIndices.length} />
-      </div>
+      </div>}
 
   </div> 
 }
-
-
-
-// type UseDotButtonType = {
-//   selectedIndex: number
-//   // scrollSnaps: number[]
-//   // scrollSnapList: number[]
-//   onDotButtonClick: (index: number) => void
-//   slideIndices: number[]
-//   slideNodes: HTMLElement[],
-//   setSelectedIndex: React.Dispatch<React.SetStateAction<number>>,
-//   setSlideIndices: React.Dispatch<React.SetStateAction<number[]>>,
-//   setSlideNodes: React.Dispatch<React.SetStateAction<HTMLElement[]>>,
-// }
-
 
 export const useDotButton = (
   emblaApi: EmblaCarouselType | undefined,
   onButtonClick?: (emblaApi: EmblaCarouselType) => void,
 ) => {
   const [selectedIndex, setSelectedIndex] = React.useState<number>(0)
+  const [hoveredIndex, setHoveredIndex] = React.useState<number|undefined>(undefined);
   const [slideIndices, setSlideIndices] = React.useState<number[]>([])
   const [slideNodes, setSlideNodes] = React.useState<HTMLElement[]>([])
-  const [hoveredIndex, setHoveredIndex] = React.useState<number|undefined>(undefined);
-
-  // const {api: emblaApi} = useCarousel();
-
-  // console.log('EMBLA API:', emblaApi);
 
   const onDotButtonClick = React.useCallback(
     (index: number) => {
@@ -491,7 +478,6 @@ export const useDotButton = (
     }
   }, [emblaApi, onInit, onSelect])
 
-  // console.log({selectedIndex, slideNodes, slideIndices});
 
   return {
     selectedIndex,

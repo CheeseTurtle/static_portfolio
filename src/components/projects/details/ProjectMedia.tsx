@@ -77,7 +77,7 @@ export function createEmbed(source: ProjectMediaEmbedData, _lazyLoad?: boolean) 
     //     src="https://www.youtube.com/embed/M7lc1UVf-VE?autoplay=1&origin=http://example.com"
     //     frameborder="0">
     // </iframe>
-    console.info('EMBED:', embed);
+    // console.info('EMBED:', embed);
     return embed;
 }
 
@@ -121,7 +121,7 @@ export const ProjectMedia = React.memo(({id, kind, useFallback = true, className
                 caption = (mediaEntry.caption ?? null) as React.JSX.Element | null;
         }
         const thumbnail = (()=>{
-            console.log('Thumbnail:', mediaEntry.thumbnail);
+            // console.log('Thumbnail:', mediaEntry.thumbnail);
             if(!mediaEntry.thumbnail) return React.cloneElement(source);
             
             if(typeof mediaEntry.thumbnail === 'string')

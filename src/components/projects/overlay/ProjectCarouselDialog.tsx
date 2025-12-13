@@ -52,6 +52,8 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
     const setActiveProjectIndex = useBrowserContext(s => s.setActiveProjectIndex);
     const visibleProjects = useBrowserContext(s=>s.visibleProjects);
 
+    const [carouselProjectIndex, setCarouselProjectIndex] = React.useState<number | null>(activeProjectIndex);
+
     const overlayRef = useRef<HTMLDivElement>(null);
     const prevRef = useRef<HTMLButtonElement>(null);
     const nextRef = useRef<HTMLButtonElement>(null);
@@ -93,21 +95,51 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
 
     const debouncedScrollTo = useDebounceCallback(scrollTo, 1000);
 
+    const debouncedSetActiveProjectIndex = useDebounceCallback(setActiveProjectIndex, 750);
+    const debouncedSetCarouselProjectIndex = useDebounceCallback(setCarouselProjectIndex, 750);
+
     // Handle carousel slide selection
     const onSelect = useCallback((emblaApi: EmblaCarouselType | undefined) => {
-        if (!emblaApi) return;
+        
+
+        if (!emblaApi) {
+            // debouncedSetActiveProjectIndex.cancel()
+            return
+        }
         
         const index = emblaApi.selectedScrollSnap();
         // console.log('[Carousel] onSelect - scrolling to index:', index, 'current activeIndex:', activeProjectIndex);
 
         // Update the store's active project index
         // This will trigger URL sync automatically if carousel is open
-        setActiveProjectIndex(index);
+        debouncedSetCarouselProjectIndex(index);
     
-        if(index !== activeProjectIndex)
-            debouncedScrollTo(index, false);
-    }, [setActiveProjectIndex, activeProjectIndex, debouncedScrollTo]);
+        // if(index !== activeProjectIndex)
+        //     debouncedScrollTo(index, false);
+    }, [debouncedSetCarouselProjectIndex/*, activeProjectIndex, debouncedScrollTo*/]);
 
+
+    const deferredCarouselProjectIndex = React.useDeferredValue(carouselProjectIndex);
+    const [_apiPending, startAPITransition] = React.useTransition();
+
+    const updateActiveProjectIndex = React.useEffectEvent((index: number | null) => {
+        console.log('CAROUSEL OPEN:', open);
+        if(open && index !== null) {
+            startAPITransition(()=>debouncedSetActiveProjectIndex(index))
+        }
+    })
+
+    React.useEffect(()=>{
+        updateActiveProjectIndex(deferredCarouselProjectIndex)
+    }, [deferredCarouselProjectIndex]);
+
+
+    const onSettle = React.useCallback((api: EmblaCarouselType)=>{
+        const index = api.selectedScrollSnap()
+        debouncedSetActiveProjectIndex.cancel()
+        startAPITransition(()=>setActiveProjectIndex(index))
+    }, [debouncedSetActiveProjectIndex, setActiveProjectIndex])
+    
     // Handle embla reinitialization
     const onEmblaReInit = useCallback((emblaApi: EmblaCarouselType | undefined) => {
         if (!emblaApi) return;
@@ -211,15 +243,17 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
         embla
             .on('reInit', onEmblaReInit)
             .on('select', onSelect)
-            .on('slidesInView', onSlidesInView);
+            .on('slidesInView', onSlidesInView)
+            .on('settle', onSettle)
         
         return () => { 
             embla
                 .off('reInit', onEmblaReInit)
                 .off('select', onSelect)
-                .off('slidesInView', onSlidesInView);
+                .off('slidesInView', onSlidesInView)
+                .off('settle', onSettle)
         };
-    }, [embla, onEmblaReInit, onSelect, onSlidesInView]);
+    }, [embla, onEmblaReInit, onSelect, onSlidesInView, onSettle]);
 
 
     const wasOpen = useRef<boolean>(false);

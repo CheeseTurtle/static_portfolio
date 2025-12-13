@@ -458,7 +458,7 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
 
     return <>
         <div ref={scrollContainer} id='project-browser-wrapper' className="overflow-y-scroll inset-0 w-full h-full p-0 m-0 bg-none border-none outline-none">
-        {/* <StrictMode> */}
+        <StrictMode>
             <AlertToast/>
             {/* <AlertToast message={toastMessage} onClose={() => setToastMessage(null)} /> */}
             <ErrorBoundary displayName="myBoundary" callback={(err: Error) => {
@@ -485,7 +485,7 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
                     </CountStoreProvider>
                 </BrowserStoreProvider>
             </ErrorBoundary>
-        {/* </StrictMode> */}
+        </StrictMode>
         </div>
     </>;
 } 

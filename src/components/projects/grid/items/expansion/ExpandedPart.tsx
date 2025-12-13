@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { gsap } from "gsap";
+import { cn } from '@/lib/utils';
 
 
 type ExpandedPartProps = React.ComponentProps<"div"> & {
@@ -9,23 +10,21 @@ type ExpandedPartProps = React.ComponentProps<"div"> & {
     setSizeChanging: (changing: boolean) => void,
 }
 
-const ExpandedPart = React.memo(({setSizeChanging, children, id, ref: externalRef, expanded, ...props}: ExpandedPartProps) => {
-    // const lightboxIsOpen = useEffectEvent(()=>lightboxOpen);
+const ExpandedPart = React.memo(({setSizeChanging, children, id, ref: externalRef, expanded, className, ...props}: ExpandedPartProps) => {
     const localRef = React.useRef<HTMLDivElement | null>(null);
     const ref = React.useMemo(()=>(externalRef ?? localRef), [externalRef]);
+    
+    const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     const [canUnmount, setCanUnmount] = React.useState<boolean>(!expanded);
-
-    const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     const handleExpandedChange = React.useEffectEvent((el: HTMLDivElement, expanded: boolean) => {
         // console.log(`PROJECT ITEM '${id}' EXPANDED:`, expanded);
         if (expanded) {
             // Expand: animate from 0 to scrollHeight
-            gsap.killTweensOf(el);
-            clearTimeout(timeoutRef.current);
             setCanUnmount(false);
-            gsap.set(el, {visibility: 'visible'});
+            clearTimeout(timeoutRef.current);
+            gsap.killTweensOf(el);
             gsap.fromTo(
                 el,
                 { height: el.clientHeight, opacity: el.style.opacity },
@@ -36,6 +35,7 @@ const ExpandedPart = React.memo(({setSizeChanging, children, id, ref: externalRe
                     ease: "power1.out",
                     onStart: () => {
                         setSizeChanging(true)
+                        gsap.set(el, {visibility: 'visible'});
                     },
                     onComplete: () => { 
                         gsap.set(el, { height: "auto" });
@@ -53,6 +53,7 @@ const ExpandedPart = React.memo(({setSizeChanging, children, id, ref: externalRe
         } else {
             // Collapse: animate from current height to 0
             gsap.killTweensOf(el);
+            clearTimeout(timeoutRef.current)
             gsap.fromTo(
                 el,
                 { height: el.clientHeight, opacity: el.style.opacity },
@@ -76,30 +77,22 @@ const ExpandedPart = React.memo(({setSizeChanging, children, id, ref: externalRe
 
     // Handle expand/collapse animation
     React.useEffect(() => {
-        console.log('Beginning handleExpandedChange')
+        console.log('Beginning handleExpandedChange effect')
         const el = ref.current;
         if (!el) return;
         // React.startTransition(()=>handleExpandedChange(el, expanded));
         handleExpandedChange(el, expanded);
-        console.log('Ending handleExpandedChange');
+        console.log('Ending handleExpandedChange effect');
     }, [expanded, ref]);
 
-    // const lastRef = React.useRef<HTMLDivElement | null>(ref.current);
-    // React.useEffect(()=>{
-    //     const current = ref.current;
-    //     if(current === lastRef.current) return;
-    //     lastRef.current = current;
-    //     if(!current) return;
-    //     const handler = (evt: Event) => { evt.stopPropagation(); };
-
-    //     current.addEventListener('scroll', handler);
-    //     return ()=>{current.removeEventListener('scroll', handler)};
-    // }, [ref]);
 
     if(canUnmount && !expanded) return null;
     // return <React.Suspense fallback={<div className='w-full min-h-20 h-min bg-blue-500'>Placeholder</div>}>
-    return <div ref={ref} 
-        style={{ height: 0, overflow: 'clip', opacity: 0, width: '100%', visibility: 'hidden'}} 
+    return <div ref={ref} className={cn(
+        "h-0 overflow-clip opacity-0 w-full invisible",
+        className,
+    )}
+        // style={{ height: 0, overflow: 'clip', opacity: 0, width: '100%', visibility: 'hidden'}} 
         data-slot='project-item-extra' {...props}>{children}</div>
     // </React.Suspense>
 });

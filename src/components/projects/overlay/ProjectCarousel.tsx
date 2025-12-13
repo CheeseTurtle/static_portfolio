@@ -122,43 +122,46 @@ const ProjectCarouselItem = React.memo(({ selectableText, setSelectableText, pro
         setIsCurrent
     }), [setIsCurrent, getTextElements]);
 
+
+
     const [isAnimating, setIsAnimating] = React.useState<boolean>(true);
+    const [_isPendingHeight, startHeightTransition] = React.useTransition();
+    const isAnimatingDeferred = React.useDeferredValue(isAnimating);
 
     const currAnim = React.useRef<GSAPTween | undefined>(undefined);
     const skeletonHeight = React.useRef<number | undefined>(undefined);
     const animateCardIn = React.useCallback((el: HTMLDivElement, changed: boolean): void =>{
-        console.log('Animating height in', el, changed, skeletonHeight.current)
+        // console.log('Animating height in', el, changed, skeletonHeight.current)
         if(!changed || undefined === skeletonHeight.current) return;
-        currAnim.current?.kill()
-        currAnim.current = gsap.fromTo(el, 
-            {height: skeletonHeight.current},
-            {
-                height: el.scrollHeight,
-                duration: 0.2,
-                onStart: () => {
-                    setIsAnimating(true);
-                },
-                onComplete: ()=>{
-                    gsap.set(el, {height: 'auto'});
-                    setIsAnimating(false);
-                },
-                onInterrupt: () => {
-                    setIsAnimating(false);
+        startHeightTransition(()=>{
+            currAnim.current?.kill()
+            currAnim.current = gsap.fromTo(el, 
+                {height: skeletonHeight.current},
+                {
+                    height: el.scrollHeight,
+                    duration: 0.2,
+                    onStart: () => {
+                        setIsAnimating(true);
+                    },
+                    onComplete: ()=>{
+                        gsap.set(el, {height: 'auto'});
+                        setIsAnimating(false);
+                    },
+                    onInterrupt: () => {
+                        setIsAnimating(false);
+                    }
                 }
-            }
-        )
-    }, [])
-
+            )
+        })
+    }, [startHeightTransition])
     const animateCardOut = React.useCallback((el: HTMLDivElement | null, changed: boolean) => {
         if(!changed || !el) return;
         setIsAnimating(true)
         skeletonHeight.current = el.clientHeight
     }, [])
-
-    const isAnimatingDeferred = React.useDeferredValue(isAnimating);
-
     const [refCallback,] = useAnimateMount(animateCardIn)
     const [skeletonRefCallback,] = useAnimateMount(undefined, animateCardOut);
+    
     const skeleton = React.useMemo(()=><CarouselSlideContentSkeleton ref={skeletonRefCallback}/>, [skeletonRefCallback]);
     
 
@@ -180,7 +183,7 @@ const ProjectCarouselItem = React.memo(({ selectableText, setSelectableText, pro
                         </CardHeader>
                         <CardContent className="project-carousel-item-card-content pointer-events-auto overflow-y-visible">
                             <DialogClose data-slot="dialog-close"
-                                className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"><XIcon></XIcon></DialogClose>
+                                className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 not-disabled:cursor-pointer"><XIcon></XIcon></DialogClose>
                             <ShareButton className="absolute right-12 top-3" disabled={!isCurrent} showToast={showToast} openProjectId={slide.props["data-project-id"]} />    
 
                             {/* accessible close: give button an explicit aria-label */}
@@ -233,23 +236,27 @@ const ProjectCarousel = (({
         ))
     }, [slides, showToast, selectableText]);
     
-    const {targetElements, setSelection, anySelection, fullSelection, setEnabled} = useSelection(false);
-
-    const setTargetElements = React.useCallback((slide: ProjectCarouselItemHandle) => {
-        const newElements = slide.getTextElements();
-        targetElements.current = newElements.map((el,i)=>{
-            const ref = targetElements.current[i] ?? React.createRef();
-            ref.current = el;
-            return ref;
-        });
-    }, [targetElements]);
-
+    const {targetElements: selectionTargetElements, setSelection, anySelection, fullSelection, setEnabled: setSelectionMonitoringEnabled} = useSelection(false);
     const selectAll = React.useCallback(()=>setSelection(true), [setSelection]);
     const selectNone = React.useCallback(()=>setSelection(false), [setSelection]);
 
+    const setTargetElements = React.useCallback((slide: ProjectCarouselItemHandle) => {
+        const newElements = slide.getTextElements();
+        selectionTargetElements.current = newElements.map((el,i)=>{
+            const ref = selectionTargetElements.current[i] ?? React.createRef();
+            ref.current = el;
+            return ref;
+        });
+    }, [selectionTargetElements]);
+
+
     const toolbarOpen = React.useMemo(()=>selectableText===1, [selectableText]);
-    // const closeToolbar = React.useCallback(()=>setSelectableText(0), )
-    const onOpenChange = React.useCallback((open: boolean) => setSelectableText(open ? 1 : 0), []);
+    const onToolbarOpenChange = React.useCallback((open: boolean) => {
+        startTransition(()=>{
+            setSelectionMonitoringEnabled(open)
+            setSelectableText(open ? 1 : 0);
+        })
+    }, [setSelectionMonitoringEnabled]);
 
     const onSelect0: typeof onSelect = React.useCallback((api, _evtType) => {
         if(!api) return;
@@ -283,34 +290,25 @@ const ProjectCarousel = (({
     }, [onSelect, onSelect0]);
 
     React.useEffect(()=>{
-        if(!embla) return;
-        embla.reInit({watchDrag: !toolbarOpen});
+        embla?.reInit({watchDrag: !toolbarOpen});
     }, [toolbarOpen, embla]);
 
 
-    React.useEffect(()=>{
+    // React.useEffect(()=>{
+    //     if(!embla) return;
+    //     const enableMonitoring = () => { setSelectionMonitoringEnabled(true); }
+    //     const disableMonitoring = () => { setSelectionMonitoringEnabled(false); }
+    //     embla.on('init', enableMonitoring).on('reInit', enableMonitoring).on('destroy', disableMonitoring);
 
-        if(!embla) return;
-        const handler = () => {
-            setEnabled(true);
-        }
-        const handler2 = () => {
-            setEnabled(false);
-        }
-        embla.on('init', handler).on('reInit', handler).on('destroy', handler2);
-
-
-        return () => {
-            embla.off('init', handler).off('reInit', handler).off('destroy', handler2);
-        }
-    }, [embla, setEnabled])
+    //     return () => {
+    //         embla.off('init', enableMonitoring).off('reInit', enableMonitoring).off('destroy', disableMonitoring);
+    //     }
+    // }, [embla, setSelectionMonitoringEnabled])
 
 
     return <>
         <ProjectCarouselInner ref={emblaRef} externalApi={embla} opts={opts} prevRef={prevRef} nextRef={nextRef} getHovercardContentForIndex={getHovercardContentForIndex} onCarouselSelect={onSelect_} slideElems={slideElems}/>
-        {/* <div className="flex w-full z-10001"> */}
-        <SelectionToolbar open={toolbarOpen} onOpenChange={onOpenChange} setTextSelectionMode={setSelectableText} anySelection={anySelection} fullSelection={fullSelection} buttonGroupProps={undefined} selectAll={selectAll} selectNone={selectNone}/>
-        {/* </div> */}
+        <SelectionToolbar open={toolbarOpen} onOpenChange={onToolbarOpenChange} setTextSelectionMode={setSelectableText} anySelection={anySelection} fullSelection={fullSelection} buttonGroupProps={undefined} selectAll={selectAll} selectNone={selectNone}/>
     </>
 });
 
@@ -326,7 +324,7 @@ const ProjectCarouselInner = React.memo(({
 }: Omit<ProjectCarouselProps, 'slides' | 'showToast'> & {
     slideElems: React.JSX.Element[]
 }) => {
-    return <>
+    return (
         <Carousel
             ref={emblaRef}
             externalCarouselRef={emblaRef}
@@ -335,30 +333,22 @@ const ProjectCarouselInner = React.memo(({
             className="overflow-visible z-60 w-full max-w-[calc(min(100vw,var(--container-2xl)))] pointer-events-none
 // style={{"
             onCarouselSelect={onCarouselSelect}
-            >
-            <CarouselContent
-                id="embla-container"
-                className="overflow-visible pointer-events-none
-                    items-center 
-                    max-h-[calc(100%-(--spacing(20)))]
-                    [will-change]-transform transform-[translateZ(0)]
-                    "
-                    // max-2xl:bg-green-300 max-sm:bg-yellow-300
-                    // px-5
-                    // max-w-[calc(100%-(--spacing(20)))] w-full
-                //     willChange: 'transform',
-                //     transform: 'translateZ(0)'
-                // }}
-            >
-                {...slideElems}
-            </CarouselContent>
-            <CarouselPrevious ref={prevRef} size="lg" className='pointer-events-auto not-disabled:cursor-pointer disabled:cursor-not-allowed max-md:hidden' />
-            <CarouselNext ref={nextRef} className='pointer-events-auto  max-md:hidden not-disabled:cursor-pointer disabled:cursor-not-allowed' />
+        >
+        <CarouselContent
+            id="embla-container"
+            className="overflow-visible pointer-events-none
+                items-center 
+                max-h-[calc(100%-(--spacing(20)))]
+                [will-change]-transform transform-[translateZ(0)]
+                "
+        >
+            {...slideElems}
+        </CarouselContent>
+        <CarouselPrevious ref={prevRef} size="lg" className='pointer-events-auto max-md:hidden' />
+        <CarouselNext ref={nextRef} className='pointer-events-auto  max-md:hidden' />
 
-            <CarouselNav className='z-10000 pointer-events-auto not-disabled:cursor-pointer' getHovercardContentForIndex={getHovercardContentForIndex}/>
-
-        </Carousel>
-    </>
+        <CarouselNav className='z-10000 pointer-events-auto' getHovercardContentForIndex={getHovercardContentForIndex}/>
+    </Carousel>)
 });
 
 export default ProjectCarousel;

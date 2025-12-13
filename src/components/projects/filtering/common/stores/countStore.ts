@@ -154,7 +154,7 @@ function getCounts(projects: ProjectInfo[], tagModes?: Record<TagType, TagFilter
                 // Iterate over the resulting array of projects and accumulate counts for the tags of this type.
                 forTagCounts_.forEach(p=>{
                     const pTags = p.tags[tagKey as TagKey];
-                    pTags.forEach(tag=>{
+                    pTags?.forEach(tag=>{
                         counts[tag] = (counts[tag] ?? 0) + 1;
                     });
                 });

@@ -7,6 +7,7 @@ import ExpandedPart from "./expansion/ExpandedPart";
 import { useBrowserContext } from "../../filtering/common/browserContext";
 import { ThumbnailRow } from "./expansion/ThumbnailRow";
 import { useCaptionedLightbox } from "../../lightbox";
+import { isEquivalentSet } from "../../util/comparison";
 
 
 function adaptLightboxData(data: ProjectInfo['lightboxData']) {
@@ -21,7 +22,6 @@ function adaptLightboxData(data: ProjectInfo['lightboxData']) {
     );
     return {sources, captions, thumbnails: data.lightboxThumbs};
 }
-
 
 
 export interface ProjectItemHandle {
@@ -45,7 +45,6 @@ type ProjectItemProps = {
 export type ProjectItemElement = React.ReactElement<ProjectItemProps & RefAttributes<ProjectItemHandle>>;
 
 const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({ 
-// const ProjectItem = (({ 
     project,
     projectIndex,
     activeProjectId, 
@@ -54,8 +53,6 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
     extraRef: extraRef_,
     scrollContainer,
     setSizeChanging,
-    // ref
-// }: ProjectItemProps & {ref?: React.Ref<ProjectItemHandle>}) => {
 }: ProjectItemProps, ref) => {
     const [isPending, startTransition] = React.useTransition();
     const { id, lightboxData: lightboxData_, title, date, summary, description, tags } = project;
@@ -64,20 +61,55 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
     const clearActiveItem = useBrowserContext(s=>s.clearActiveItem);
 
     const year = useMemo(() => (date.explicitDate?.year ?? date.getFullYear()), [date]);
-    const selfRef = useRef<HTMLDivElement>(null);
-    const localExtraRef = useRef<HTMLDivElement>(null);
 
+    const selfRef = useRef<HTMLDivElement>(null);
+    
+    const localExtraRef = useRef<HTMLDivElement>(null);
     const extraRef = useMemo(()=>extraRef_ ?? localExtraRef, [extraRef_]);
 
-    const newEntries = useMemo(() => Object.entries(tags || {}).map(([k, vs]) => {
-        const newKey = convertToBadgeType(k as TagKey);
-        return [newKey, vs];
-    }), [tags]);
+    // const newEntries = useMemo(() => Object.entries(tags || {}).map(([k, vs]) => {
+    //     const newKey = convertToBadgeType(k as TagKey);
+    //     return [newKey, vs];
+    // }), [tags]);
     
-    const badgeRows = useMemo(
-        () => (newEntries.length > 0 ? Object.fromEntries(newEntries) : {}) as Record<BadgeType, Set<string>>, 
-        [newEntries]
-    );
+    // const badgeRows = useMemo(
+    //     () => (newEntries.length > 0 ? Object.fromEntries(newEntries) : {}) as Record<BadgeType, Set<string>>, 
+    //     [newEntries]
+    // );
+
+    const updateBadgeRowsFromTags = React.useCallback((existing: null | Partial<Record<BadgeType, (Set<string> | undefined)>>, tags_: typeof tags)=>{
+        let anyTags: boolean = false, anyChange: boolean = false;
+        const ret: Partial<Record<BadgeType, (Set<string> | undefined)>> = {}
+        
+        Object.entries(tags_).forEach(([k,vs])=>{
+            const newKey = convertToBadgeType(k as TagKey);
+            const oldSet = existing?.[newKey];
+            if(!vs?.size) {
+                if(oldSet?.size) anyChange = true;
+                return;
+            };
+            anyTags ||= true;
+            if(oldSet && isEquivalentSet(oldSet, vs)) {
+                ret[newKey] = oldSet;
+                return;
+            }
+            anyChange = true;
+            ret[newKey] = vs;
+        });
+
+        if(!anyChange) return [existing, false] as [typeof existing, boolean];
+        return [anyTags ? ret : null, true] as [typeof ret | null, boolean]
+    }, [])
+
+    const [badgeRows, setBadgeRows] = React.useState<null | Partial<Record<BadgeType, (Set<string> | undefined)>>>(null);
+    const badgeRowsRef = React.useRef<typeof badgeRows>(badgeRows);
+    React.useEffect(()=>{
+        const [newRows, anyChange] = updateBadgeRowsFromTags(badgeRowsRef.current, tags)
+        if(anyChange) {
+            badgeRowsRef.current = newRows
+            setBadgeRows(newRows)
+        }
+    }, [tags, updateBadgeRowsFromTags])
 
     const {state: lightboxState, dispatch: lightboxDispatch} = useCaptionedLightbox();
     const {open: lightboxOpen} = lightboxState;
@@ -189,6 +221,7 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
             onPointerEnter={onHover}
             onPointerLeave={onUnhover}
             className={`
+                h-min
                 relative cursor-pointer overflow-hidden transition-all
                 [text-wrap-mode:wrap] [text-wrap:stable]
                 hover:shadow-lg

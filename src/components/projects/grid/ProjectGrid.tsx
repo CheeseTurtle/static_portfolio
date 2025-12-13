@@ -7,6 +7,7 @@ import { useBrowserContext } from "../filtering/common/browserContext";
 import type { ScrollToFn } from "../filtering/common/filterTypes";
 import { cn } from "@/lib/utils";
 import { useResizeObserver } from "@/hooks/useResizeObserver";
+import { useAnimationFrameRequest } from "@/hooks/useCallbackRequest";
 // import useThrottledDebounce from "@/hooks/useThrottledDebounce";
 
 interface ProjectGridProps {
@@ -75,12 +76,15 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
   const isMeasuringRef = React.useRef(false);
   const lastNaturalHeightRef = React.useRef<number>(0);
   
+  const [requestFrame, cancelFrameRequest] = useAnimationFrameRequest();
+
   const measureBaseHeight = useCallback(() => {
     console.log('Measure base height')
     if (!gridContainerRef.current || isMeasuringRef.current) return;
     
     isMeasuringRef.current = true;
     console.log('Measuring ref current = true)')
+    cancelFrameRequest()
     
     const container = gridContainerRef.current;
     const originalMinHeight = container.style.minHeight;
@@ -105,12 +109,12 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
         // Release lock after next frame
       }
     // })
-    requestAnimationFrame(() => {
+    requestFrame(() => {
       console.log('Measuring ref current = false)')
       isMeasuringRef.current = false;
     });
     console.log('End measure base height')
-  }, []);
+  }, [requestFrame, cancelFrameRequest]);
 
 
   // Initial measurement
@@ -118,7 +122,7 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
     console.log('Refreshing projectSizeChanging array')
     projectSizeChanging.current = new Array<boolean>(projects.length).fill(false);
     console.log('Done refreshing projectSizeChanging array')
-    // measureBaseHeight();
+    measureBaseHeight();
   }, [projects, columns, measureBaseHeight]);
 
   const setSizeChanging = React.useCallback((index: number, changing: boolean)=>{
@@ -156,8 +160,9 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
   
   const projectItems = useMemo(()=>projectCols.flat(1), [projectCols]);
 
+  // max-w-[calc(100vw-16*var(--spacing))]
   const projectGridContents = useMemo(()=>projectCols.map((colElems, i) => (
-    <div key={i} className="flex-1 flex flex-col gap-4 h-min max-w-[calc(100vw-16*var(--spacing))]">
+    <div key={i} className="flex flex-col gap-4 items-stretch justify-items-start content-start justify-start">
       {colElems}
     </div>
   )), [projectCols]);
@@ -211,8 +216,6 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
         handle.current = undefined;
       }
     }
-
-
   }, []);
   // const updateSizeChangingDebounced = useThrottledDebounce(updateSizeChanging, 500, 250);
 
@@ -225,7 +228,7 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
   // }, [updateSizeChangingDebounced, sizeChangingCurrent])
 
 
-  React.useEffect(()=>{
+  React.useLayoutEffect(()=>{
     // startTransition(async () => {
       // await new Promise<void>((resolve)=>{
         updateSizeChanging(sizeChangingCurrent);
@@ -263,7 +266,15 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
           minHeight: collapsedGridHeight > 0 ? `max(100vh, ${totalReservedHeight}px)` : '100vh',
         }}
       >
-        <div ref={gridContainerRef} className={cn("w-full max-w-full grid grid-flow-col auto-cols-fr gap-4 p-8 pt-4 h-min overflow-y-visible sm:grid-flow-col-dense md:grid-flow-col-dense")}> 
+        <div ref={gridContainerRef} className={cn("w-full max-w-full grid grid-flow-col auto-cols-fr gap-4 p-8 pt-4 h-min overflow-y-visible",
+          "justify-start", // justify-content
+          "justify-items-stretch", // justify-items
+          "content-start", // align-content (distribution of space between/around content items on block/cross axis)
+          "items-start", // align-items (alignment of items on cross axis / alignment of items on block axis within grid areas)
+          "justify-self-stretch", // inline axis
+          "self-start", // align-self -- flexbox: cross axis (possibly ignored), grid: aligns item inside grid area
+        )}> 
+          {/*  sm:grid-flow-col-dense md:grid-flow-col-dense" */}
           {projectGridContents}
         </div>
         <div 
