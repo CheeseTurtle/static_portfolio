@@ -99,7 +99,9 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
     // startTransition(()=>{
       if (Math.abs(naturalHeight - lastNaturalHeightRef.current) > 5) {
         lastNaturalHeightRef.current = naturalHeight;
-        setCollapsedGridHeight(naturalHeight);
+        React.startTransition(()=>{
+          setCollapsedGridHeight(naturalHeight);
+        })
         // Release lock after next frame
       }
     // })
@@ -233,16 +235,20 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
   }, [updateSizeChanging, sizeChangingCurrent])
 
 
+  const resizeCallbackEnabled = React.useMemo(()=>!(anySizeChanging || carouselOpen), [anySizeChanging, carouselOpen]);
+  const resizeCallback = React.useCallback(()=>{
+      if (resizeCallbackEnabled && !isMeasuringRef.current) {
+          measureBaseHeight()
+        }
+  }, [measureBaseHeight, resizeCallbackEnabled])
+
+
   // Track resize changes
   // TODO: Temporarily disable resize observation during carousel update
   useResizeObserver({
     ref: gridContainerRef,
-    onResize: ()=>{
-        if (!isMeasuringRef.current) {
-          measureBaseHeight()
-        }
-    },
-    enabled: !anySizeChanging,
+    onResize: resizeCallback,
+    enabled: resizeCallbackEnabled,
     throttle: 200,  // Update at most every 200ms during resize
     debounce: 150,  // Final update 150ms after resize stops
   });
