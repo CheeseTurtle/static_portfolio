@@ -19,7 +19,6 @@ type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
 type CarouselOptions = UseCarouselParameters[0]
 type CarouselPlugin = UseCarouselParameters[1]
 
-
 type CarouselProps = {
   opts?: CarouselOptions
   plugins?: CarouselPlugin
@@ -151,8 +150,7 @@ function Carousel({ orientation = "horizontal",
 
 function CarouselContent({ children, className, ...props }: React.ComponentProps<"div">) {
   // const { orientation, api } = useCarousel();
-  const obj = useCarousel()
-  const { carouselRef, orientation, api: _api }  = obj;
+  const {carouselRef, orientation } = useCarousel()
 
   return (
     <div

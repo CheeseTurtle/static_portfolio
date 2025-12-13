@@ -5,11 +5,12 @@ import { checkSelection, clearSelection, selectElementsText } from "./selection"
 
 
 
-export default function useSelection() {
+export default function useSelection(initiallyEnabled?: boolean) {
     const targetElements = React.useRef<React.RefObject<HTMLElement|null>[]>([]);
 
     const [anySelection, setAnySelection] = React.useState<boolean>(false);
     const [fullSelection, setFullSelection] = React.useState<boolean>(false);
+    const [enabled, setEnabled] = React.useState<boolean>(initiallyEnabled ?? false);
 
     const setSelection = React.useCallback((select: boolean)=>{
         const elements = targetElements.current.map(x=>x.current).filter(x=>!!x);
@@ -28,8 +29,14 @@ export default function useSelection() {
             });
     }, [])
 
+    const enabledRef = React.useRef<boolean>(enabled);
+    React.useEffect(()=>{
+        enabledRef.current = enabled;
+    }, [enabled]);
+
     React.useEffect(()=>{
         const listener = (_evt: Event) => {
+            if(!enabledRef.current) return;
             const elements = targetElements.current.map(x=>x.current).filter(x=>!!x);
             const [anySelection, fullSelection] = checkSelection(elements, false);
             console.log('Selection changed:', anySelection, fullSelection);
@@ -42,5 +49,5 @@ export default function useSelection() {
         }
     }, []);
     
-    return {targetElements, setSelection, anySelection, fullSelection};
+    return {targetElements, setSelection, anySelection, fullSelection, enabled, setEnabled};
 }

@@ -7,7 +7,7 @@ import { useBrowserContext } from "../filtering/common/browserContext";
 import type { ScrollToFn } from "../filtering/common/filterTypes";
 import { cn } from "@/lib/utils";
 import { useResizeObserver } from "@/hooks/useResizeObserver";
-import useThrottledDebounce from "@/hooks/useThrottledDebounce";
+// import useThrottledDebounce from "@/hooks/useThrottledDebounce";
 
 interface ProjectGridProps {
   scrollContainer: RefObject<any>,
@@ -65,7 +65,7 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
   
   const projectSizeChanging = React.useRef<boolean[]>([]);
   
-  const [_isPending, startTransition] = React.useTransition();
+  // const [_isPending, startTransition] = React.useTransition();
 
   const gridContainerRef = React.useRef<HTMLDivElement>(null);
   
@@ -108,7 +108,6 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
       isMeasuringRef.current = false;
     });
     console.log('End measure base height')
-    
   }, []);
 
 

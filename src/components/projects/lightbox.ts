@@ -1,5 +1,6 @@
 import React from "react";
 import type { ProjectInfo, ProjectMediaEmbedData } from "./types";
+import type { CaptionedLightboxHandle } from "./CaptionedLightbox";
 
 
 
@@ -69,44 +70,48 @@ export type LightboxAction =
     // | { type: 'SET_PROJECT', projectId: null, projectIndex: null,}
     | { type: 'CLEAR_PROJECT' }
 
-export function lightboxReducer(state: LightboxState, action: LightboxAction): LightboxState {
-    const result = (()=>{
-        switch (action.type) {
-            case "OPEN":
-                // console.log('Old state:', state);
-                return {
-                    ...state,
-                    open: true,
-                    initialSlide: action.slide,
-                };
-            case "ENSURE_OPEN":
-                return {
-                    ...state,
-                    open: true,
-                    initialSlide: (action.slide === undefined ? state.initialSlide : action.slide)
+export function createLightboxReducer(lightboxHandle: React.RefObject<CaptionedLightboxHandle | null>) {
+    return (state: LightboxState, action: LightboxAction): LightboxState => {
+        const result = (()=>{
+            switch (action.type) {
+                case "OPEN":
+                    // console.log('Old state:', state);
+                    return {
+                        ...state,
+                        open: true,
+                        initialSlide: action.slide,
+                    };
+                case "ENSURE_OPEN":
+                    return {
+                        ...state,
+                        open: true,
+                        initialSlide: (action.slide === undefined ? state.initialSlide : action.slide)
+                    }
+                case "CLOSE": {
+                    lightboxHandle.current?.hideCaptions()
+                    return { ...state, activeProjectIndex: undefined, activeProjectId: undefined, open: false };
                 }
-            case "CLOSE":
-                return { ...state, activeProjectIndex: undefined, activeProjectId: undefined, open: false };
-            // case "SET_SLIDE":
-            //   return { ...state, slide: action.slide };
-            case 'SET_PROJECT': {
-                return {...state, ...action};
+                // case "SET_SLIDE":
+                //   return { ...state, slide: action.slide };
+                case 'SET_PROJECT': {
+                    return {...state, ...action};
+                }
+                case "CLEAR_PROJECT":
+                    return {...state, activeProjectIndex: undefined, activeProjectId: undefined};
+                case 'SET_CONTENT': {
+                    const {type, ...rest} = action
+                    if (action.sources !== state.sources || action.captions !== state.captions)
+                        return { ...state, ...rest };
+                    return state;
+                }
+                default:
+                    return state;
             }
-            case "CLEAR_PROJECT":
-                return {...state, activeProjectIndex: undefined, activeProjectId: undefined};
-            case 'SET_CONTENT': {
-                const {type, ...rest} = action
-                if (action.sources !== state.sources || action.captions !== state.captions)
-                    return { ...state, ...rest };
-                return state;
-            }
-            default:
-                return state;
-        }
-    })();
-    const {type, ...params} = action;
-    console.log('LIGHTBOX REDUCER ACTION', type, params, state, result);
-    return result;
+        })();
+        const {type, ...params} = action;
+        console.log('LIGHTBOX REDUCER ACTION', type, params, state, result);
+        return result;
+    }
 }
 
 

@@ -8,6 +8,8 @@ import type { ScrollToFn, ShowToastFn } from "../filtering/common/filterTypes";
 import { useDebounceCallback } from "@/hooks/use-debounce-callback";
 import type { ProjectInfo } from "../types";
 import type { ProjectInfoForProvider } from "../details/ProjectProviderBase";
+import { useAnimationFrameRequest } from "@/hooks/useCallbackRequest";
+import useThrottledDebounce from "@/hooks/useThrottledDebounce";
 // import ProjectCarousel from "./ProjectCarousel";
 
 const ProjectCarousel = React.lazy(()=>import('./ProjectCarousel'));
@@ -65,6 +67,11 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
     
     const [emblaRef, embla] = useEmblaCarousel(opts);
 
+    const notVisibleSlides = React.useRef<Set<number>>(new Set());
+    const visibleSlides = React.useRef<Set<number>>(new Set());
+    const newlyVisibleSlides = React.useRef<Set<number>>(new Set());
+    const newlyNotVisibleSlides = React.useRef<Set<number>>(new Set());
+
     // Map content elements by project ID
     const allSlides = useMemo(
         () => Object.fromEntries(contentElements.map(elem => [elem.props["data-project-id"], elem])), 
@@ -115,19 +122,104 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
         }
     }, [activeProjectIndex, open, debouncedScrollTo]);
 
+    type Embla = Exclude<typeof embla, undefined>;
+    type On = Embla['on'];
+    type OnParams = Parameters<On>;
+    type CallbackType = OnParams[1];
+
+
+
+    const markNewlyVisibleSlides = React.useCallback((_api: EmblaCarouselType, slides: HTMLElement[])=>{
+        newlyVisibleSlides.current.forEach(index=>{
+            try {
+                const slide = slides[index]
+                slide.style.visibility = 'visible'
+                slide.style.contentVisibility = 'auto'
+                visibleSlides.current.add(index)
+            } catch(e) {
+                console.error(e)
+            }
+        })
+        newlyVisibleSlides.current.clear()
+    }, []);
+
+    const markNewlyNotVisibleSlides = React.useCallback((_api: EmblaCarouselType, slides: HTMLElement[])=>{
+        newlyNotVisibleSlides.current.forEach(index=>{
+            try {
+                const slide = slides[index];
+                slide.style.visibility = 'hidden';
+                slide.style.contentVisibility = 'hidden';
+                notVisibleSlides.current.add(index);
+            } catch(e) {
+                console.error(e)
+            }
+        })
+        newlyNotVisibleSlides.current.clear()
+    }, [])
+
+    const updateNewlyVisibleSlides = React.useCallback((api: EmblaCarouselType) => {
+        const visibleIndices = api.slidesInView();
+        return visibleIndices.reduce<boolean>((prev, index,)=>{
+            if(notVisibleSlides.current.delete(index) || newlyNotVisibleSlides.current.delete(index)) {
+                newlyNotVisibleSlides.current.add(index)
+                return true;
+            }
+            return prev;
+        }, false)
+    }, []);
+    
+    const updateNewlyNotVisibleSlides = React.useCallback((api: EmblaCarouselType) => {
+        const notVisibleIndices = api.slidesNotInView();
+        return notVisibleIndices.reduce<boolean>((prev, index,)=>{
+            if(visibleSlides.current.delete(index)) {
+                newlyNotVisibleSlides.current.add(index)
+                return true;
+            }
+            return prev;
+        }, false)
+    }, []);
+
+    const [requestFrame,] = useAnimationFrameRequest();
+    // const [requestIdle, cancelIdleRequest] = useIdleCallbackRequest();
+
+
+    const updateNewlyNotVisibleSlides_ = React.useCallback((api: Embla) => {
+        if(updateNewlyNotVisibleSlides(api))
+            React.startTransition(()=>{
+                markNewlyNotVisibleSlides(api, api.slideNodes())
+            })
+    }, [updateNewlyNotVisibleSlides, markNewlyNotVisibleSlides]);
+
+    const updateNewlyNotVisibleSlidesDebounced = useThrottledDebounce(updateNewlyNotVisibleSlides_, 50, 150);
+    const updateNewlyVisibleSlidesDebounced = React.useCallback((api: EmblaCarouselType)=>{
+        requestFrame(()=>{
+            if(updateNewlyVisibleSlides(api)) {
+                markNewlyVisibleSlides(api, api.slideNodes())
+            }
+        })
+    }, [requestFrame, markNewlyVisibleSlides, updateNewlyVisibleSlides])
+
+    const onSlidesInView: CallbackType = React.useCallback((api, _evtType) => {
+        updateNewlyVisibleSlidesDebounced(api);
+        updateNewlyNotVisibleSlidesDebounced(api);
+    }, [updateNewlyVisibleSlidesDebounced, updateNewlyNotVisibleSlidesDebounced])
+
     // Subscribe to embla events
     useEffect(() => {
         if (!embla) return;
         
-        embla.on('reInit', onEmblaReInit);
-        embla.on('select', onSelect);
+        embla
+            .on('reInit', onEmblaReInit)
+            .on('select', onSelect)
+            .on('slidesInView', onSlidesInView);
         
         return () => { 
             embla
                 .off('reInit', onEmblaReInit)
-                .off('select', onSelect);
+                .off('select', onSelect)
+                .off('slidesInView', onSlidesInView);
         };
-    }, [embla, onEmblaReInit, onSelect]);
+    }, [embla, onEmblaReInit, onSelect, onSlidesInView]);
 
 
     const wasOpen = useRef<boolean>(false);
@@ -167,6 +259,7 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
 
         const callback = (evt: KeyboardEvent) => {
             // console.log('Key up/down:', evt);
+            if(evt.defaultPrevented) return;
             switch(evt.key) {
                 case 'ArrowLeft': {
                     if(embla.canScrollPrev())
@@ -182,14 +275,14 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
                     return;
                 }
             evt.preventDefault();
-            // evt.stopImmediatePropagation();
+            evt.stopImmediatePropagation();
             evt.stopPropagation();
         };
-        // window.addEventListener('keydown', callback);
-        window.addEventListener('keyup', callback);
+        window.addEventListener('keydown', callback);
+        // window.addEventListener('keyup', callback);
         return () => { 
-            // window.removeEventListener('keydown', callback);
-            window.removeEventListener('keyup', callback) 
+            window.removeEventListener('keydown', callback);
+            // window.removeEventListener('keyup', callback) 
         };
         
     });

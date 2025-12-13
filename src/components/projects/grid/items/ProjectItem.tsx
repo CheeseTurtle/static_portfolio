@@ -27,34 +27,22 @@ function adaptLightboxData(data: ProjectInfo['lightboxData']) {
 export interface ProjectItemHandle {
     onClick: (evt: MouseEvent<HTMLDivElement>) => void;
     scrollIntoView: (jump?: boolean) => void,
-    // setUpLightbox: () => boolean,
 }
 
 type ProjectItemProps = {
     refIndex: number,
     project: ProjectInfo;
     projectIndex: number; // Index in the visible projects array
-    // activeProject: ProjectInfo | null;
     activeProjectId: string | null;
-    // activeProjectIndex: number | null;
     openProjectId: string | null;
     carouselOpen: boolean;
-    // lightboxOpen: boolean;
     clickItem: (itemId: string, itemIndex: number, newState?: 'active' | 'open') => void;
-    // setCarouselOpen: (open: boolean) => void;
     extraRef?: React.RefObject<HTMLDivElement | null>,
     scrollContainer: React.RefObject<HTMLDivElement | null>,
     setSizeChanging: (index: number, changing: boolean) => void,
 };
 
 export type ProjectItemElement = React.ReactElement<ProjectItemProps & RefAttributes<ProjectItemHandle>>;
-
-// type x = RefAttributes<ProjectItemHandle>['ref'];
-
-
-// export type ProjectItemElement = React.ReactElement<React.ComponentProps<typeof ProjectItem>>;
-
-// export type ProjectItemElement = React.ComponentClass<React.ComponentPropsWithRef<typeof ProjectItem>>;
 
 const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({ 
 // const ProjectItem = (({ 
@@ -145,8 +133,6 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
                     && ((selfRect.right - containerRect.left >= MIN_X_VISIBLE) && ((containerRect.right - selfRect.right >= ALLOWABLE_MISSED_X) && (containerRect.right - selfRect.left >= MIN_X_VISIBLE)))
                 ) return;
 
-                // const selfBottom = self.clientTop + self.clientHeight;
-                // const containerBottom = Math.min(container.scrollTop + container.clientHeight, container.scrollHeight);
                 selfRef.current?.scrollIntoView({behavior: jump ? "instant" : (jump === false ? "smooth" : "auto")});
                 // // selfRef.current?.scrollTo()
             });
@@ -196,16 +182,6 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
 
     const setSizeChanging_ = React.useCallback((changing: boolean)=>setSizeChanging(projectIndex, changing), [setSizeChanging, projectIndex]);
 
-    // const fallback = <div className="w-full min-h-20 h-max bg-blue-500">
-    //     {
-    //         [0].map(()=>{
-    //             console.log('Fallback element');
-    //             return null;
-    //         })
-    //     }
-    //     (Placeholder)...
-    //     </div>;
-
     return (
         <Card 
             ref={selfRef}
@@ -214,11 +190,12 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
             onPointerLeave={onUnhover}
             className={`
                 relative cursor-pointer overflow-hidden transition-all
+                [text-wrap-mode:wrap] [text-wrap:stable]
                 hover:shadow-lg
                 ${expanded ? "ring-2 ring-primary" : ""}
                 ${isPending ? "outline-4 outline-yellow-500" : ""}
             `}
-            style={{textWrapMode: "wrap", textWrap: "stable"}}
+            // style={{textWrapMode: "wrap", textWrap: "stable"}}
         >
             {/* Header */}
             <CardHeader className="pb-2">

@@ -1,10 +1,15 @@
-import { useCallback, useReducer } from "react";
-import { LightboxContext, lightboxReducer } from "./lightbox";
-import CaptionedLightbox from "./CaptionedLightbox";
+import React, { useCallback, useReducer } from "react";
+import { LightboxContext, createLightboxReducer } from "./lightbox";
+import CaptionedLightbox, { type CaptionedLightboxHandle } from "./CaptionedLightbox";
 // const CaptionedLightbox = lazy(()=>import('@/components/projects/CaptionedLightbox'));
 
 export default function CaptionedLightboxProvider({children, onClose}: {children: React.ReactNode, onClose?: () => void}) {
-    const [state, dispatch] = useReducer(lightboxReducer, {captions: [], initialSlide: 1, open: false, sources: [] });
+
+    const lightboxHandle = React.useRef<CaptionedLightboxHandle>(null);
+
+    const reducer = createLightboxReducer(lightboxHandle);
+
+    const [state, dispatch] = useReducer(reducer, {captions: [], initialSlide: 1, open: false, sources: [] });
 
     const onClose_ = useCallback(()=>{
         dispatch({type: 'CLOSE'});
@@ -15,7 +20,7 @@ export default function CaptionedLightboxProvider({children, onClose}: {children
         state, dispatch
     }}>
         {/* <Suspense> */}
-        <CaptionedLightbox {...state} onClose={onClose_} />
+        <CaptionedLightbox ref={lightboxHandle} {...state} onClose={onClose_} />
         {/* </Suspense> */}
         {children}
     </LightboxContext.Provider>;

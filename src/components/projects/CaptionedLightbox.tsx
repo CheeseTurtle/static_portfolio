@@ -175,10 +175,10 @@ type LightboxCaptionsOverlayProps = {
     divRef: React.RefObject<HTMLDivElement | null>,
 };
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type LightboxCaptionsOverlayHandle = {
     // activateCaption: (index: number | undefined) => void,
-    // activateCaptionDebounced: ReturnType<typeof useThrottledDebounce<(index: number | undefined) => void>>,    
+    // activateCaptionDebounced: ReturnType<typeof useThrottledDebounce<(index: number | undefined) => void>>,
+    hide: () => void,
 };
 
 // type JSXElement = React.JSX.Element;
@@ -195,7 +195,7 @@ type LightboxCaptionProps = React.ComponentPropsWithoutRef<'div'> & {
     divRef: React.RefObject<HTMLDivElement | null>,
 } & WithRequired<React.RefAttributes<LightboxCaptionHandle>, 'ref'>;
 
-function LightboxCaption({ref, children, divRef, sourceElem, className, index, activeIndex, ...props}: LightboxCaptionProps) {
+const LightboxCaption = React.memo(({ref, children, divRef, sourceElem, className, index, activeIndex, ...props}: LightboxCaptionProps) => {
     const [focused, setFocused] = React.useState<boolean>(false);
     const active = React.useMemo(()=>index===activeIndex, [activeIndex, index]);
     // const [active, setActive] = React.useState<boolean>(false);
@@ -208,15 +208,14 @@ function LightboxCaption({ref, children, divRef, sourceElem, className, index, a
 
     const activated = React.useRef<boolean | undefined>(undefined);
     React.useLayoutEffect(()=>{
-        console.log('LightboxCaption layout effect begin')
         const div = divRef.current;
+        console.log('LightboxCaption layout effect begin', div, active, activated.current)
         if(!div) return;
         if(active === activated.current) return;
         gsap.killTweensOf(div);
         // const quickSet = gsap.quickSetter(div, "visibility");
         activated.current = undefined;
         if(active) {
-            gsap.set(div, {'visibility': 'visible'});
             gsap.to(div, {
                 opacity: 70,
                 // delay: 0.5,
@@ -226,7 +225,12 @@ function LightboxCaption({ref, children, divRef, sourceElem, className, index, a
                 //     quickSet('visible');
                 //     activated.current = undefined;
                 // },
+                onStart: ()=>{
+                    console.log('Lightbox caption animation beginning (to visible)', index)
+                    gsap.set(div, {'visibility': 'visible'});
+                },
                 onComplete: ()=>{
+                    console.log('Lightbox caption animation completed (to visible)', index)
                     activated.current = true;
                 }
             });
@@ -237,21 +241,25 @@ function LightboxCaption({ref, children, divRef, sourceElem, className, index, a
                 delay: 0,
                 duration: 0.5,
                 onStart: () => {
+                    console.log('Lightbox caption animation beginning (to hidden)', index)
                 },
                 onComplete: ()=>{
                     // quickSet('hidden');
                     gsap.set(div, {'visibility': 'hidden'});
+                    console.log('Lightbox caption animation completed (to hidden)', index)
                     activated.current = false;
                 }
             });
         }
         console.log('LightboxCaption layout effect end')
         return ()=>gsap.killTweensOf(div);
-    }, [active, divRef]);
+    }, [active, divRef, index]);
 
 
     return <div ref={divRef} className={cn(
-        'absolute w-full bottom-0 max-h-[30%] hover:max-h-min text-muted-foreground hover:text-foreground pointer-events-auto bg-background hover:opacity-100',
+        "bg-background/30 backdrop-brightness-90 text-foreground/80 dark:text-muted-foreground dark:bg-background/40 backdrop-blur-sm hover:backdrop-blur-lg border border-white/10",
+        'absolute w-full bottom-0 max-h-[30%] backdrop-opacity-50 opacity-30 hover:backdrop-opacity-100 dark:opacity-100 hover:max-h-min hover:text-foreground pointer-events-auto hover:opacity-100',
+        'duration-250',
         focused ? 'current-caption overflow-y-scroll' : 'overflow-y-hidden',
         className,
         )} {...props}
@@ -263,10 +271,10 @@ function LightboxCaption({ref, children, divRef, sourceElem, className, index, a
     >
         {children}
     </div>;
-}
+})
 
 // type LightboxCaptionElem = React.ReactElement<LightboxCaptionProps, typeof LightboxCaption>;
-const LightboxCaptionsOverlay = (({sources, captions, open, ref: _ref, divRef, activeIndex, container: _container}: LightboxCaptionsOverlayProps & React.RefAttributes<LightboxCaptionsOverlayHandle>) => {
+const LightboxCaptionsOverlay = React.memo(({sources, captions, open, ref, divRef, activeIndex, container: _container}: LightboxCaptionsOverlayProps & React.RefAttributes<LightboxCaptionsOverlayHandle>) => {
 
     const captionElemRefs = React.useRef<React.RefObject<HTMLDivElement | null>[]>([]);
     captionElemRefs.current = sources.map((_el,i)=>captionElemRefs.current[i] ?? React.createRef());
@@ -290,28 +298,28 @@ const LightboxCaptionsOverlay = (({sources, captions, open, ref: _ref, divRef, a
 
     // const captionElems = useMemo(()=>Object.values(captionElemMap)/*.filter(x => x !== null)*/, [captionElemMap]);
 
-    // const captionElems = React.useMemo(
-    //     ()=>sources.map((elem,i)=>{
-    //         const caption = captions[i];
-    //         if(!caption) {
-    //             captionElemRefs.current[i].current = null;
-    //             captionHandleRefs.current[i].current = null;
-    //             return null;
-    //         }
-    //         const inner = (typeof caption === 'string') ? <p>{caption}</p> : caption;
-    //         return <LightboxCaption index={i} key={i} activeIndex={activeIndex} divRef={captionElemRefs.current[i]} sourceElem={elem} ref={captionHandleRefs.current[i]}>{inner}</LightboxCaption>;
-    //     }), [sources]);
+    const captionElems = React.useMemo(
+        ()=>sources.map((elem,i)=>{
+            const caption = captions[i];
+            if(!caption) {
+                captionElemRefs.current[i].current = null;
+                captionHandleRefs.current[i].current = null;
+                return null;
+            }
+            const inner = (typeof caption === 'string') ? <p>{caption}</p> : caption;
+            return <LightboxCaption index={i} key={i} activeIndex={activeIndex} divRef={captionElemRefs.current[i]} sourceElem={elem} ref={captionHandleRefs.current[i]}>{inner}</LightboxCaption>;
+        }), [sources, activeIndex, captions]);
 
-     const captionElems = sources.map((elem,i)=>{
-        const caption = captions[i];
-        if(!caption) {
-            captionElemRefs.current[i].current = null;
-            captionHandleRefs.current[i].current = null;
-            return null;
-        }
-        const inner = (typeof caption === 'string') ? <p>{caption}</p> : caption;
-        return <LightboxCaption index={i} key={i} activeIndex={activeIndex} divRef={captionElemRefs.current[i]} sourceElem={elem} ref={captionHandleRefs.current[i]}>{inner}</LightboxCaption>;
-    });
+    //  const captionElems = sources.map((elem,i)=>{
+    //     const caption = captions[i];
+    //     if(!caption) {
+    //         captionElemRefs.current[i].current = null;
+    //         captionHandleRefs.current[i].current = null;
+    //         return null;
+    //     }
+    //     const inner = (typeof caption === 'string') ? <p>{caption}</p> : caption;
+    //     return <LightboxCaption index={i} key={i} activeIndex={activeIndex} divRef={captionElemRefs.current[i]} sourceElem={elem} ref={captionHandleRefs.current[i]}>{inner}</LightboxCaption>;
+    // });
 
     // const activeCaptionElemRef = React.useRef<HTMLDivElement | null>(null);
     // const activeCaptionHandleRef = React.useRef<LightboxCaptionHandle | null>(null);
@@ -352,27 +360,61 @@ const LightboxCaptionsOverlay = (({sources, captions, open, ref: _ref, divRef, a
 
     // console.log('sources:', sources);
 
+    const hide = React.useCallback(()=>{
+        const div = divRef.current;
+        if(!div) return;
+        if(opened.current === false) return;
+        opened.current = undefined;
+        gsap.killTweensOf(div);
+        gsap.to(div, {
+            opacity: 0,
+            duration: 0.1,
+            onStart: () => {
+                console.log('Captions overlay animation beginning (to hidden) [HIDE]')
+            },
+            onComplete: ()=>{
+                gsap.set(div, {visibility: 'hidden'});
+                console.log('Captions overlay animation completed (to hidden) [HIDE]')
+                opened.current = false;
+            }
+        })
+    }, [divRef]);
+
+    React.useImperativeHandle(ref, ()=>({
+        hide
+    }), [hide]);
+
 
     const opened = React.useRef<boolean | undefined>(undefined);
-    React.useEffect(()=>{
+    React.useLayoutEffect(()=>{
         const div = divRef.current;
         if(!div) return;
         if(open === opened.current) return;
         opened.current = undefined;
         gsap.killTweensOf(div);
         if(open) {
-            gsap.set(div, {visibility: 'visible'});
             gsap.to(div, {
                 opacity: 100,
+                duration: 0.1,
+                onStart: () =>{
+                    console.log('Captions overlay animation beginning (to visible)')
+                    gsap.set(div, {visibility: 'visible'});
+                },
                 onComplete: () => {
+                    console.log('Captions overlay animation beginning (to visible)')
                     opened.current = true;
                 }
             });
         } else {
             gsap.to(div, {
                 opacity: 0,
+                duration: 0.1,
+                onStart: () => {
+                    console.log('Captions overlay animation beginning (to hidden)')
+                },
                 onComplete: ()=>{
                     gsap.set(div, {visibility: 'hidden'});
+                    console.log('Captions overlay animation completed (to hidden)')
                     opened.current = false;
                 }
             });
@@ -415,8 +457,9 @@ type CaptionedLightboxProps = {
 };
 
 
-interface CaptionedLightboxHandle {
-    func?: () => void
+export interface CaptionedLightboxHandle {
+    // func?: () => void
+    hideCaptions: () => void
 }
 
 
@@ -428,7 +471,7 @@ export default function CaptionedLightbox({
     open,
     initialSlide,
     onClose,
-    ref: _ref
+    ref
 }: CaptionedLightboxProps & React.RefAttributes<CaptionedLightboxHandle>) {
     const [toggler, setToggler] = React.useState(false);
     const snRef = React.useRef<HTMLSpanElement | null>(null);
@@ -440,6 +483,21 @@ export default function CaptionedLightbox({
     React.useEffect(()=>{
         gsap.registerPlugin(Flip);
     }, []);
+
+    React.useEffect(()=>{
+        const container = containerRef.current;
+        console.log('CONTAINER:', container)
+        if(!container) return;
+        const listener = (evt: MouseEvent) => {
+            console.log('LISTENER TRIGGERED')
+            captionsHandleRef.current?.hide();
+        }
+        container.addEventListener('click', listener, {capture: true})
+
+        return () => {
+            container.removeEventListener('click', listener, {capture: true});
+        }
+    })
 
     
     // Sync the open prop to toggler state
@@ -456,6 +514,11 @@ export default function CaptionedLightbox({
     const containerRef = React.useRef<HTMLElement>(null);
 
     const captionDivRef = React.useRef<HTMLDivElement | null>(null);
+
+    useMutationObserver(containerRef, (_records, _obs)=>{
+        // if(containerRef.current?.classList.contains(''))
+        console.log(containerRef.current?.classList);
+    }, {attributes: true, childList: false, subtree: false, characterData: false, attributeOldValue: false})
     
     // React.useEffect(()=>{
     //     const captionsHandle = captionsHandleRef.current;
@@ -480,7 +543,7 @@ export default function CaptionedLightbox({
     const opts = React.useMemo(()=>({
         prelim: prelimFn
     }), [prelimFn]);
-    const setActiveCaptionIndexDebounced = useThrottledDebounce(setActiveCaptionIndex as ((value: number | undefined) => void), 150, 500, opts);
+    const setActiveCaptionIndexDebounced = useThrottledDebounce(setActiveCaptionIndex as ((value: number | undefined) => void), 75, 50, opts);
 
     React.useEffect(()=>{
         if(open && captionSlide !== undefined) {
@@ -496,6 +559,10 @@ export default function CaptionedLightbox({
 
     
     
+    React.useImperativeHandle(ref, ()=>({
+        hideCaptions: ()=>captionsHandleRef.current?.hide()
+    }), []);
+
     const sources_ = React.useMemo(()=>sources?.map(x=>{
         console.log('Source:', x);
         if(typeof x === 'object') {

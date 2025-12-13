@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import type { ValueOf } from "node_modules/astro/dist/type-utils";
@@ -358,24 +359,72 @@ export type OneChildOrNoChildren = Exclude<
 //  */
 // type InstanceType<T extends abstract new (...args: any) => any> = T extends abstract new (...args: any) => infer R ? R : any;
 
+export type Callable<P extends any[],R> = ((...args: P) => R) | (new (...args: P) => R)
+export type CallableArgsAndRet<T extends Callable<any, any>> = T extends Callable<infer P, infer R> ? [P, R] : never;
+
+export type ConstructorFnArgsAndRet<T extends new (...args: any) => any> = T extends new (...args: infer P) => infer R ? [P,R] : never
+
 export type ConstructorFn<P extends any[] = any, R = any> = abstract new (
   ...args: P
 ) => R;
 
 // type FirstArg<F extends Function> = F extends ((arg: infer A, ...args: any) => any) ? A : never;
 
-// type x = {
-//     (a: string): string,
-//     (a: number, b: any): boolean,
-// };
 
-// function fy(a: string): string;
-// function fy(a: number, b: any): boolean;
-// function fy(a: number | string, b?: any): boolean | string {
-//     if(typeof a === 'string') return a;
-//     return a == b;
-// }
-// type y = typeof fy;
+function fy(a: string): string;
+function fy(a: number, b: any): boolean;
+function fy(a: number | string, b?: any): boolean | string {
+    if(typeof a === 'string') return a;
+    return a == b;
+}
+type Y = typeof fy;
+
+
+type X = {
+    (a: string): string,
+    (a: number, b: boolean): boolean,
+    (a: boolean, b: number): null,
+};
+
+
+// type Z = Extract<X,Y> // Identical to Y
+// type Z = Exclude<Y, X> // Identical to X
+// type Z = Extract<Y, Exclude<Y, X>> // Identical to X
+
+// type Z = X & Y;
+// type Z = X | Y;
+
+
+// type XX = X extends ((a: string, b: infer P) => any) ? P : never;        // number**
+// type XX = X extends {(a: string, b: infer P): any} ? P : never;          // number**
+
+// type XX = X extends ((arg: string, ...args: infer P) => any) ? P : never    // number**
+// type XX = X extends ((arg: string, ...args: infer P) => string) ? P : never    // number**
+// type XX = X extends ((a: infer A extends string, b: infer B) => string) ? B : never; // number**
+// type XX = X extends ((a: infer A extends string, b: infer B extends boolean) => string) ? B : never; // boolean**
+
+// type XX = X extends ((a: infer A extends string, b: boolean) => string) ? A : never; // string**
+// type XX = X extends ((a: infer A extends boolean, b: boolean) => string) ? A : never; // never
+// type XX = X extends ((a: infer A extends boolean, b: boolean) => null) ? A : never; // never
+// type XX = X extends ((a: infer A extends boolean, b: infer B extends boolean) => null) ? A : never; // never
+// type XX = X extends ((a: infer A extends boolean, b: infer B extends boolean) => infer R) ? A : never; // never
+// type XX = X extends ((a: infer A extends boolean, b: infer B) => infer R) ? A : never; // boolean
+
+
+// type XX = X extends {(...args: [string, ...infer P]): any} ? P : never;   // [b: number]
+// type XX = X extends {(...args: infer P extends [string]): any} ? P : never; // [string]
+
+// type XP = Parameters<X extends infer XX extends (a: number, b: boolean) => any ? (a: number, b: boolean) => any : never>
+
+// type XX = X extends (a: boolean, b: infer B) => null ? B : never;        // number
+// type XX = X extends (a: boolean, b: infer B) => any ? B : never;         // number
+// type XX = X extends (a: number, b: infer B) => any ? B : never;         // never*
+// type XX = X extends (a: number, b: infer B) => null ? B : never;        // never
+// type XX = X extends (a: number, b: infer B) => boolean ? B : never;     // never**
+// type XX = X extends (a: number, b: infer B) => any ? B : never;     // never**
+// type XX = X extends (a: number, b: infer B extends boolean) => any ? B : never;     // boolean
+// type XX = X extends (a: number, b: infer B extends boolean) => boolean ? B : never;  // boolean
+// type XX = X extends (a: number, b: infer B extends number) => boolean ? B : never;  // never
 
 // type FunctionOverloads<F> = F extends Function ? _FunctionOverloads<F> : never;
 
@@ -404,3 +453,21 @@ export type ConstructorFn<P extends any[] = any, R = any> = abstract new (
 //   return arg;
 // }
 // type vv = SignatureOf<typeof f>;
+
+
+type Z = {
+  // (...args: [string, boolean, number] | [string, boolean, string]): number,
+  (a: string, b: boolean, c: number): number,
+  (a: string, b: boolean, c: string): number,
+  // (...args: [null, number, undefined] | [null, null, null]): symbol,
+  (a: null, b: number, c: undefined): symbol,
+  (a: null, b: null, c: null): symbol,
+}
+
+// type ZZ = Z extends (a: string, b: infer B, c: infer C) => number ? [B,C] : never; // never**
+// type ZZ = Z extends (a: string, b: infer B extends boolean, c: infer C) => number ? [B,C] : never; // never**
+// type ZZ = Z extends (a: string, b: infer B extends boolean, c: infer C) => any ? [B,C] : never; // never**
+// type ZZ = Z extends (a: string, b: infer B extends boolean, c: infer C extends number) => number ? [B,C] : never; // [boolean, number]
+// type ZZ = Z extends (a: infer A extends string, b: infer B, c: infer C) => any ? [B,C] : never; // never**
+// type ZZ = Z extends (a: infer A extends string, b: boolean, c: infer C) => any ? C : never; // never**
+// type ZZ = Z extends (a: string, b: boolean, c: infer C extends number | string) => any ? C : never; // never**

@@ -1,7 +1,7 @@
-import React, { forwardRef, Fragment, StrictMode, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type RefObject } from "react"
+import React, { forwardRef, StrictMode, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type RefObject } from "react"
 import ProjectGrid, { type ProjectGridHandle } from "./grid/ProjectGrid";
 // import ProjectCarouselDialog from "./overlay/ProjectCarouselDialog";
-import type { LightboxMediaEntryWithLBSymbols, ProjectInfo, ProjectInfoWithLBSymbols, ProjectMediaEmbedData } from "./types";
+import type { LightboxMediaEntryWithLBSymbols, ProjectInfo, ProjectInfoWithLBSymbols } from "./types";
 import parse from "html-react-parser";
 import { collectFilterRangeInfo, TAGTYPES, type FilterRangeInfo, type ScrollToFn, type ShowToastFn } from "./filtering/common/filterTypes";
 import AlertToast from "./toasts";
@@ -21,8 +21,9 @@ import ErrorBoundary from "@/hooks/ErrorBoundary";
 import FilterSheet from "./filtering/FilterSheet";
 import type { ValueOf } from "node_modules/astro/dist/type-utils";
 import getYouTubeThumbnail from "./details/getYoutubeThumbnail";
-import { createEmbed } from "./details/ProjectMedia";
+// import { createEmbed } from "./details/ProjectMedia";
 import CaptionedLightboxProvider from "./CaptionedLightboxProvider";
+import StickyDiv from "./StickyDiv";
 
 const ProjectCarouselDialog = React.lazy(()=>import('./overlay/ProjectCarouselDialog'));
 
@@ -93,7 +94,7 @@ type ProjectBrowserInnerProps = Omit<ProjectBrowserProps, 'projects' | 'lbConten
     contentElements: React.JSX.Element[],
 };
 
-const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInnerProps>(({ children, projects, filterRangeInfo, contentElements, showToast, scrollToRef, scrollTo, scrollContainer }: ProjectBrowserInnerProps, _ref) => {
+const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInnerProps>(({ children: _children, projects: _projects, filterRangeInfo, contentElements, showToast, scrollToRef, scrollTo, scrollContainer }: ProjectBrowserInnerProps, _ref) => {
     console.log('[ProjectBrowserInner] Render start', {
         url: window.location.href,
         search: window.location.search,
@@ -242,7 +243,8 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
         </Collapsible>
         <CaptionedLightboxProvider>
             <div className="mt-5 overflow-y-visible w-full max-w-[100vw]" ref={filterResultsRef}>
-                <div className="pl-4 pr-4 sticky top-[-0.8px] z-1 bg-background">{resultText}</div>
+                {/* <div className="pl-4 pr-4 sticky top-[-0.8px] z-1 bg-background">{resultText}</div> */}
+                <StickyDiv className='px-4 top-[-0.8px] z-1 data-[sticky-state="stuck"]:bg-background bg-none'>{resultText}</StickyDiv>
                 <ProjectGrid ref={gridHandle} scrollContainer={scrollContainer} />
             </div>
             <React.Suspense fallback={<div className="absolute inset-0 w-screen h-screen bg-green-400"></div>}>
@@ -268,7 +270,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
 
 
 
-function getLightboxItems(lbContentString: string | undefined, projects: ProjectInfoWithLBSymbols[]) {
+function getLightboxItems(lbContentString: string | undefined, _projects: ProjectInfoWithLBSymbols[]) {
     const ret: Record<string, React.JSX.Element> = {};
     for(const contentString of [lbContentString]) {
         if(!contentString) continue;

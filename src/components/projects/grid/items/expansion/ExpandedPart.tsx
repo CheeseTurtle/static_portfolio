@@ -99,7 +99,7 @@ const ExpandedPart = React.memo(({setSizeChanging, children, id, ref: externalRe
     if(canUnmount && !expanded) return null;
     // return <React.Suspense fallback={<div className='w-full min-h-20 h-min bg-blue-500'>Placeholder</div>}>
     return <div ref={ref} 
-        style={{ height: 0, overflow: 'hidden', opacity: 0, width: '100%', visibility: 'hidden'}} 
+        style={{ height: 0, overflow: 'clip', opacity: 0, width: '100%', visibility: 'hidden'}} 
         data-slot='project-item-extra' {...props}>{children}</div>
     // </React.Suspense>
 });
