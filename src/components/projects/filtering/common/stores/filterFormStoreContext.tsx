@@ -4,11 +4,6 @@ import { createTagSectionStore, type TagSectionStore, type TagSectionStoreInitPr
 import { useStoreWithEqualityFn } from "zustand/traditional";
 import { useStore } from "zustand";
 
-
-
-
-
-
 const FilterFormStoreContext = React.createContext<FilterFormStore|null>(null);
 
 const TagSectionStoreContext = React.createContext<TagSectionStore | null>(null);
@@ -35,18 +30,24 @@ export function useTagSectionStore<T>(selector: (state: TagSectionStoreState)=>T
 
 
 
-export function FilterFormStoreProvider({browserStore, filterStore, children}: FilterFormStoreInitProps & Omit<React.ComponentProps<typeof FilterFormStoreContext.Provider>, 'value'>) {
-    const filterFormStore = createFilterFormStore({browserStore, filterStore});
+export function FilterFormStoreProvider({children, ...props}: FilterFormStoreInitProps & Omit<React.ComponentProps<typeof FilterFormStoreContext.Provider>, 'value'>) {
+    const storeRef = React.useRef<FilterFormStore | null>(null);
 
-    return <FilterFormStoreContext.Provider value={filterFormStore}>
+    if(!storeRef.current)
+        storeRef.current = createFilterFormStore(props);
+
+    return <FilterFormStoreContext.Provider value={storeRef.current}>
         {children}
     </FilterFormStoreContext.Provider>
 }
 
 export function TagSectionStoreProvider({children, ...props}: TagSectionStoreInitProps & Omit<React.ComponentProps<typeof TagSectionStoreContext.Provider>, 'value'>) {
-    const tagSectionStore = createTagSectionStore(props);
+    const storeRef = React.useRef<TagSectionStore>(null);
 
-    return <TagSectionStoreContext.Provider value={tagSectionStore}>
+    if(!storeRef.current)
+        storeRef.current = createTagSectionStore(props);
+
+    return <TagSectionStoreContext.Provider value={storeRef.current}>
         {children}
     </TagSectionStoreContext.Provider>
 }

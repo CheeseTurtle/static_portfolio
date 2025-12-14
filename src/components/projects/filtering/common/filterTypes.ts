@@ -85,7 +85,8 @@ export type FilterRangeInfo = {
     maxYear: number,
     categories: Set<string>,
     // audiences: string[],
-    count: number // number of project items
+    count: number, // number of project items
+    categoryNames: string[],
 };
 
 
@@ -114,7 +115,8 @@ export function collectFilterRangeInfo(allProjects: (ProjectInfo | ProjectInfoWi
         throw Error('No projects, or no projects with years');
 
     return {
-        lang: langs, topic: topics, skill: skills, minYear, maxYear, categories, count
+        lang: langs, topic: topics, skill: skills, minYear, maxYear, categories, count,
+        categoryNames: Array.from(categories),
     }
 }
 

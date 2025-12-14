@@ -1,17 +1,15 @@
-import type { ProjectInfo } from "@/components/projects/types";
+import type { TagKey } from "@/components/projects/types";
 import { getProjectKeyFromTagType, type FilterRangeInfo, type TagType } from "../filterTypes";
 import { computeTagOrders as computeTagOrders_, type CountStore, type CountStoreState } from "./countStore";
-import { createStore, useStore } from "zustand";
+import { createStore } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import React from "react";
-import type { FilterStore } from "./filterStore";
-import { shallow } from "zustand/shallow";
-import { useStoreWithEqualityFn } from "zustand/traditional";
+import type { FilterStore, FilterStoreState } from "./filterStore";
 
 
 export type TagSectionStoreInitProps = {
     countStore: CountStore,
-    projects: ProjectInfo[],
+    // projects: ProjectInfo[],
     tagType: TagType,
     rangeInfo: FilterRangeInfo,
     registerReset: (resetFn: ()=>void) => ()=>void,
@@ -20,12 +18,14 @@ export type TagSectionStoreInitProps = {
 }
 
 export type TagSectionStoreProps = {
-    readonly projects: ProjectInfo[],
+    // readonly projects: ProjectInfo[],
     readonly tagType: TagType,
+    readonly tagKey: TagKey,
     readonly rangeInfo: FilterRangeInfo,
     readonly registerReset: (resetFn: ()=>void) => ()=>void,
     readonly reset: () => void,
 
+    readonly sectionTitle: string,
     readonly colorClassName: string,
     readonly availableTags: Set<string>,
     readonly selectedTags: Set<string> | undefined,
@@ -47,6 +47,10 @@ type TagSectionStoreActions = {
 
     canToggleTag: (tagText: string, currentlyActive: boolean) => boolean,
 
+    setUseOr: (useOr: boolean) => void,
+
+    setVisualOrder: React.Dispatch<React.SetStateAction<VisualOrder>>,
+
 }
 
 
@@ -55,6 +59,22 @@ export type TagSectionStore = ReturnType<typeof createTagSectionStore>;
 
 
 
+type TagCounts = {[key: string]: number}
+
+function isEqualTagCounts(a: TagCounts, b: TagCounts): boolean {
+    const bKeys = new Set<string>(Object.keys(b));
+    if(Object.entries(a).some(([k,v])=>(bKeys.delete(k) ? b[k] : 0) !== v))
+        return false;
+    if(bKeys.size && [...bKeys].some(k=>b[k]))
+        return false;
+    return true;
+}
+
+function isEqualOptionalTagSet(a: Set<string> | undefined, b: Set<string> | undefined): boolean {
+    if(a?.size && b?.size)
+        return a.size === b.size && [...a].every(x=>b.has(x));
+    return !a?.size && !b?.size;
+}
 
 
 
@@ -95,14 +115,15 @@ type VisualOrder = [string[], string[]]
 
 
 
-export const createTagSectionStore = ({countStore, filterStore, projects, rangeInfo, registerReset, reset, tagType}: TagSectionStoreInitProps) => {
+export const createTagSectionStore = ({countStore, filterStore, rangeInfo, registerReset, reset, tagType}: TagSectionStoreInitProps) => {
+    const tagKey = getProjectKeyFromTagType(tagType);
     const colorClassName = getSectionColors(tagType);
     
     const [_singular, plural] = getSectionWords(tagType);
     const sectionTitle = plural.slice(0,1).toUpperCase() + plural.slice(1);
 
-    const availableTagsSet = React.useMemo(() => rangeInfo[tagType], [rangeInfo, tagType]);
-    const availableTags = React.useMemo(()=>Array.from(availableTagsSet), [availableTagsSet]);
+    const availableTagsSet = rangeInfo[tagType];
+    const availableTags = Array.from(availableTagsSet);
 
 
     return createStore<TagSectionStoreState>()(subscribeWithSelector((set,get,api)=>{
@@ -116,40 +137,25 @@ export const createTagSectionStore = ({countStore, filterStore, projects, rangeI
             return [selected.filter(x=>availableTags.includes(x)), newUnselected] as [string[], string[]];
         }
 
+        const propsToggleTag = (tagText: string) => filterStore.getState().toggleTag(tagType, tagText);
+        
+        const setTagMode: FilterStoreState['setTagMode'] = (tagType, mode) => filterStore.getState().setTagMode(tagType, mode);
 
         filterStore.subscribe(s=>s.tags?.[tagType], (selectedTags)=>{
             set({
                 selectedTags,
                 canReset: Boolean(selectedTags?.size)
             })
-        }, {
-            equalityFn: (a, b) => {
-                // if(!((a && a.size) || (b && b.size)))
-                //     return true;
-                if(a?.size && b?.size)
-                    return a.size === b.size && [...a].every(x=>b.has(x));
-                return !a?.size && !b?.size;
-            }
-        });
+        }, { equalityFn: isEqualOptionalTagSet });
 
         countStore.subscribe(s=>s.current.tagCounts[tagKey], counts=>{
             set({ counts })
-        }, {equalityFn: (a,b)=>{
-            const bKeys = new Set<string>(Object.keys(b));
-            if(Object.entries(a).some(([k,v])=>(bKeys.delete(k) ? b[k] : 0) !== v))
-                return false;
-            if(bKeys.size && [...bKeys].some(k=>b[k]))
-                return false;
-            return true;
-        }})
+        }, {equalityFn: isEqualTagCounts})
 
-        const toggleTag_ = useStoreWithEqualityFn(filterStore, s=>s.toggleTag);
-        const propsToggleTag = React.useCallback((tagText: string) => toggleTag_(tagType, tagText), [toggleTag_]);
+        // api.subscribe(s=>s.projects, projects=>{
+
+        // })
         
-        const setTagMode = useStore(filterStore, s=>s.setTagMode);
-
-        const tagKey = getProjectKeyFromTagType(tagType);
-
         api.subscribe(s=>s.useOr, useOr => {
             setTagMode(tagType, Number(useOr))
         })
@@ -175,7 +181,8 @@ export const createTagSectionStore = ({countStore, filterStore, projects, rangeI
         const initialVisualOrder = updateVisualOrderFromAvailableTags([[], initialTagOrder], availableTags)
 
         return {
-            tagType, rangeInfo, projects, sectionTitle, availableTags: availableTagsSet, colorClassName,
+            tagKey,
+            tagType, rangeInfo, sectionTitle, availableTags: availableTagsSet, colorClassName,
             selectedTags: undefined,
             canReset: false,
             useOr: false,
@@ -194,6 +201,8 @@ export const createTagSectionStore = ({countStore, filterStore, projects, rangeI
             canToggleTag(tagText, currentlyActive) {
                 return currentlyActive || get().counts[tagText] > 0
             },
+
+            setVisualOrder,
 
             toggleTag(tagText: string, isPressed: boolean) {
                 if (isPressed) {

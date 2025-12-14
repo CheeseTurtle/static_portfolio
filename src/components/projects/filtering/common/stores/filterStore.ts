@@ -48,6 +48,17 @@ export interface FilterDataProps {
 
 export interface FilterStoreProps extends FilterInitProps, FilterDataProps {
   filterRangeInfo: FilterRangeInfo;
+
+  readonly yearValue: [number, number],
+  
+  readonly _selectedCategoriesSet: Set<string>,
+  readonly selectedCategories: string[],
+  readonly selectedTags: FilterStoreState['tags'],
+
+  readonly canResetYear: boolean,
+  readonly canResetCategories: boolean,
+  readonly canResetTags: boolean,
+  
 }
 
 export type SetFilterProps = {
@@ -77,6 +88,9 @@ export interface FilterStoreActions {
   canToggleCategory: (value: string, currentlyActive: boolean ) => boolean,
   canToggleTag: (tagType: TagKey, tagText: string, currentlyActive: boolean, visibleProjects: ProjectInfo[], ) => boolean,
   resetFilter: (payload?: ResetPayload) => void;
+  resetYear: (resetMin?: boolean, resetMax?: boolean) => void,
+  resetCategories: () => void,
+  resetTags: (tagType?: TagType | TagType[]) => void,
 
   applyFilter: (spec: Partial<FilterDataProps>, projects: ProjectInfo[]) => ProjectInfo[], 
   canApplyFilter: (spec: Partial<FilterDataProps>, projects: ProjectInfo[]) => boolean, 
@@ -158,71 +172,94 @@ export const createFilterStore = (
   };
 
   const rangeInfo = filterRangeInfo ?? collectFilterRangeInfo(initProps.allProjects);
-  return createStore<FilterStoreState>()(subscribeWithSelector((set, get) => ({
-    ...DEFAULT_PROPS,
-    ...initProps,
-    filterRangeInfo: rangeInfo,
+  return createStore<FilterStoreState>()(subscribeWithSelector((set, get, api) => {
 
-    // addBear: () => set((state) => ({ bears: ++state.bears })),
+    api.subscribe(s=>s.year, (v0) => {
+        const yearValue: [number, number] = [v0?.[0] ?? rangeInfo.minYear, v0?.[1] ?? rangeInfo.maxYear] as [number, number];
+        set({
+            yearValue,
+            canResetYear: yearValue[0] !== rangeInfo.minYear || yearValue[1] !== rangeInfo.maxYear
+        });
+    }, {equalityFn: (v0, v1) => {
+        const [aMin, aMax] = v0 ?? [undefined, undefined];
+        const [bMin, bMax] = v1 ?? [undefined, undefined];
 
-    setTagMode(tagType, mode) {
-      // console.log(`Setting ${tagType} mode to:`, mode);
-      set({tagModes: {...get().tagModes, [tagType]: mode}});
-    },
-    
-    setYear: (value) =>
-      set((_state) => {
-        if (value === undefined) return {};
-        if (value === null) return { year: null };
-        const minYear =
-          value[0] !== null && value[0] > rangeInfo.minYear
-            ? value[0]
-            : null;
-        const maxYear =
-          value[1] !== null && value[1] < rangeInfo.maxYear
-            ? value[1]
-            : null;
-        
-        return {
-          year:
-            minYear === null && maxYear === null
-              ? null
-              : [minYear, maxYear],
-        };
-      }),
+        const year0Unchanged = aMin === bMin || (aMin ?? rangeInfo.minYear) === (bMin ?? rangeInfo.minYear)
+        const year1Unchanged = aMax === bMax || (aMax ?? rangeInfo.maxYear) === (bMax ?? rangeInfo.maxYear)
+        return !(year0Unchanged && year1Unchanged);
+    }})
 
-    setCategories: (value: string[]) => set(state=>{
-      const oldSize = state.categories.size;
-      const newSize = value.length;
-      if(newSize === oldSize && value.every(x=>state.categories.has(x))) return {}; // No change
-      const newCategories = new Set<string>(value);
-      return {categories: newCategories};
-    }),
+    api.subscribe(s=>s.categories, (selectedCategoriesSet)=>{
+        set({
+            // _selectedCategoriesSet: selectedCategoriesSet,
+            selectedCategories: Array.from(selectedCategoriesSet),
+            canResetCategories: selectedCategoriesSet.size > 0,
+        })
+    }, {equalityFn: (a,b)=>(a.size === b.size && [...a].every(x=>b.has(x)))})
+
+    api.subscribe(s=>s.selectedTags, selectedTags => {
+        set({
+            selectedTags: selectedTags,
+            canResetTags: selectedTags ? Object.values(selectedTags).some((v)=>v.size) : false
+        })
+    })
+
+    const resetFilter: FilterStoreState['resetFilter'] = (payload?) =>
+        set((state) => {
+          if (payload && payload.mask !== undefined) {
+            const year: [number | null, number | null] | null =
+              payload.mask & FilterField.ALL_YEAR && state.year !== null
+                ? [
+                    payload.mask & FilterField.MIN_YEAR
+                      ? rangeInfo.minYear
+                      : state.year[0],
+                    payload.mask & FilterField.MAX_YEAR
+                      ? rangeInfo.maxYear
+                      : state.year[1],
+                  ] // as [number, number] | [number, undefined] | [undefined, number]
+                : (state.year ?? null);
+            const categories =
+              payload.mask & FilterField.CATEGORY
+                ? new Set<string>()
+                : state.categories;
+
+            const tagTypes = payload.tagTypes;
+            const tags =
+              payload.mask & FilterField.TAG
+                ? tagTypes === undefined
+                  ? TAGTYPES.reduce((acc, t) => ({ ...acc, [t]: new Set() }), {})
+                  : Array.isArray(tagTypes)
+                    ? TAGTYPES.reduce(
+                        (acc, t) => ({
+                          ...acc,
+                          [t]: tagTypes.includes(t)
+                            ? new Set<string>()
+                            : state.tags?.[t],
+                        }),
+                        {},
+                      )
+                    : TAGTYPES.reduce(
+                        (acc, t) => ({
+                          ...acc,
+                          [t]: t === tagTypes ? new Set() : state.tags?.[t],
+                        }),
+                        {},
+                      )
+                : state.tags;
+            return { ...state, year, categories, tags: <Record<TagType, Set<string>>>tags };
+          }
+          return {
+            ...state,
+            year: null,
+            categories: new Set<string>(),
+            tags: <Record<TagType, Set<string>>>(
+              TAGTYPES.reduce((acc, t) => ({ ...acc, [t]: new Set() }), {})
+            ),
+          };
+        }, true);
 
 
-    toggleCategory: (value, active) =>
-      set((state) => {
-        // const categories = new Set(state.categories);
-        if (state.categories !== null && state.categories.has(value)) {
-          if (active === true) return {};
-          state.categories.delete(value);
-        } else if (active === false) return {};
-        else if(state.categories === null)
-          return { categories: new Set<string>([value]) };
-        else state.categories.add(value);
-        return { categories: new Set<string>(state.categories) };
-    }),
-
-    applyFilter(spec, projects): ProjectInfo[] {
-      return applyFilter(
-        {
-          tagModes: get().tagModes,
-          ...spec
-        }, projects
-      );
-    },
-
-    canApplyFilter(spec, projects): boolean {
+    const canApplyFilter: FilterStoreState['canApplyFilter'] = (spec, projects): boolean => {
       return projects.some(p=>{
         if(spec.year && (spec.year[0] !== null || spec.year[1] !== null)) {
           const year = p.date.getFullYear();
@@ -236,152 +273,157 @@ export const createFilterStore = (
         }
         return true;
       });
-    },
-    
-    canToggleCategory(value, currentlyActive): boolean {
-      if(currentlyActive) return true; // Can always unselect
-      const tags = get().tags;
-      const year = get().year;
-      const ret = get().canApplyFilter({
-        year, tags, categories: new Set([value])
-      }, initProps.allProjects);
+    }
 
-      return ret;
-    },
+    return {
+      ...DEFAULT_PROPS,
+      ...initProps,
+      filterRangeInfo: rangeInfo,
 
-    canToggleTag(tagKey, tagText, currentlyActive, visibleProjects): boolean {
-      if(currentlyActive) return true; // Can always unselect
-      const ret = visibleProjects.some(p=>{
-        const tags = p.tags[tagKey];
-        return (tags.size && tags.has(tagText));
-      });
-      // console.log('Can toggle tag?:', tagKey, tagText, ret);
-      return ret;
-    },
+      canResetYear: false,
+      canResetCategories: false,
+      canResetTags: false,
+      yearValue: [rangeInfo.minYear, rangeInfo.maxYear],
+      selectedCategories: [],
+      _selectedCategoriesSet: new Set(),
+      selectedTags: null,
 
+      setTagMode(tagType, mode) {
+        // console.log(`Setting ${tagType} mode to:`, mode);
+        set(({tagModes})=>({tagModes: {...tagModes, [tagType]: mode}}));
+      },
+      
+      setYear: (value) =>
+        set((_state) => {
+          if (value === undefined) return {};
+          if (value === null) return { year: null };
+          const minYear =
+            value[0] !== null && value[0] > rangeInfo.minYear
+              ? value[0]
+              : null;
+          const maxYear =
+            value[1] !== null && value[1] < rangeInfo.maxYear
+              ? value[1]
+              : null;
+          
+          return {
+            year:
+              minYear === null && maxYear === null
+                ? null
+                : [minYear, maxYear],
+          };
+        }),
 
-    toggleTag: (tagType, tagText, active) =>
-      set((state) => {
-        // const tags = { ...state.tags, [tagType]: new Set(state.tags?.[tagType] ?? []) };
-        const tags = state.tags;
-        const tagSet = tags?.[tagType];
-        const newTagSet = new Set<string>(tagSet);
-        if (tagSet !== undefined && tagSet.has(tagText)) {
-          if (active === true) return {};
-          newTagSet.delete(tagText);
-        } else if (active === false) return {};
-        // else if(tags === null)
-        //   return {tags: {
-        //       lang: new Set<string>([]),
-        //       skill: new Set<string>([]),
-        //       topic: new Set<string>([]),
-        //       [tagType]: new Set<string>([tagText])}};
-        // // else if(tagSet === undefined)
-        // //   tags[tagType] = new Set<string>([tagText]);
-        else newTagSet.add(tagText);
-
-        // console.log(`Setting ${tagType} tags to:`, newTagSet);
-        
-        return { tags: {...(tags ?? {lang: new Set(), skill: new Set(), topic: new Set()}), [tagType]: newTagSet } };
+      setCategories: (value: string[]) => set(state=>{
+        const oldSize = state.categories.size;
+        const newSize = value.length;
+        if(newSize === oldSize && value.every(x=>state.categories.has(x))) return {}; // No change
+        const newCategories = new Set<string>(value);
+        return {categories: newCategories};
       }),
 
 
-    setFilter: ({
-      category,
-      year,
-      lang,
-      skill,
-      topic,
-    }: Partial<SetFilterProps>) =>
-      set((state) => {
-        const newTags =
-          lang === undefined && skill === undefined && topic === undefined
-            ? undefined
-            : (()=>{
-                const ret: Partial<Record<TagType, Set<string>>> = {};
-                if(lang !== undefined)
-                  ret.lang = new Set<string>(lang);
-                if(skill !== undefined)
-                  ret.skill = new Set<string>(skill);
-                if(topic !== undefined)
-                  ret.topic = new Set<string>(topic);
-                return {...(state.tags ?? {lang: new Set<string>([]), skill: new Set<string>([]), topic: new Set<string>([])}), ...ret};
-            })();
-            // : {
-            //     lang:
-            //       lang === undefined ? state.tags?.lang ?? null : new Set<string>(lang),
-            //     skill:
-            //       skill === undefined
-            //         ? state.tags?.skill
-            //         : new Set<string>(skill),
-            //     topic:
-            //       topic === undefined
-            //         ? state.tags?.topic
-            //         : new Set<string>(topic),
-            //   };
-        const newState = {
-          categories:
-            category === undefined
-              ? state.categories
-              : new Set<string>(category),
-          year: year === undefined ? (state.year ?? null) : (year ?? null),
-          tags: newTags ?? null,
-        };
-        console.log("[createStore] INIT_FROM_URL new state:", newState);
-        return {...state, ...newState};
-      }, true),
-    resetFilter: (payload?) =>
-      set((state) => {
-        if (payload && payload.mask !== undefined) {
-          const year: [number | null, number | null] | null =
-            payload.mask & FilterField.ALL_YEAR && state.year !== null
-              ? [
-                  payload.mask & FilterField.MIN_YEAR
-                    ? rangeInfo.minYear
-                    : state.year[0],
-                  payload.mask & FilterField.MAX_YEAR
-                    ? rangeInfo.maxYear
-                    : state.year[1],
-                ] // as [number, number] | [number, undefined] | [undefined, number]
-              : (state.year ?? null);
-          const categories =
-            payload.mask & FilterField.CATEGORY
-              ? new Set<string>()
-              : state.categories;
+      toggleCategory: (value, active) =>
+        set((state) => {
+          // const categories = new Set(state.categories);
+          if (state.categories !== null && state.categories.has(value)) {
+            if (active === true) return {};
+            state.categories.delete(value);
+          } else if (active === false) return {};
+          else if(state.categories === null)
+            return { categories: new Set<string>([value]) };
+          else state.categories.add(value);
+          return { categories: new Set<string>(state.categories) };
+      }),
 
-          const tagTypes = payload.tagTypes;
-          const tags =
-            payload.mask & FilterField.TAG
-              ? tagTypes === undefined
-                ? TAGTYPES.reduce((acc, t) => ({ ...acc, [t]: new Set() }), {})
-                : Array.isArray(tagTypes)
-                  ? TAGTYPES.reduce(
-                      (acc, t) => ({
-                        ...acc,
-                        [t]: tagTypes.includes(t)
-                          ? new Set<string>()
-                          : state.tags?.[t],
-                      }),
-                      {},
-                    )
-                  : TAGTYPES.reduce(
-                      (acc, t) => ({
-                        ...acc,
-                        [t]: t === tagTypes ? new Set() : state.tags?.[t],
-                      }),
-                      {},
-                    )
-              : state.tags;
-          return { ...state, year, categories, tags: <Record<TagType, Set<string>>>tags };
-        }
-        return {
-          ...state,
-          year: null,
-          categories: new Set<string>(),
-          tags: <Record<TagType, Set<string>>>(
-            TAGTYPES.reduce((acc, t) => ({ ...acc, [t]: new Set() }), {})
-          ),
-        };
-      }, true),
-  })));
+      applyFilter(spec, projects): ProjectInfo[] {
+        return applyFilter(
+          {
+            tagModes: get().tagModes,
+            ...spec
+          }, projects
+        );
+      },
+
+      canApplyFilter,
+      
+      canToggleCategory(value, currentlyActive): boolean {
+        if(currentlyActive) return true; // Can always unselect
+        const tags = get().tags;
+        const year = get().year;
+        const ret = canApplyFilter({
+          year, tags, categories: new Set([value])
+        }, initProps.allProjects);
+
+        return ret;
+      },
+
+      canToggleTag(tagKey, tagText, currentlyActive, visibleProjects): boolean {
+        if(currentlyActive) return true; // Can always unselect
+        const ret = visibleProjects.some(p=>{
+          const tags = p.tags[tagKey];
+          return (tags.size && tags.has(tagText));
+        });
+        // console.log('Can toggle tag?:', tagKey, tagText, ret);
+        return ret;
+      },
+
+
+      toggleTag: (tagType, tagText, active) =>
+        set((state) => {
+          // const tags = { ...state.tags, [tagType]: new Set(state.tags?.[tagType] ?? []) };
+          const tags = state.tags;
+          const tagSet = tags?.[tagType];
+          const newTagSet = new Set<string>(tagSet);
+          if (tagSet !== undefined && tagSet.has(tagText)) {
+            if (active === true) return {};
+            newTagSet.delete(tagText);
+          } else if (active === false) return {};
+          else newTagSet.add(tagText);
+
+          return { tags: {...(tags ?? {lang: new Set(), skill: new Set(), topic: new Set()}), [tagType]: newTagSet } };
+        }),
+
+      setFilter: ({
+        category,
+        year,
+        lang,
+        skill,
+        topic,
+      }: Partial<SetFilterProps>) =>
+        set((state) => {
+          const newTags =
+            lang === undefined && skill === undefined && topic === undefined
+              ? undefined
+              : (()=>{
+                  const ret: Partial<Record<TagType, Set<string>>> = {};
+                  if(lang !== undefined)
+                    ret.lang = new Set<string>(lang);
+                  if(skill !== undefined)
+                    ret.skill = new Set<string>(skill);
+                  if(topic !== undefined)
+                    ret.topic = new Set<string>(topic);
+                  return {...(state.tags ?? {lang: new Set<string>([]), skill: new Set<string>([]), topic: new Set<string>([])}), ...ret};
+              })();
+          const newState = {
+            categories:
+              category === undefined
+                ? state.categories
+                : new Set<string>(category),
+            year: year === undefined ? (state.year ?? null) : (year ?? null),
+            tags: newTags ?? null,
+          };
+          console.log("[createStore] INIT_FROM_URL new state:", newState);
+          return {...state, ...newState};
+        }, true),
+      resetFilter,
+      resetYear: (resetMin: boolean = true, resetMax: boolean = true)=>{
+        const mask = (resetMin ? (resetMax ? FilterField.ALL_YEAR : FilterField.MIN_YEAR) : (resetMax ? FilterField.MAX_YEAR : null));
+        if (mask !== null) resetFilter({mask});
+      },
+      resetCategories: ()=>resetFilter({mask: FilterField.CATEGORY}),
+      resetTags: (tagTypes?: TagType | TagType[]) => resetFilter({mask: FilterField.TAG, tagTypes}),
+
+    }
+  }))
 };
