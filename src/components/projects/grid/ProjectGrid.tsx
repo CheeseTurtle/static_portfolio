@@ -118,11 +118,11 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
 
 
   // Initial measurement
-  React.useLayoutEffect(() => {
+  React.useEffect(() => {
     console.log('Refreshing projectSizeChanging array')
     projectSizeChanging.current = new Array<boolean>(projects.length).fill(false);
     console.log('Done refreshing projectSizeChanging array')
-    measureBaseHeight();
+    measureBaseHeight(); // TODO: Omit??
   }, [projects, columns, measureBaseHeight]);
 
   const setSizeChanging = React.useCallback((index: number, changing: boolean)=>{
@@ -228,7 +228,7 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
   // }, [updateSizeChangingDebounced, sizeChangingCurrent])
 
 
-  React.useLayoutEffect(()=>{
+  React.useEffect(()=>{
     // startTransition(async () => {
       // await new Promise<void>((resolve)=>{
         updateSizeChanging(sizeChangingCurrent);

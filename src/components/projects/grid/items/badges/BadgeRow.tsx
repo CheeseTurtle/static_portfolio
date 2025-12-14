@@ -30,7 +30,8 @@ export const BadgeRow = React.memo(({badgeType, badgeItems, ...props}: BadgeRowP
 
   // Measure which badges fit
   useLayoutEffect(() => {
-    // if(badgeItems === badgeItemsRef.current) return;
+    if(badgeItems === badgeItemsRef.current) return;
+    badgeItemsRef.current = badgeItems;
     // console.log('BadgeRow layout effect begin', badgeItems, badgeItemsRef.current, badgeItems === badgeItemsRef.current);
     badgeItemsRef.current = badgeItems;
     const container = containerRef.current;

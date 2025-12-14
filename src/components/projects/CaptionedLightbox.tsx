@@ -207,7 +207,7 @@ const LightboxCaption = React.memo(({ref, children, divRef, sourceElem, classNam
     // console.log(index, activeIndex, active);
 
     const activated = React.useRef<boolean | undefined>(undefined);
-    React.useLayoutEffect(()=>{
+    React.useEffect(()=>{
         const div = divRef.current;
         console.log('LightboxCaption layout effect begin', div, active, activated.current)
         if(!div) return;
@@ -386,7 +386,7 @@ const LightboxCaptionsOverlay = React.memo(({sources, captions, open, ref, divRe
 
 
     const opened = React.useRef<boolean | undefined>(undefined);
-    React.useLayoutEffect(()=>{
+    React.useEffect(()=>{
         const div = divRef.current;
         if(!div) return;
         if(open === opened.current) return;

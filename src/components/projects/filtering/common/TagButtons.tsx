@@ -21,12 +21,15 @@ type TagButtonsProps = {
 };
 
 export default function TagButtons({toggleTag: propsToggleTag, availableTags: availableTagsSet, selectedTags, tagType, registerReset, colorClassName}: TagButtonsProps) {    
-    const tagKey = useMemo(()=>getProjectKeyFromTagType(tagType), [tagType]);
-    const availableTags = useMemo(() => Array.from(availableTagsSet.values()), [availableTagsSet]);
-
     useEffect(()=>{
         gsap.registerPlugin(Flip);
     }, []);
+
+
+    
+    const tagKey = useMemo(()=>getProjectKeyFromTagType(tagType), [tagType]);
+    const availableTags = useMemo(() => Array.from(availableTagsSet.values()), [availableTagsSet]);
+
 
     // [selected tags, unselected tags]
     const [visualOrder, setVisualOrder] = useState<[string[],string[]]>([[],availableTags]);
@@ -45,12 +48,8 @@ export default function TagButtons({toggleTag: propsToggleTag, availableTags: av
         return computeTagOrders_(tags, counts, inPlace);
     }, [counts, computeTagOrders_]);
     
-    const computeTagOrdersSafe = useEffectEvent(computeTagOrders);
+    // const computeTagOrdersSafe = useEffectEvent(computeTagOrders);
 
-
-    // useEffect(()=>{
-    //     console.log('Selected tags:', props.tagType, props.selectedTags);
-    // }, [props.selectedTags]);
 
     // update visualOrder on mount or when availableTags changes
     useEffect(() =>
@@ -254,7 +253,7 @@ export default function TagButtons({toggleTag: propsToggleTag, availableTags: av
                     return vOrder;
                 }
                 if(!unselected.length) {
-                    const ret: [string[], string[]] = [computeTagOrdersSafe(selected)[1], unselected];
+                    const ret: [string[], string[]] = [computeTagOrders(selected)[1], unselected];
                     // console.log('(in registered reset) Setting visual order:', ret);
                     return ret;
                 }
@@ -266,13 +265,13 @@ export default function TagButtons({toggleTag: propsToggleTag, availableTags: av
                     if(!newUnselected.includes(tag)) newUnselected.push(tag);
                     return false;
                 });
-                const ret: [string[], string[]] = [computeTagOrdersSafe(newSelected, true)[1], computeTagOrdersSafe(newUnselected, true)[1]];
+                const ret: [string[], string[]] = [computeTagOrders(newSelected, true)[1], computeTagOrders(newUnselected, true)[1]];
                 // console.log('(in registered reset) Setting visual order:', ret);
                 return ret;
             });
         });
         return unregister;
-    }, [selectedTags, setVisualOrder, registerReset]);
+    }, [selectedTags, setVisualOrder, registerReset, computeTagOrders]);
 
     return <div data-role='tag-buttons'>
         {renderedChildren}

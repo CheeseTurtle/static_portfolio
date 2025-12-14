@@ -16,7 +16,8 @@ import { WrappingToggleGroup, WrappingToggleGroupItem } from "./common/WrappingT
 // type SliderProps = React.ComponentProps<typeof Slider>;
 
 
-type FilterFormProps = {
+type FilterFormProxyProps = {
+    form: React.RefObject<FilterFormHandle>,
     projects: ProjectInfo[],
     // state: FilterState,
     // dispatch: Dispatch<FilterAction>,
@@ -89,7 +90,7 @@ function FilterFormSection({filterField, headingExtra, children, resetFn, canRes
  }
 
 
-const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, _ref) => {
+const FilterFormProxy = forwardRef<FilterFormHandle, FilterFormProxyProps>((props, _ref) => {
     
     // #region Set/Reset
     const setYear = useFilterContext(s=>s.setYear);
@@ -150,6 +151,11 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, _ref) =
     ></YearSlider>
     // #endregion
 
+    // #region Categories
+
+    // #endregion
+
+
     // #region Tags
     const tagSections = useMemo( ()=>
         TAGTYPES.map((tt =>
@@ -182,4 +188,4 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, _ref) =
 });
 
 
-export default FilterForm;
+export default FilterFormProxy;

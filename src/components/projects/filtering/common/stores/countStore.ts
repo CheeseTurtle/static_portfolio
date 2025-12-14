@@ -6,7 +6,7 @@ import type { BrowserStore } from "./browserStore";
 import { useStoreWithEqualityFn } from "zustand/traditional";
 import { getTagTypeFromTagKey, type TagType } from "../filterTypes";
 import type { MemberOf } from "@/lib/type-utils";
-import { useDebounceCallback } from "@/hooks/use-debounce-callback";
+// import { useDebounceCallback } from "@/hooks/use-debounce-callback";
 
 
 
@@ -309,7 +309,7 @@ function getCounts(projects: ProjectInfo[], tagModes?: Record<TagType, TagFilter
 // }
 
 
-function computeTagOrders<Tag extends string, TagsToSort extends Tag[] = any>(tags: TagsToSort, tagCounts: Partial<Record<Tag, number>>, inPlace?: boolean, selected?: Set<Tag> | null, ):
+export function computeTagOrders<Tag extends string, TagsToSort extends Tag[] = any>(tags: TagsToSort, tagCounts: Partial<Record<Tag, number>>, inPlace?: boolean, selected?: Set<Tag> | null, ):
 // function computeTagOrders<Tag extends string, TagsToSort extends Tag[] = any, CountedTag extends Tag = any>(tags: TagsToSort, tagCounts: Record<CountedTag, number>, inPlace?: boolean):
     [Record<MemberOf<TagsToSort>, number>, Tag[]]
 {

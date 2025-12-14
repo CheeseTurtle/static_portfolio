@@ -286,7 +286,6 @@ export const createFilterStore = (
       }),
 
 
-
     setFilter: ({
       category,
       year,
