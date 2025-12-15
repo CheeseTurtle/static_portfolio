@@ -5,6 +5,7 @@ import { createStore } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import React from "react";
 import type { FilterStore, FilterStoreState } from "./filterStore";
+import { shallow } from "zustand/shallow";
 
 
 export type TagSectionStoreInitProps = {
@@ -50,6 +51,8 @@ type TagSectionStoreActions = {
     setUseOr: (useOr: boolean) => void,
 
     setVisualOrder: React.Dispatch<React.SetStateAction<VisualOrder>>,
+
+    setTagMode: (tagType: TagType, mode: number) => void,
 
 }
 
@@ -114,6 +117,10 @@ type VisualOrder = [string[], string[]]
 // type DispatchSetStateActionParameters<T> = Parameters<DispatchSetStateAction<T>>
 
 
+function isEqualVisualOrder(a: VisualOrder, b: VisualOrder) {
+    return shallow(a[0], b[0]) && shallow(a[1], b[1]);
+}
+
 
 export const createTagSectionStore = ({countStore, filterStore, rangeInfo, registerReset, reset, tagType}: TagSectionStoreInitProps) => {
     const tagKey = getProjectKeyFromTagType(tagType);
@@ -126,16 +133,24 @@ export const createTagSectionStore = ({countStore, filterStore, rangeInfo, regis
     const availableTags = Array.from(availableTagsSet);
 
 
-    return createStore<TagSectionStoreState>()(subscribeWithSelector((set,get,api)=>{
+    const store = createStore<TagSectionStoreState>()(subscribeWithSelector((set,get,_api)=>{
         function computeTagOrders(tags: string[], inPlace?: boolean) {
             const counts = get().counts;
             return computeTagOrders_(tags, counts, inPlace)
         }
+
+        const initialCounts = countStore.getState().current.tagCounts[tagKey]
+
+        const initialTagOrder = computeTagOrders_(availableTags, initialCounts, false)[1]
+        
         function updateVisualOrderFromAvailableTags([selected, _unselected]: [string[], string[]], availableTags: string[]) {
-            const newUnselected = computeTagOrders(availableTags.filter(x=>!selected.includes(x)), true)[1];
+            const newUnselected = computeTagOrders_(availableTags.filter(x=>!selected.includes(x)), initialCounts, true)[1];
             // console.log('(On mount / availableTags changed) Setting visual order (updating newUnselected):', [selected, newUnselected]);
             return [selected.filter(x=>availableTags.includes(x)), newUnselected] as [string[], string[]];
         }
+
+        const initialVisualOrder = updateVisualOrderFromAvailableTags([[], initialTagOrder], availableTags)
+
 
         const propsToggleTag = (tagText: string) => filterStore.getState().toggleTag(tagType, tagText);
         
@@ -152,18 +167,6 @@ export const createTagSectionStore = ({countStore, filterStore, rangeInfo, regis
             set({ counts })
         }, {equalityFn: isEqualTagCounts})
 
-        // api.subscribe(s=>s.projects, projects=>{
-
-        // })
-        
-        api.subscribe(s=>s.useOr, useOr => {
-            setTagMode(tagType, Number(useOr))
-        })
-
-        api.subscribe(s=>({visualOrder: s.visualOrder, counts: s.counts}), ({visualOrder: [selected, unselected], counts})=>{
-            const unselectedOrdered = computeTagOrders_(unselected, counts, false)[1]
-            set({renderOrder: [...selected, ...unselectedOrdered]})
-        })
 
         const setVisualOrder: React.Dispatch<React.SetStateAction<VisualOrder>> = (valueOrSetter) => {
             if(typeof valueOrSetter === 'function')
@@ -174,12 +177,7 @@ export const createTagSectionStore = ({countStore, filterStore, rangeInfo, regis
             else
                 set({visualOrder: valueOrSetter})
         }
-        const initialCounts = countStore.getState().current.tagCounts[tagKey]
-
-        const initialTagOrder = computeTagOrders_(availableTags, initialCounts, false)[1]
-
-        const initialVisualOrder = updateVisualOrderFromAvailableTags([[], initialTagOrder], availableTags)
-
+       
         return {
             tagKey,
             tagType, rangeInfo, sectionTitle, availableTags: availableTagsSet, colorClassName,
@@ -223,5 +221,25 @@ export const createTagSectionStore = ({countStore, filterStore, rangeInfo, regis
                 propsToggleTag(tagText);
           }
         }
-    }))
+    }));
+
+    store.subscribe(s=>s.useOr, useOr => {
+        store.getState().setTagMode(tagType, Number(useOr))
+    })
+
+    store.subscribe(s=>({visualOrder: s.visualOrder, counts: s.counts}), ({visualOrder: [selected, unselected], counts})=>{
+        const unselectedOrdered = computeTagOrders_(unselected, counts, false)[1]
+        store.setState({renderOrder: [...selected, ...unselectedOrdered]})
+    }, {equalityFn: (a,b)=>{
+
+        return isEqualVisualOrder(a.visualOrder, b.visualOrder) && isEqualTagCounts(a.counts, b.counts)
+
+    }})
+
+    return store;
 }
+
+
+// export function getTagSectionStoreRef(tagType: TagType, storesRef: React.RefObject<Record<TagType, React.RefObject<TagSectionStore | null>>>) {
+//     return storesRef.current[tagType];
+// }

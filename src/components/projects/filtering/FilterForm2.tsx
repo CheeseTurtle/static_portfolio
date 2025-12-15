@@ -1,22 +1,24 @@
 import React, { forwardRef, type ReactNode } from "react";
-import type { FilterSheetProps } from "./FilterSheet";
 // import { Accordion, AccordionContent, AccordionHeader, AccordionItem, AccordionTrigger } from "@radix-ui/react-accordion";
 import TagFilterSection from "./sections/TagFilterSection2";
 // import {Slider} from "@/components/ui/slider";
 import YearSlider from "@/components/projects/filtering/sections/YearSlider";
-import type { ProjectInfo } from "../types";
-import { useBrowserContext, useFilterContext } from "./common/browserContext";
+import { useBrowserContext, useFilterContext, useFilterStore } from "./common/browserContext";
 import ResetButton from "./common/ResetButton";
 import YearValue from "./sections/YearValue";
 import { URLSyncFlag } from "./common/stores/browserStore";
 import { WrappingToggleGroup, WrappingToggleGroupItem } from "./common/WrappingToggleGroup";
-import { useFilterFormStore } from "./common/stores/filterFormStoreContext";
+import { useFilterFormStore, useFilterFormStoreContext } from "./common/stores/filterFormStoreContext";
+import { TagSectionStoreProvider } from "./common/stores/FilterFormStoreProvider";
+import { shallow } from "zustand/shallow";
+import { useCountStore } from "./common/stores/countStore";
+import { createRecordFromObject } from "@/lib/objutil";
 
 type FilterFormProps = {
-    projects: ProjectInfo[],
-    registerReset: (resetFn: ()=>void) => ()=>void,
+    // projects: ProjectInfo[],
+    // registerReset: (resetFn: ()=>void) => ()=>void,
     inSheet?: boolean,
-} & FilterSheetProps;
+}; // & FilterSheetProps;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface FilterFormHandle {};
@@ -51,8 +53,13 @@ function FilterFormSection({filterField, headingExtra, children, resetFn, canRes
  }
 
 
-const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, _ref) => {
-    
+const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>(({
+    inSheet: _inSheet
+}, _ref) => {
+
+    const rangeInfo = useFilterContext(s=>s.filterRangeInfo);
+    // const {tagSectionStores, filterFormStore} = useFilterFormStoreContext();
+
     // #region Set/Reset
     const setYear = useFilterContext(s=>s.setYear);
     const setCategories = useFilterContext(s=>s.setCategories);
@@ -67,22 +74,26 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, _ref) =
 
     // #endregion
     
+
+
     // #region Values
-    const yearValue = useFilterContext(s=>s.yearValue);
+    const yearValue = useFilterFormStore(s=>s.yearValue, shallow);
     const [year0, year1] = yearValue;
 
-    const categoryNames = props.rangeInfo.categoryNames;
+    console.log('yearValue:', yearValue)
+
+    const categoryNames = rangeInfo.categoryNames;
 
     // const selectedCategoriesSet = useFilterContext(state=>state.categories, (a,b)=>(a.size === b.size && [...a].every(x=>b.has(x))));
-    const selectedCategories = useFilterContext(s=>s.selectedCategories);
+    const selectedCategories = useFilterFormStore(s=>s.selectedCategories);
     
     // const selectedTags = useFilterContext(s=>s.tags);
     // #endregion
 
 
-    const canResetYear = useFilterContext(s=>s.canResetYear);
-    const canResetCategories = useFilterContext(s=>s.canResetCategories);
-    const canResetTags = useFilterContext(s=>s.canResetTags);
+    const canResetYear = useFilterFormStore(s=>s.canResetYear);
+    const canResetCategories = useFilterFormStore(s=>s.canResetCategories);
+    const canResetTags = useFilterFormStore(s=>s.canResetTags);
     const canToggleCategory = useFilterContext(s=>s.canToggleCategory);
     
 
@@ -97,7 +108,7 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, _ref) =
         console.log('value commit:', value);
         setURLSyncFlag(URLSyncFlag.DEFER, true);   
     }, [setURLSyncFlag])
-    const yearSlider = <YearSlider value={yearValue} min={props.rangeInfo.minYear} max={props.rangeInfo.maxYear} defaultValue={[props.rangeInfo.minYear, props.rangeInfo.maxYear]}
+    const yearSlider = <YearSlider min={rangeInfo.minYear} max={rangeInfo.maxYear} defaultValue={[rangeInfo.minYear, rangeInfo.maxYear]}
         onValueChange={onValueChange} onValueCommit={onValueCommit}
         // vocab=""
         // color='green'
@@ -119,18 +130,33 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, _ref) =
     //     ))
     // , [props.projects, props.rangeInfo, props.registerReset, filterStore, countStore, resetTags]);
 
-    const tagSectionStores = useFilterFormStore(s=>s.tagSectionStores);
-    const tagSections = React.useMemo(()=>
-        Object.entries(tagSectionStores).map(([tt, store])=>
-            <TagFilterSection key={tt} tagType={tt as TagType} store={store} />
-        )
-    , [tagSectionStores]);
+    const countStore = useCountStore()
+    const filterStore = useFilterStore()
+    // const registerReset = useStore(filterFormStore, s=>s.registerReset);
+    const registerReset = useFilterFormStore(s=>s.registerReset);
+
+    const {tagSectionStores} = useFilterFormStoreContext();
+    
+    // const tagSections = Object.entries(tagSectionStores).map(([tt, ref])=>
+    //         <TagSectionStoreProvider storeRef={ref} key={tt} tagType={tt as TagType} countStore={countStore} filterStore={filterStore} rangeInfo={rangeInfo} registerReset={registerReset} reset={()=>resetTags(tt as TagType)}>
+    //             <TagFilterSection key={tt} tagType={tt as TagType} />
+    //         </TagSectionStoreProvider>
+    //     )
+
+    const tagSections = React.useRef<Partial<Record<TagType, React.JSX.Element>>>({});
+    tagSections.current = createRecordFromObject(tagSectionStores, ([tt,ref])=> (
+        tagSections.current[tt] ?? (
+            <TagSectionStoreProvider storeRef={ref} key={tt} tagType={tt as TagType} countStore={countStore} filterStore={filterStore} rangeInfo={rangeInfo} registerReset={registerReset} reset={()=>resetTags(tt as TagType)}>
+                <TagFilterSection key={tt} tagType={tt as TagType} />
+            </TagSectionStoreProvider>
+        )))
+
     // #endregion
 
 
     return <>
         <FilterFormSection filterField="year" resetFn={resetYear} canReset={canResetYear} 
-            headingExtra={<YearValue minYear={year0} maxYear={year1} rangeMinYear={props.rangeInfo.minYear} rangeMaxYear={props.rangeInfo.maxYear}/>}
+            headingExtra={<YearValue minYear={year0} maxYear={year1} rangeMinYear={rangeInfo.minYear} rangeMaxYear={rangeInfo.maxYear}/>}
         >
             {yearSlider}
         </FilterFormSection>
@@ -145,7 +171,7 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>((props, _ref) =
         </FilterFormSection>
 
         <FilterFormSection filterField="tags" resetFn={resetTags} canReset={canResetTags}>
-            {tagSections}
+            {Object.values(tagSections.current)}
         </FilterFormSection>
     </>;
 });

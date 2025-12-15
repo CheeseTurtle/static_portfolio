@@ -1,4 +1,4 @@
-import React, { forwardRef, StrictMode, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type RefObject } from "react"
+import React, { forwardRef, StrictMode, useEffect, useEffectEvent, useMemo, useRef, useState, type RefObject } from "react"
 import ProjectGrid, { type ProjectGridHandle } from "./grid/ProjectGrid";
 // import ProjectCarouselDialog from "./overlay/ProjectCarouselDialog";
 import type { LightboxMediaEntryWithLBSymbols, ProjectInfo, ProjectInfoWithLBSymbols } from "./types";
@@ -6,24 +6,27 @@ import parse from "html-react-parser";
 import { collectFilterRangeInfo, TAGTYPES, type FilterRangeInfo, type ScrollToFn, type ShowToastFn } from "./filtering/common/filterTypes";
 import AlertToast from "./toasts";
 
-import { BrowserStoreProvider, useBrowserContext, useFilterStore } from "./filtering/common/browserContext";
+import { BrowserStoreProvider, useBrowserContext, useBrowserStore } from "./filtering/common/browserContext";
 import { toast } from "sonner";
-import FilterForm from "./filtering/FilterForm";
+import FilterForm from "./filtering/FilterForm2";
 // import {useScrollSentinel, useValueChangeWatcher} from "./scrolling";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CountStoreProvider, useCountContext } from "./filtering/common/stores/countStoreContext";
+import { CountStoreProvider } from "./filtering/common/stores/countStoreContext";
 // import ErrorBoundary from "@/hooks/ErrorBoundary";
 import { useDomReady } from "@/hooks/use-dom-ready";
 import type { FilterStoreState } from "./filtering/common/stores/filterStore";
 import ErrorBoundary from "@/hooks/ErrorBoundary";
-import FilterSheet from "./filtering/FilterSheet";
+import FilterSheet from "./filtering/FilterSheet2";
 import type { ValueOf } from "node_modules/astro/dist/type-utils";
 import getYouTubeThumbnail from "./details/getYoutubeThumbnail";
 // import { createEmbed } from "./details/ProjectMedia";
 import CaptionedLightboxProvider from "./CaptionedLightboxProvider";
 import StickyDiv from "./StickyDiv";
+import { FilterFormStoreProvider } from "./filtering/common/stores/FilterFormStoreProvider";
+import { useStore } from "zustand";
+import { useCountContext } from "./filtering/common/stores/countStore";
 
 const ProjectCarouselDialog = React.lazy(()=>import('./overlay/ProjectCarouselDialog'));
 
@@ -53,34 +56,6 @@ export interface ProjectBrowserHandle {
     setOpenProjectFromId: (id: string | null) => void,
 }
 
-
-// function isEquivalentSet(s1: Set<any>, s2: Set<any>): boolean {
-//     return (s1.size === s2.size) && [...s1].every(x=>s2.has(x));
-// }
-
-// function isEquivalentFilterState(s1: FilterState, s2: FilterState, includeOpenProject: boolean = false): boolean {
-//     if(includeOpenProject && (s1.openProjectId !== s2.openProjectId)) return false;
-
-//     if((s1.year === undefined) || (s1.year[0] === undefined && s1.year[1] === undefined)) {
-//         if(!((s2.year === undefined) || (s2.year[0] === undefined && s2.year[1] === undefined)))
-//             return false;
-//     } else if(((s2.year === undefined) || (s2.year[0] === undefined && s2.year[1] === undefined)))
-//         return false;
-//     else if(s1.year[0] !== s2.year[0] || s1.year[1] !== s2.year[1])
-//         return false;
-
-//     if(!isEquivalentSet(s1.categories, s2.categories)) return false;
-
-//     for(const tagType of TAGTYPES) {
-//         const tags1 = s1.tags[tagType];
-//         const tags2 = s2.tags[tagType];
-//         if(!isEquivalentSet(tags1, tags2)) return false;
-//     }
-
-
-//     return true;
-// }
-
 function anyFilter(){
     const params = new URLSearchParams(window.location.search);
     if(!params.size) return false;
@@ -99,6 +74,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
         url: window.location.href,
         search: window.location.search,
     });
+
 
     const formRef = useRef<HTMLDivElement>(null);
     const gridHandle = useRef<ProjectGridHandle>(null);
@@ -157,19 +133,19 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
         useImperativeHandle(ref, () => handleRef.current, []);
     */
 
-    // Keep a registry of reset callbacks for each TagButtons
-    const registeredResets = useRef<Set<() => void>>(new Set());
-    const registerReset = useCallback((resetFn: () => void) => {
-        registeredResets.current.add(resetFn);
-        return () => {registeredResets.current.delete(resetFn);} // cleanup
-    }, []);
+    // // Keep a registry of reset callbacks for each TagButtons
+    // const registeredResets = useRef<Set<() => void>>(new Set());
+    // const registerReset = useCallback((resetFn: () => void) => {
+    //     registeredResets.current.add(resetFn);
+    //     return () => {registeredResets.current.delete(resetFn);} // cleanup
+    // }, []);
 
     
-    // This is the shared reset function all TagButtons can call
-    const resetAll = useEffectEvent(() => {
-        // We'll notify children via a callback they register
-        registeredResets.current.forEach((fn) => fn());
-    });
+    // // This is the shared reset function all TagButtons can call
+    // const resetAll = useEffectEvent(() => {
+    //     // We'll notify children via a callback they register
+    //     registeredResets.current.forEach((fn) => fn());
+    // });
 
     
     const sheetContentRef = useRef<HTMLDivElement>(null);
@@ -181,6 +157,11 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
     //     }, []);
         
     // useValueChangeWatcher<boolean, boolean>(inView, onInViewChange, {});
+
+
+    const browserStore = useBrowserStore()
+    const filterStore = useStore(browserStore, s=>s.filterStore)
+
 
     const initiallyHasFilter = useMemo(()=>anyFilter(), []);
     const [filterExpanded, setFilterExpanded] = useState<boolean>(initiallyHasFilter);
@@ -195,7 +176,6 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
         _updateCounts(visibleProjects, filterState.tagModes, filterState);
     });
     const countsUpdated = useRef<boolean>(false);
-    const filterStore = useFilterStore();
     useEffect(()=>{
         if(domReady && initiallyHasFilter && !countsUpdated.current) {
             // useBrowserContext(s=>s._refilterProjects)
@@ -216,8 +196,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
         : <>No projects match the current filter.</>
     ), [visibleProjects]);
 
-    // throw Error('help');
-    return <>
+    return <FilterFormStoreProvider rangeInfo={filterRangeInfo} projects={visibleProjects} browserStore={browserStore} filterStore={filterStore}>
         <h1 className="text-3xl font-black align-middle self-center justify-self-center justify-center text-center w-full xl:p-10 md:p-2 sm:p-1 p-0">Projects</h1>
         <Collapsible open={filterExpanded} onOpenChange={setFilterExpanded} ref={formRef} asChild>
             <div className="flex-col flex max-w-2xl min-w-xl max-md:hidden mx-auto bg-linear-to-tr from-gray-200 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-0"> 
@@ -230,7 +209,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
                 </CollapsibleTrigger>
                 <CollapsibleContent asChild>
                     <div className="pt-0 p-10 w-full CollapsibleContent relative">
-                        <FilterForm inSheet={false} projects={visibleProjects} rangeInfo={filterRangeInfo} registerReset={registerReset} registeredResets={registeredResets} resetAll={resetAll}></FilterForm>
+                        <FilterForm inSheet={false} />
                     </div>
                 </CollapsibleContent>
                 <CollapsibleTrigger asChild>
@@ -258,14 +237,8 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
          <FilterSheet 
             contentRef={sheetContentRef}
             triggerRef={sheetTriggerRef}
-            projects={visibleProjects} 
-            rangeInfo={filterRangeInfo} 
-            registerReset={registerReset}
-            resetAll={resetAll}
-            registeredResets={registeredResets}
-            // browserStore={store}
         />
-    </>;
+    </FilterFormStoreProvider>;
 });
 
 
@@ -437,10 +410,34 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
                 : [_contentElements]
     ).filter((x) => typeof x === 'object');
 
-    const showToast = React.useCallback((message: string) => {
-        console.warn('[Toast]', message, 
-            toast.error(message, {})
-        );
+    const showToast = React.useCallback((message: string, type: 'error' | 'success' | 'warn' | 'info' | 'debug' | 'normal' = 'normal') => {
+        switch(type) {
+            case 'error': {
+                console.error('[Toast]', message, toast.error(message, {}))
+                break;
+            }
+            case 'warn': {
+                console.warn('[Toast]', message, toast.warning(message, {}))
+                break;
+            }
+            case 'success': {
+                console.log('[Toast]', message, toast.success(message, {}))
+                break
+            }
+            case 'info': {
+                console.info('[Toast]', message, toast.info(message, {}))
+                break
+            }
+            case 'debug': {
+                console.debug('[Toast]', message, toast.message(message, {}))
+                break
+            }
+            default:
+                toast(message, {})
+        }
+        // console.warn('[Toast]', message, 
+        //     toast.error(message, {})
+        // );
         // setToastMessage(message);
         // Auto-clear toast after a few seconds
         // setTimeout(() => setToastMessage(null), 5000);

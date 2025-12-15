@@ -7,6 +7,8 @@ import * as React from "react"
 import * as SliderPrimitive from "@radix-ui/react-slider"
 
 import { cn } from "@/lib/utils"
+import { useFilterFormStore } from "../common/stores/filterFormStoreContext";
+import { shallow } from "zustand/shallow";
 
 
 type YearSliderThumbProps = {
@@ -81,16 +83,23 @@ function YearSlider({
   //   showTooltips,
   ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root>) {
-  const _values = React.useMemo(
-    () =>
-      Array.isArray(value)
-        ? value
-        : Array.isArray(defaultValue)
-          ? defaultValue
-          : [min, max],
-    [value, defaultValue, min, max]
-  )
+  // const _values = React.useMemo(
+  //   () =>
+  //     Array.isArray(value)
+  //       ? value
+  //       : Array.isArray(defaultValue)
+  //         ? defaultValue
+  //         : [min, max],
+  //   [value, defaultValue, min, max]
+  // )
+  const _values = useFilterFormStore(s=>s.yearValue, shallow);
+  // const [_values, set_values] = React.useState<[number, number]>([min, max]);
 
+  console.log('_values:', _values)
+
+  // const filterFormStore = useFilterFormStore()
+  // filterFormStore.subscribe(s=>s.yearValue, yearValue => set_values(year_value as [number, number]));
+  
   const descId = "year-slider-desc";
 
   return (
@@ -108,7 +117,8 @@ function YearSlider({
         aria-describedby={descId}
          data-slot="slider"
          defaultValue={defaultValue}
-         value={value}
+        //  value={value}
+        // value={_values}
          min={min}
          max={max}
          className={cn(
@@ -132,7 +142,7 @@ function YearSlider({
           />
         </SliderPrimitive.Track>
         {Array.from({ length: _values.length }, (_, index) => (
-          <YearSliderThumb key={index} value={value} index={index} aria-label={`Year ${index === 0 ? 'minimum' : 'maximum'}`}>{value?.[index]}</YearSliderThumb>
+          <YearSliderThumb key={index} value={_values} index={index} aria-label={`Year ${index === 0 ? 'minimum' : 'maximum'}`}>{_values?.[index]}</YearSliderThumb>
         ))}
        </SliderPrimitive.Root>
      </div>

@@ -70,12 +70,12 @@ export function ShareButton({showToast, openProjectId, hovercardProps, triggerPr
     const doCopy = useCallback(()=>{
         void copy(URLtoCopy.current).then(()=>{
             setURLChanged(false);
-            showToast('Copied to clipboard.');
+            showToast('Copied to clipboard.', 'success');
             // setTimeout(()=>{
             //     setURLChanged(true);
             // }, 1000);
         }).catch((reason)=>{
-            showToast(`Failed to copy to clipboard! (reason: ${reason})`);
+            showToast(`Failed to copy to clipboard! (reason: ${reason})`, 'error');
         });
     }, [showToast, copy]);
 

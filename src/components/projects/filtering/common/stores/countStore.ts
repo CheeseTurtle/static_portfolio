@@ -1,5 +1,5 @@
 import type { ProjectInfo, TagKey } from "@/components/projects/types";
-import {createStore} from "zustand";
+import {createStore, useStore} from "zustand";
 import { applyFilter, type FilterDataProps, type TagFilterMode } from "./filterStore";
 import { subscribeWithSelector } from "zustand/middleware";
 import type { BrowserStore } from "./browserStore";
@@ -7,8 +7,7 @@ import { useStoreWithEqualityFn } from "zustand/traditional";
 import { getTagTypeFromTagKey, type TagType } from "../filterTypes";
 import type { MemberOf } from "@/lib/type-utils";
 // import { useDebounceCallback } from "@/hooks/use-debounce-callback";
-
-
+import React from 'react';
 
 type CountStoreData = {
     tagCounts: Record<TagKey, {[key: string]: number}>,
@@ -338,49 +337,12 @@ export const createCountStore = ({allProjects, browserStore}: CountStoreInitProp
     const countStore = createStore<CountStoreState>()(subscribeWithSelector((set,get)=>{
          // TODO: Equality functions
 
-        // const setCurrent = (counts: CountStoreData) => set({current: counts});
-
-        // filterStore.subscribe(s=>s.tagModes, (tagModes) => {
-        //     if(Object.values(tagModes).some(x=>x)) {
-
-
-        //     }
-        // });
-
-        // browserStore.subscribe(s=>s.visibleProjects, (projects, prevProjects) => {
-        //     // setCurrent(getCounts(projects));
-        //     get().updateCounts(projects);
-        // }, {});
-
-        // const debouncedUpdate = useDebounceCallback((spec: FilterDataProps)=>{
-        //     get().updateCounts(browserStore.getState().visibleProjects, spec);
-        // }, 50);
 
         filterStore.subscribe(s=>({year: s.year, categories: s.categories, tags: s.tags, tagModes: s.tagModes} as FilterDataProps), (spec, _prevSpec) => {
             // debouncedUpdate(spec);
             get().updateCounts(browserStore.getState().visibleProjects, spec);
         }, {});
 
-
-    
-        // filterStore.subscribe(s=>s.tags, (state, prevState) => {
-        //     const categoryCounts = get().current.categoryCounts;
-        //     setCurrent({
-        //         categoryCounts,
-        //         tagCounts: getTagCounts(projects, keys)
-        //     })
-        // }, {});
-    
-    
-        // filterStore.subscribe(s=>s.year, (state, prevState)=>{
-    
-    
-        // }, {});
-    
-        // filterStore.subscribe(s=>s.categories, (state, prevState) => {
-    
-    
-        // });
         return {
             initial: initialCounts,
             current: initialCounts,
@@ -407,3 +369,38 @@ export const createCountStore = ({allProjects, browserStore}: CountStoreInitProp
 
 
 export type CountStore = ReturnType<typeof createCountStore>;
+
+
+
+
+export const CountStoreContext = React.createContext<CountStore | null>(null);
+
+export function useCountContext<T>(
+    selector: (state: CountStoreState) => T,
+    equalityFn?: (left: T, right: T) => boolean,
+): T {
+    const store = React.useContext(CountStoreContext);
+    if (!store) throw new Error('Missing BrowserStoreContext.Provider in the tree');
+    // return useStoreWithEqualityFn(store, selector, (a: any, b: any) => {
+    //     const result = a === b;
+    //     console.log('COMPARING:', a, b, result);
+    //     return result;
+    // });
+    // return useStoreWithEqualityFn(store, selector, equalityFn);
+    // return useStore(store, selector);
+    // console.log(selector);
+    return equalityFn 
+        ? useStoreWithEqualityFn(store, selector, equalityFn) 
+        : useStore(store, selector);
+}
+
+
+
+export function useCountStore() {
+    const store = React.useContext(CountStoreContext);
+    if (!store) throw new Error('Missing CountStoreContext.Provider in the tree');
+    return store;
+}
+
+
+

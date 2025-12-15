@@ -5,14 +5,16 @@ import { Flip } from "gsap/Flip";
 import {gsap} from "gsap";
 import { useFlipAnimation } from "@/hooks/useFlip";
 import { useMounted } from "@/hooks/use-mounted";
-import type { TagSectionStore } from "./stores/tagSectionStore";
-import { useStore } from "zustand";
+import { useTagSectionStore } from "./stores/filterFormStoreContext";
+import { shallow } from "zustand/shallow";
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type TagButtonsProps = {
-    store: TagSectionStore,
+    // store: TagSectionStore,
 };
 
-export default function TagButtons({store}: TagButtonsProps) {
+// eslint-disable-next-line no-empty-pattern
+export default function TagButtons({}: TagButtonsProps) {
     // TODO: Move elsewhere
     useEffect(()=>{
         gsap.registerPlugin(Flip);
@@ -20,18 +22,18 @@ export default function TagButtons({store}: TagButtonsProps) {
 
     // {toggleTag: propsToggleTag, availableTags: availableTagsSet, selectedTags, tagType, registerReset, colorClassName}
 
-    const {tagKey, availableTags, registerReset, computeTagOrders, setVisualOrder, toggleTag, canToggleTag, colorClassName, } = useStore(store, s=>({
+    const {tagKey, availableTags, registerReset, computeTagOrders, setVisualOrder, toggleTag, canToggleTag, colorClassName, } = useTagSectionStore(s=>({
         tagKey: s.tagKey, availableTags: s.availableTags, computeTagOrders: s.computeTagOrders,
         registerReset: s.registerReset,
         setVisualOrder: s.setVisualOrder, toggleTag: s.toggleTag, canToggleTag: s.canToggleTag, colorClassName: s.colorClassName,
-    }))
+    }), shallow)
 
     // [selected tags, unselected tags]
     // const visualOrder = useStore(store, s=>s.visualOrder);
-    const renderOrder = useStore(store, s=>s.renderOrder);
+    const renderOrder = useTagSectionStore(s=>s.renderOrder);
 
-    const selectedTags = useStore(store, s=>s.selectedTags);
-    const counts = useStore(store, s=>s.counts);
+    const selectedTags = useTagSectionStore(s=>s.selectedTags);
+    const counts = useTagSectionStore(s=>s.counts);
 
     const availableChildren: Record<string, ReactElement<TagButtonProps>> = useMemo(()=>Object.fromEntries(
         Array.from(availableTags).map(
@@ -63,7 +65,7 @@ export default function TagButtons({store}: TagButtonsProps) {
 
     const updatePrevState = useCallback(()=>{
         const flipTargets = flipTargetIDs.map((id) => document.getElementById(id));
-        prevState.current = Flip.getState(flipTargets, {simple: true, props: flipProps}); //, props: 'scaleX,left,x,background-color,background,width,opacity'});
+        prevState.current = Flip.getState(flipTargets, {simple: true, props: flipProps});
     }, [flipTargetIDs, flipProps]);
     
     const onEndFlip = useCallback(()=>{
@@ -141,7 +143,7 @@ export default function TagButtons({store}: TagButtonsProps) {
                     // gsap.killTweensOf(flipTargets);
                     Flip.from(prevState_, {duration: 0.2, ease: 'power2.inOut', 
                         simple: true,
-                        nested: true,
+                        nested: false,
                         props: flipProps,
                         absolute: false,
                         onComplete: () => endFlip(),

@@ -246,5 +246,5 @@ export function createFilterReducer(rangeInfo: FilterRangeInfo): FilterReducer {
 
 
 
-export type ShowToastFn = (text: string) => void;
+export type ShowToastFn = (text: string, type?: 'error' | 'success' | 'warn' | 'info' | 'debug' | 'normal') => void;
 export type ScrollToFn = (index: number, jump?: boolean) => void;

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
+import type { FilterStoreState } from "@/components/projects/filtering/common/stores/filterStore";
 import type { ValueOf } from "node_modules/astro/dist/type-utils";
 import type React from "react";
 
@@ -12,12 +13,113 @@ type PropsWithRef<T, H> = React.PropsWithoutRef<T> & RefAttributesOnly<H>;
 //     [Property in keyof Type as Exclude<Property, "hello">]: Type[Property]
 // }
 
+
+
+// export type ArrayOfTypeUnionMembers<U> = [U] extends [infer T1 | infer T2] ? (
+//   IsEquivalentType<T1, T2> extends true ? [U] : [...ArrayOfTypeUnionMembers<T1>, ...ArrayOfTypeUnionMembers<T2>]
+// ) : [U]
+export type ArrayOfTypeUnionMembers<U> = U extends (infer T1 | infer T2) ? (
+  T2 extends Exclude<U, T1> ?  [T1] : []
+  // IsEquivalentType<T1, T2> extends true ? [U] : []
+) : []
+
+
+// // type kk = [('a' | 'b')] extends ([infer A] | [infer B]) ? B : never
+// type k0 = ('a' | 'b' | 'c' | 'd')
+// type kk<T0, T,K> = K extends keyof T ? [ValueOf<{[KK in k0]: [T[KK], ...kk<k0, T, Exclude<K, KK>>]}>] : []
+// // type kk2<V, K> = K extends keyof V ? [V[K], ...kk2<V, Exclude<keyof V, K>>] : []
+// // type x = kk2<kk, keyof kk>
+
+// type x = kk<k0, {[K in k0]: K}, any>
+
+const obj = {
+  str: 'strval',
+  num: 25,
+  bool: true,
+  obj: new Object(),
+  undef: undefined,
+  nil: null,
+}
+type Obj = typeof obj;
+
+// type Flatten<T> = T extends any[] ? T[number] : T;
+// type Flatten2<T> = T extends Array<infer Item> ? Item : T;
+
+// type ToArrayDist<Type> = Type extends any ? Type[] : never;
+// type ToArrayNonDist<Type> = [Type] extends [any] ? Type[] : never;
+
+// // type ToArrayDist2<Type> = Type extends infer ? Type[] : never;
+// // type ToArrayNonDist2<Type> = [Type] extends [any] ? Type[] : never;
+
+// // type oe = [keyof Obj] extends [infer X] ? X[] : never
+// // type oe = keyof Obj extends infer X ? X[] : never
+
+// // type oe = ToArrayDist<keyof Obj>
+
+// type FromArray<T> = T extends (infer AT)[] ? (
+//   T extends [infer T1 extends AT, ...infer TRest] ? [T1, ...FromArray<TRest>] : T
+// ) : never
+
+// type tt = FromArray<(string | boolean)[]>
+
+export type And<A, B> = A extends true ? (B extends true ? true : false) : false;
+export type IsExtensionOf<A, B> = A extends B ? true : false;
+export type RecipExtends<A, B> = And<
+  A extends B ? true : false,
+  B extends A ? true : false
+>;
+
+export type IsSameType<T1, T2> = T1 extends T2
+  ? T2 extends T1
+    ? true
+    : false
+  : false;
+export type IsEquivalentType<T1, T2> =
+  And<
+    RecipExtends<Exclude<T1, T2>, never>,
+    RecipExtends<Exclude<T2, T1>, never>
+  > extends true
+    ? And<
+        And<
+          RecipExtends<Extract<T1, T2>, T1>,
+          RecipExtends<Extract<T1, T2>, T2>
+        >,
+        And<
+          RecipExtends<Extract<T2, T1>, T1>,
+          RecipExtends<Extract<T2, T1>, T2>
+        >
+      >
+    : false;
+
+export type UnpackTypeUnion<U> = U extends infer T1 | infer T2
+  ? IsEquivalentType<T1, T2> extends true
+    ? U
+    : UnpackTypeUnion<T1> | UnpackTypeUnion<T2>
+  : U;
+
+type TypeKeyType<T> = keyof T;
+
+
 export type ValueFor<T, K extends keyof T> = T[K];
-export type EntryFor<T, K extends keyof T> = T extends { [P in K]: infer V }
+// export type TypedValueFor<T, K extends keyof T, VT extends ValueOf<T> = ValueOf<T>> = T extends Record<K, infer VType extends VT> ? (T extends {[P in K]: infer V extends VT} ? Extract<VT, V> : never) : never
+export type TypedValueFor<T, K extends keyof T> = T extends Partial<Record<infer _ extends K, infer VT extends ValueOf<T>>> ? VT : never
+export type EntryFor_<T, K extends keyof T> = T extends { [P in K]: infer V }
   ? [K, V]
   : never;
-// type x = EntryFor<FilterStoreState, "allProjects" | "categories">;
 
+
+
+// export type EntryFor<T, K extends keyof T> = (K extends [infer KK extends keyof T] ? [K,T[K]] : never)
+export type EntryFor<T, K extends keyof T> = T extends {[P in K]: infer V} ? EntryOf<{[P in K]: T[P]}> : never;
+
+// export type EntryFor<T, K extends keyof T> = ArrayOfTypeUnionMembers<K>
+
+// export type ExactEntryFor<T, K> = [K, K extends keyof T ? T[K]: never]
+export type SomeEntryFor<T, K extends keyof T> = [K, T[K]]
+
+// type x = EntryFor<FilterStoreState, "allProjects" | "categories">;
+// type x = SomeEntryFor<FilterStoreState, "allProjects" | "categories">;
+  
 export type KeyOf<T> = T extends any ? keyof T : never;
 
 // type EntryOf<T> = T extends any ? (T extends {[P in keyof T]: (infer V extends T[P])} ? [keyof T,V] : never) : never;
@@ -37,42 +139,7 @@ type x = undefined;
 // export const revealType = <T>(x: T): T => [x][0];
 const xx = [0 as unknown as x][0];
 
-type And<A, B> = A extends true ? (B extends true ? true : false) : false;
-type IsExtensionOf<A, B> = A extends B ? true : false;
-type RecipExtends<A, B> = And<
-  A extends B ? true : false,
-  B extends A ? true : false
->;
 
-type IsSameType<T1, T2> = T1 extends T2
-  ? T2 extends T1
-    ? true
-    : false
-  : false;
-type IsEquivalentType<T1, T2> =
-  And<
-    RecipExtends<Exclude<T1, T2>, never>,
-    RecipExtends<Exclude<T2, T1>, never>
-  > extends true
-    ? And<
-        And<
-          RecipExtends<Extract<T1, T2>, T1>,
-          RecipExtends<Extract<T1, T2>, T2>
-        >,
-        And<
-          RecipExtends<Extract<T2, T1>, T1>,
-          RecipExtends<Extract<T2, T1>, T2>
-        >
-      >
-    : false;
-
-type UnpackTypeUnion<U> = U extends infer T1 | infer T2
-  ? IsEquivalentType<T1, T2> extends true
-    ? U
-    : UnpackTypeUnion<T1> | UnpackTypeUnion<T2>
-  : U;
-
-type TypeKeyType<T> = keyof T;
 
 type GeneralizeToPrimitive<U, T> =
   Exclude<U, T> extends never ? (U extends T ? T : U) : T | Exclude<U, T>;

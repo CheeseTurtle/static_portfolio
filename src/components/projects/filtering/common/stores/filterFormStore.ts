@@ -3,12 +3,12 @@ import { subscribeWithSelector } from "zustand/middleware";
 
 
 import type { FilterStore } from "./filterStore";
-import { TAGTYPES, type FilterRangeInfo, type TagType } from "../filterTypes";
+// import { TAGTYPES, type FilterRangeInfo, type TagType } from "../filterTypes";
 import type { BrowserStore } from "./browserStore";
-import { useCountStore } from "./countStoreContext";
-import type { CountStore } from "./countStore";
+// import { useCountStore } from "./countStore";
+// import type { CountStore } from "./countStore";
 import type { ProjectInfo } from "@/components/projects/types";
-import { createTagSectionStore, type TagSectionStore } from "./tagSectionStore";
+// import { createTagSectionStore, type TagSectionStore } from "./tagSectionStore";
 
 
 
@@ -17,20 +17,33 @@ import { createTagSectionStore, type TagSectionStore } from "./tagSectionStore";
 export type FilterFormStoreInitProps = {
     browserStore: BrowserStore,
     filterStore: FilterStore,
-    registerReset: (resetFn: ()=>void) => ()=>void,
     projects: ProjectInfo[],
 }
 
 export type FilterFormStoreProps = {
+    readonly yearValue: [number, number],
     // readonly filterRangeInfo: FilterRangeInfo,
     readonly showYearSlider: boolean,
     // readonly categoryNames: string[],
-    readonly tagSectionStores: Record<TagType, TagSectionStore>,
+    // readonly tagSectionStores: Record<TagType, React.RefObject<TagSectionStore | null>>,
     readonly projects: ProjectInfo[],
+
+    readonly registeredResets: Set<()=>void>,
+    
+    
+    readonly canResetYear: boolean,
+    readonly canResetCategories: boolean,
+    readonly canResetTags: boolean,
+
+  
+    readonly _selectedCategoriesSet: Set<string>,
+    readonly selectedCategories: string[],
+    // readonly selectedTags: FilterStoreState['tags'],
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type FilterFormStoreActions = {
+    registerReset: (resetFn: ()=>void) => ()=>void,
+    resetAll: () => void,
     // updateProjects: (projects: ProjectInfo[]) => void,
 }
 
@@ -39,31 +52,35 @@ export type FilterFormStore = ReturnType<typeof createFilterFormStore>
 
 
 
-function createTagSectionStore_(tagType: TagType, countStore: CountStore, filterStore: FilterStore, rangeInfo: FilterRangeInfo,
-    reset: ()=>void, registerReset: (resetFn: ()=>void) => ()=>void,) {
-    return createTagSectionStore({
-        countStore, filterStore, rangeInfo, registerReset, reset, tagType
-    })
-}
+// function createTagSectionStore_(tagType: TagType, countStore: CountStore, filterStore: FilterStore, rangeInfo: FilterRangeInfo,
+//     reset: ()=>void, registerReset: (resetFn: ()=>void) => ()=>void,) {
+//     return createTagSectionStore({
+//         countStore, filterStore, rangeInfo, registerReset, reset, tagType
+//     })
+// }
 
-function createTagSectionStores(countStore: CountStore, filterStore: FilterStore, rangeInfo: FilterRangeInfo,
-    resetTags: (tagType: TagType)=>void, registerReset: (resetFn: ()=>void) => ()=>void,) {
-    return Object.fromEntries(TAGTYPES.map(tagType => [tagType, 
-        createTagSectionStore_(tagType, countStore, filterStore, rangeInfo, ()=>resetTags(tagType), registerReset)
-    ])) as Record<TagType, TagSectionStore>
-}
+// function createTagSectionStores(countStore: CountStore, filterStore: FilterStore, rangeInfo: FilterRangeInfo,
+//     resetTags: (tagType: TagType)=>void, registerReset: (resetFn: ()=>void) => ()=>void,) {
+//     return Object.fromEntries(TAGTYPES.map(tagType => [tagType, 
+//         createTagSectionStore_(tagType, countStore, filterStore, rangeInfo, ()=>resetTags(tagType), registerReset)
+//     ])) as Record<TagType, TagSectionStore>
+// }
 
-export const createFilterFormStore= ({browserStore, filterStore, projects, registerReset}: FilterFormStoreInitProps)=>{
-    // const filterStore = useFilterStore();
+export const createFilterFormStore= ({browserStore, projects}: FilterFormStoreInitProps)=>{
     const rangeInfo = browserStore.getState().filterRangeInfo;
-    const countStore = useCountStore();
-    const resetTags = filterStore.getState().resetTags;
-    const tagSectionStores = createTagSectionStores(countStore, filterStore, rangeInfo, resetTags, registerReset);
+    // const countStore = useCountStore();
+    // const resetTags = filterStore.getState().resetTags;
     
-    const showYearSlider = rangeInfo.minYear !== rangeInfo.maxYear;
+    
+    const store = createStore<FilterFormStoreState>()(subscribeWithSelector((_set, get, _api)=>{
 
-
-    return createStore<FilterFormStoreState>()(subscribeWithSelector(()=>{    
+        const registerReset: FilterFormStoreState['registerReset'] = (resetFn) => {
+            get().registeredResets.add(resetFn);
+            return () => { get().registeredResets.delete(resetFn); }
+        }
+        // const tagSectionStores = createTagSectionStores(countStore, filterStore, rangeInfo, resetTags, registerReset);
+        
+        const showYearSlider = rangeInfo.minYear !== rangeInfo.maxYear;
         // function updateProjects(projects: ProjectInfo[]) {
         //     Object.values(tagSectionStores).forEach(store=>store.setState({projects}))
         //     set({projects})
@@ -73,11 +90,31 @@ export const createFilterFormStore= ({browserStore, filterStore, projects, regis
         //     Object.values(tagSectionStores).forEach(store=>store.setState({projects}))
         // }, {equalityFn: shallow})
 
+
+
+       
+
         return {
+            registeredResets: new Set<()=>void>(),
             showYearSlider,
-            tagSectionStores,
+            // tagSectionStores,
             projects,
             // updateProjects,
+            resetAll() {
+                get().registeredResets.forEach(fn=>fn());
+            },
+            registerReset,
+            canResetYear: false,
+            canResetCategories: false,
+            canResetTags: false,
+            yearValue: [rangeInfo.minYear, rangeInfo.maxYear],
+            selectedCategories: [],
+            _selectedCategoriesSet: new Set(),
+            // selectedTags: null,
+            
+                 
         }
     }));
+
+    return store;
 }

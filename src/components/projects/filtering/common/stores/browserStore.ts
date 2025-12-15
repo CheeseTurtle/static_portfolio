@@ -1,13 +1,10 @@
-import type { ProjectInfo, TagKey } from "@/components/projects/types";
+import type { ProjectInfo } from "@/components/projects/types";
 import { subscribeWithSelector } from "zustand/middleware";
-import { useStoreWithEqualityFn } from "zustand/traditional";
-import { createFilterStore, TagFilterMode, type FilterDataProps, type FilterStore, type FilterStoreState, type SetFilterProps } from "./filterStore";
+import { createFilterStore, TagFilterMode, type FilterDataProps, type FilterStore, type SetFilterProps } from "./filterStore";
 import { collectFilterRangeInfo, getProjectKeyFromTagType, TAGTYPES, type FilterRangeInfo, type ScrollToFn, type ShowToastFn, type TagType } from "../filterTypes";
-import { createStore, type StoreApi } from "zustand";
-import React from "react";
-import { useStore } from "zustand";
+import { createStore } from "zustand";
 import {shallow} from "zustand/shallow";
-import type { ValueOf } from "node_modules/astro/dist/type-utils";
+// import type { ValueOf } from "node_modules/astro/dist/type-utils";
 import { useDebounceCallback } from "@/hooks/use-debounce-callback";
 
 
@@ -319,7 +316,7 @@ export const createBrowserStore = (
                 set({ sheetOpen: open });
             },
 
-            onSheetOpenChange(open) {
+            onSheetOpenChange(_open) {
                 // TODO
                 // if(!open) {
                 //     get().
@@ -551,9 +548,9 @@ export const createBrowserStore = (
         }))
     );
 
-    const initState = store.getInitialState();
-    const getSyncFlag = initState.getURLSyncFlag;
-    const setSyncFlag = initState.setURLSyncFlag;
+    // const initState = store.getInitialState();
+    // const getSyncFlag = initState.getURLSyncFlag;
+    // const setSyncFlag = initState.setURLSyncFlag;
 
     const debounced = useDebounceCallback(syncURLtoFilterState, 300);
 

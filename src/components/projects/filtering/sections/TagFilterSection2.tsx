@@ -3,14 +3,14 @@ import type { TagType } from "../FilterForm";
 import TagButtons from "../common/TagButtons2";
 import ResetButton from "../common/ResetButton";
 import BoolSwitch from "./BoolSwitch";
-import type { TagSectionStore } from "../common/stores/tagSectionStore";
-import { useStore } from "zustand";
+import { useTagSectionStore } from "../common/stores/filterFormStoreContext";
+import { shallow } from "zustand/shallow";
 
 
 
 type TagFilterSectionProps = {
     tagType: TagType,
-    store: TagSectionStore,
+    // store: TagSectionStore,
 };
 
 
@@ -20,16 +20,16 @@ interface TagFilterSectionHandle {
 
 
 
-const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProps>(({store, tagType}: TagFilterSectionProps, _ref) => {
+const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProps>(({tagType}: TagFilterSectionProps, _ref) => {
 
-    const {sectionTitle, /*colorClassName, availableTags, toggleTag,*/ setUseOr, reset} = useStore(store, s=>({
+    const {sectionTitle, /*colorClassName, availableTags, toggleTag,*/ setUseOr, reset} = useTagSectionStore(s=>({
         sectionTitle: s.sectionTitle, /*colorClassName: s.colorClassName, availableTags: s.availableTags,
         toggleTag: s.toggleTag,*/ setUseOr: s.setUseOr, reset: s.reset
-    }));
+    }), shallow);
 
     // const selectedTags = useStore(store, s=>s.selectedTags)
-    const canReset = useStore(store, s=>s.canReset);
-    const useOr = useStore(store, s=>s.useOr);
+    const canReset = useTagSectionStore(s=>s.canReset);
+    const useOr = useTagSectionStore(s=>s.useOr);
 
     const onClick = React.useCallback(()=>reset(), [reset]);
 
@@ -44,7 +44,7 @@ const TagFilterSection = forwardRef<TagFilterSectionHandle, TagFilterSectionProp
             </Toggle> */}
             <BoolSwitch checked={useOr} onCheckedChange={setUseOr}/>
         </div>
-        <TagButtons store={store}/>
+        <TagButtons/>
     </div>;
 });
 

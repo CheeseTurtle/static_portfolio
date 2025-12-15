@@ -47,18 +47,7 @@ export interface FilterDataProps {
 }
 
 export interface FilterStoreProps extends FilterInitProps, FilterDataProps {
-  filterRangeInfo: FilterRangeInfo;
-
-  readonly yearValue: [number, number],
-  
-  readonly _selectedCategoriesSet: Set<string>,
-  readonly selectedCategories: string[],
-  readonly selectedTags: FilterStoreState['tags'],
-
-  readonly canResetYear: boolean,
-  readonly canResetCategories: boolean,
-  readonly canResetTags: boolean,
-  
+  filterRangeInfo: FilterRangeInfo;  
 }
 
 export type SetFilterProps = {
@@ -172,38 +161,9 @@ export const createFilterStore = (
   };
 
   const rangeInfo = filterRangeInfo ?? collectFilterRangeInfo(initProps.allProjects);
-  return createStore<FilterStoreState>()(subscribeWithSelector((set, get, api) => {
+  const store = createStore<FilterStoreState>()(subscribeWithSelector((set, get, _api) => {
 
-    api.subscribe(s=>s.year, (v0) => {
-        const yearValue: [number, number] = [v0?.[0] ?? rangeInfo.minYear, v0?.[1] ?? rangeInfo.maxYear] as [number, number];
-        set({
-            yearValue,
-            canResetYear: yearValue[0] !== rangeInfo.minYear || yearValue[1] !== rangeInfo.maxYear
-        });
-    }, {equalityFn: (v0, v1) => {
-        const [aMin, aMax] = v0 ?? [undefined, undefined];
-        const [bMin, bMax] = v1 ?? [undefined, undefined];
-
-        const year0Unchanged = aMin === bMin || (aMin ?? rangeInfo.minYear) === (bMin ?? rangeInfo.minYear)
-        const year1Unchanged = aMax === bMax || (aMax ?? rangeInfo.maxYear) === (bMax ?? rangeInfo.maxYear)
-        return !(year0Unchanged && year1Unchanged);
-    }})
-
-    api.subscribe(s=>s.categories, (selectedCategoriesSet)=>{
-        set({
-            // _selectedCategoriesSet: selectedCategoriesSet,
-            selectedCategories: Array.from(selectedCategoriesSet),
-            canResetCategories: selectedCategoriesSet.size > 0,
-        })
-    }, {equalityFn: (a,b)=>(a.size === b.size && [...a].every(x=>b.has(x)))})
-
-    api.subscribe(s=>s.selectedTags, selectedTags => {
-        set({
-            selectedTags: selectedTags,
-            canResetTags: selectedTags ? Object.values(selectedTags).some((v)=>v.size) : false
-        })
-    })
-
+    
     const resetFilter: FilterStoreState['resetFilter'] = (payload?) =>
         set((state) => {
           if (payload && payload.mask !== undefined) {
@@ -279,49 +239,6 @@ export const createFilterStore = (
       ...DEFAULT_PROPS,
       ...initProps,
       filterRangeInfo: rangeInfo,
-
-      canResetYear: false,
-      canResetCategories: false,
-      canResetTags: false,
-      yearValue: [rangeInfo.minYear, rangeInfo.maxYear],
-      selectedCategories: [],
-      _selectedCategoriesSet: new Set(),
-      selectedTags: null,
-
-      setTagMode(tagType, mode) {
-        // console.log(`Setting ${tagType} mode to:`, mode);
-        set(({tagModes})=>({tagModes: {...tagModes, [tagType]: mode}}));
-      },
-      
-      setYear: (value) =>
-        set((_state) => {
-          if (value === undefined) return {};
-          if (value === null) return { year: null };
-          const minYear =
-            value[0] !== null && value[0] > rangeInfo.minYear
-              ? value[0]
-              : null;
-          const maxYear =
-            value[1] !== null && value[1] < rangeInfo.maxYear
-              ? value[1]
-              : null;
-          
-          return {
-            year:
-              minYear === null && maxYear === null
-                ? null
-                : [minYear, maxYear],
-          };
-        }),
-
-      setCategories: (value: string[]) => set(state=>{
-        const oldSize = state.categories.size;
-        const newSize = value.length;
-        if(newSize === oldSize && value.every(x=>state.categories.has(x))) return {}; // No change
-        const newCategories = new Set<string>(value);
-        return {categories: newCategories};
-      }),
-
 
       toggleCategory: (value, active) =>
         set((state) => {
@@ -424,6 +341,41 @@ export const createFilterStore = (
       resetCategories: ()=>resetFilter({mask: FilterField.CATEGORY}),
       resetTags: (tagTypes?: TagType | TagType[]) => resetFilter({mask: FilterField.TAG, tagTypes}),
 
+       setTagMode(tagType, mode) {
+          // console.log(`Setting ${tagType} mode to:`, mode);
+          set(({tagModes})=>({tagModes: {...tagModes, [tagType]: mode}}));
+        },
+        
+        setYear: (value) =>
+          set((_state) => {
+            if (value === undefined) return {};
+            if (value === null) return { year: null };
+            const minYear =
+              value[0] !== null && value[0] > rangeInfo.minYear
+                ? value[0]
+                : null;
+            const maxYear =
+              value[1] !== null && value[1] < rangeInfo.maxYear
+                ? value[1]
+                : null;
+            
+            return {
+              year:
+                minYear === null && maxYear === null
+                  ? null
+                  : [minYear, maxYear],
+            };
+          }),
+  
+        setCategories: (value: string[]) => set(state=>{
+          const oldSize = state.categories.size;
+          const newSize = value.length;
+          if(newSize === oldSize && value.every(x=>state.categories.has(x))) return {}; // No change
+          const newCategories = new Set<string>(value);
+          return {categories: newCategories};
+        }),
     }
-  }))
+  }));
+
+  return store;
 };

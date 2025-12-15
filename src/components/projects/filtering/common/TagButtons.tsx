@@ -3,7 +3,7 @@ import TagButton, { type TagButtonProps } from "./TagButton";
 import type { TagType } from "../FilterForm";
 import type { ProjectInfo } from "../../types";
 import { getProjectKeyFromTagType } from "./filterTypes";
-import { useCountContext } from "./stores/countStoreContext";
+import { useCountContext } from "./stores/countStore";
 
 import { Flip } from "gsap/Flip";
 import {gsap} from "gsap";
@@ -26,7 +26,7 @@ export default function TagButtons({toggleTag: propsToggleTag, availableTags: av
     }, []);
 
 
-    
+
     const tagKey = useMemo(()=>getProjectKeyFromTagType(tagType), [tagType]);
     const availableTags = useMemo(() => Array.from(availableTagsSet.values()), [availableTagsSet]);
 
