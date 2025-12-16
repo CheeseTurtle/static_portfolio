@@ -226,7 +226,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
                 <StickyDiv className='px-4 top-[-0.8px] z-1 data-[sticky-state="stuck"]:bg-background bg-none'>{resultText}</StickyDiv>
                 <ProjectGrid ref={gridHandle} scrollContainer={scrollContainer} />
             </div>
-            <React.Suspense fallback={<div className="absolute inset-0 w-screen h-screen bg-green-400"></div>}>
+            <React.Suspense fallback={<div className="absolute inset-0 w-screen h-screen bg-green-400 suspense-fallback">LOADING PROJECT CAROUSEL DIALOG</div>}>
                 <ProjectCarouselDialog 
                     showToast={showToast}
                     scrollTo={scrollTo}

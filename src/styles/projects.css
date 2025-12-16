@@ -59,3 +59,7 @@
 		background-color: var(--color-gray-800);
 	}
 }
+
+.fslightbox-container {
+	pointer-events: auto;
+}

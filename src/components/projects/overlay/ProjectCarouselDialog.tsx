@@ -3,14 +3,18 @@ import React, { useCallback, useEffect, useEffectEvent, useMemo, useRef, type Mo
 import type {EmblaCarouselType, EmblaOptionsType} from "embla-carousel";
 import { Dialog, DialogContent, DialogHeader, DialogOverlay, DialogPortal, DialogTitle } from "./TransparentDialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import { useBrowserContext } from "../filtering/common/browserContext";
+import { useBrowserContext, useBrowserStore } from "../filtering/common/browserContext";
 import type { ScrollToFn, ShowToastFn } from "../filtering/common/filterTypes";
 import { useDebounceCallback } from "@/hooks/use-debounce-callback";
 import type { ProjectInfo } from "../types";
 import type { ProjectInfoForProvider } from "../details/ProjectProviderBase";
 import { useAnimationFrameRequest } from "@/hooks/useCallbackRequest";
 import useThrottledDebounce from "@/hooks/useThrottledDebounce";
-import useSyncedRef from "@/hooks/useSyncedRef";
+import { CustomSpinner } from "@/components/ui/CustomSpinner";
+import { LucideTurtle } from "lucide-react";
+import { cn } from "@/lib/utils";
+// import { useStore } from "zustand";
+// import useSyncedRef from "@/hooks/useSyncedRef";
 // import ProjectCarousel from "./ProjectCarousel";
 
 const ProjectCarousel = React.lazy(()=>import('./ProjectCarousel'));
@@ -43,6 +47,16 @@ const HovercardContentItem = ({project, index, numSlides}: {project: ProjectInfo
         <p className="text-xs font-light">{project.description}</p>
     </div>
 }
+
+
+const CarouselFallback = React.memo(({className, ...props}: React.ComponentPropsWithRef<'div'>) => {
+    
+
+    return <div {...props} className={cn("z-75 pointer-events-none")}>
+        <CustomSpinner Icon={LucideTurtle}/>
+    </div>
+});
+
 
 export default function ProjectCarouselDialog({ contentElements, showToast, scrollTo }: ProjectCarouselDialogProps) {
     // Get all state and actions from the store
@@ -87,6 +101,9 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
     );
 
     const numSlides = useMemo(()=>visibleProjects.length, [visibleProjects]);
+    
+    const alreadyOpenRef = React.useRef<boolean>(false); // or open?
+
 
     const getHovercardContentForIndex = React.useCallback((index: number) => {
         const project = visibleProjects[index];
@@ -99,14 +116,45 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
     const debouncedSetActiveProjectIndex = useDebounceCallback(setActiveProjectIndex, 750);
     const debouncedSetCarouselProjectIndex = useDebounceCallback(setCarouselProjectIndex, 750);
 
+    const wasOpen = useRef<boolean>(false);
+    const debouncedScrollTo_cancel = useEffectEvent(() => debouncedScrollTo.cancel());
+
+
+    // Handle carousel open/close
+    useEffect(() => {
+        console.log('[Carousel] open changed:', open, 'activeIndex:', activeProjectIndexRef.current, 'embla:', !!embla);
+        if (!embla) return;
+        if(!open) {
+            if(wasOpen.current) debouncedScrollTo_cancel(); // or flush?
+        } else {
+            const index = (activeProjectIndexRef.current)
+            if(index !== null) {
+                console.log('[Carousel] Opening - reInit and scroll to:', index, activeProjectIndexRef.current, carouselProjectIndexRef.current)
+                if(!wasOpen.current) {
+                    // console.log('Starting reInit')
+                    embla.reInit({ startIndex: index });
+                    // console.log('Ending reInit')
+                } else if(embla.selectedScrollSnap() !== index)
+                    embla.scrollTo(index, false);
+            }
+        }
+        wasOpen.current = open;
+    }, [open, embla]);
+
+
     // Handle carousel slide selection
     const onSelect = useCallback((emblaApi: EmblaCarouselType | undefined) => {
         if (!emblaApi) {
             // debouncedSetActiveProjectIndex.cancel()
             return
         }
+        if(!alreadyOpenRef.current) {
+            return
+        }
+        
         
         const index = emblaApi.selectedScrollSnap();
+        // console.log(`[Carousel] onSelect (selectedScrollSnap: ${index})`)
         // console.log('[Carousel] onSelect - scrolling to index:', index, 'current activeIndex:', activeProjectIndex);
 
         // Update the store's active project index
@@ -146,12 +194,11 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
 
     // const deferredCarouselProjectIndexRef = useSyncedRef(deferredCarouselProjectIndex);
 
-
-
-
     const onSettle = React.useCallback((api: EmblaCarouselType)=>{
+        if(!alreadyOpenRef.current) return
         const index = api.selectedScrollSnap()
         // console.log('ON SETTLE', index, deferredCarouselProjectIndexRef.current, carouselProjectIndexRef.current, activeProjectIndexRef.current)
+        // console.log('ON SETTLE', index, carouselProjectIndexRef.current, activeProjectIndexRef.current)
         // if(index !== carouselProjectIndex)
         //     console.warn(index, carouselProjectIndex)
         debouncedSetActiveProjectIndex.cancel()
@@ -163,7 +210,7 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
     const onEmblaReInit = useCallback((emblaApi: EmblaCarouselType | undefined) => {
         if (!emblaApi) return;
         
-        console.log('[Carousel] onReInit - activeIndex:', activeProjectIndex, 'embla snap:', emblaApi.selectedScrollSnap());
+        // console.log('[Carousel] onReInit - activeIndex:', activeProjectIndex, 'embla snap:', emblaApi.selectedScrollSnap());
         
         if (activeProjectIndex !== null && open) {
             // console.log('[Carousel] (onReInit) Scrolling to index:', activeProjectIndex);
@@ -255,6 +302,14 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
         updateNewlyNotVisibleSlidesDebounced(api);
     }, [updateNewlyVisibleSlidesDebounced, updateNewlyNotVisibleSlidesDebounced])
 
+    const onInit: CallbackType = React.useCallback((_api)=>{
+        alreadyOpenRef.current = true
+    }, [])
+
+    const onDestroy = React.useCallback(()=>{
+        alreadyOpenRef.current = false;
+    }, [])
+
     // Subscribe to embla events
     useEffect(() => {
         if (!embla) return;
@@ -264,6 +319,8 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
             .on('select', onSelect)
             .on('slidesInView', onSlidesInView)
             .on('settle', onSettle)
+            .on('init', onInit)
+            .on('destroy', onDestroy)
         
         return () => { 
             embla
@@ -271,51 +328,48 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
                 .off('select', onSelect)
                 .off('slidesInView', onSlidesInView)
                 .off('settle', onSettle)
+                .off('init', onInit)
+                .off('destroy', onDestroy)
         };
-    }, [embla, onEmblaReInit, onSelect, onSlidesInView, onSettle]);
+    }, [embla, onEmblaReInit, onSelect, onSlidesInView, onSettle, onInit, onDestroy]);
 
 
-    const wasOpen = useRef<boolean>(false);
-    const debouncedScrollTo_cancel = useEffectEvent(() => debouncedScrollTo.cancel());
 
+    // const noPropagate = (e: React.PointerEvent<HTMLButtonElement | HTMLDivElement>) => {
+    //     // console.log('noPropagate', e)
+    //     e.stopPropagation();
+    // };
 
-    // Handle carousel open/close
-    useEffect(() => {
-        // console.log('[Carousel] open changed:', open, 'activeIndex:', activeProjectIndex, 'embla:', !!embla);
-        if (!embla) return;
-        if(!open && wasOpen.current) {
-            // console.log('Cancelling debounced scrollTo');
-            debouncedScrollTo_cancel(); // or flush?
-        } else if (open && carouselProjectIndexRef.current !== null) {
-            console.log('[Carousel] Opening - reInit and scroll to:', carouselProjectIndexRef.current);
-            if(!wasOpen.current) embla.reInit({ startIndex: carouselProjectIndexRef.current });
-            else if(embla.selectedScrollSnap() !== carouselProjectIndexRef.current)
-                embla.scrollTo(carouselProjectIndexRef.current, false);
-        }
-        wasOpen.current = open;
-    }, [open, embla]);
-
-    const noPropagate = (e: React.PointerEvent<HTMLButtonElement | HTMLDivElement>) => {
-        e.stopPropagation();
-    };
-
+    const bstore = useBrowserStore()
+    const lightboxOpen = useBrowserContext(s=>s.lightboxOpen);
     const dialogOnClick: MouseEventHandler<HTMLDivElement> = React.useCallback((e) => {
-        e.preventDefault();
-        setOpen(false);
-    }, [setOpen]);
+        // console.log('DIALOGONCLICK -- lightboxOpen:', lightboxOpen);
+        if(!lightboxOpen) {
+            e.preventDefault();
+            setOpen(false);
+        }
+    }, [setOpen, lightboxOpen]);
 
     const onOpenChange_ = React.useCallback((open: boolean) => {
-            console.log('Open changed flushing scrollTo):', open);
-            onOpenChange(open);
-            debouncedScrollTo.flush();
-        }, [onOpenChange, debouncedScrollTo]);
+        // console.log('Open changed flushing scrollTo:', open);
+        onOpenChange(open);
+        debouncedScrollTo.flush();
+    }, [onOpenChange, debouncedScrollTo]);
 
     useEffect(()=>{
         if(!embla) return;
 
         const callback = (evt: KeyboardEvent) => {
-            // console.log('Key up/down:', evt);
+            // console.log('Key up/down:', evt, evt.defaultPrevented);
             if(evt.defaultPrevented) return;
+            const lightboxOpen = bstore.getState().lightboxOpen;
+            if(lightboxOpen) {
+                evt.preventDefault()
+                // evt.stopImmediatePropagation()
+                // evt.stopPropagation()
+                // console.log('Stopping propagation')
+                return;
+            }
             switch(evt.key) {
                 case 'ArrowLeft': {
                     if(embla.canScrollPrev())
@@ -327,6 +381,8 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
                         embla.scrollNext(false);
                     break;
                 }
+                // case 'Escape': {
+                // }
                 default: 
                     return;
                 }
@@ -334,49 +390,50 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
             evt.stopImmediatePropagation();
             evt.stopPropagation();
         };
-        window.addEventListener('keydown', callback);
-        // window.addEventListener('keyup', callback);
+        window.addEventListener('keydown', callback, {capture: true});
         return () => { 
-            window.removeEventListener('keydown', callback);
-            // window.removeEventListener('keyup', callback) 
+            window.removeEventListener('keydown', callback, {capture: true});
         };
         
-    });
+    }, [embla, bstore]);
+
+    const dialogFallback = React.useMemo(()=><CarouselFallback/>, [])
 
     return (
-        <React.Suspense fallback={<div className="z-50 absolute w-screen h-screen bg-red-500">Turtles</div>}>
+        <React.Suspense fallback={<div className="z-50 absolute w-screen h-screen bg-red-500 suspense-fallback">LOADING CAROUSEL DIALOG</div>}>
             <Dialog open={open} onOpenChange={onOpenChange_} modal={true}>
                 <DialogPortal container={document.getElementById('modal-root')}>
-                    <DialogContent 
-                        className="border-0 shadow-none p-0 m-0 items-center justify-center focus:outline-none z-50 flex w-full h-full inset-0 pointer-events-none overflow-clip" 
-                        aria-describedby={undefined}
-                        showCloseButton={false}
-                        style={{contentVisibility: 'auto'}}
-                        // onKeyUp={(evt)=>{
-                            //     console.log('Key up:', evt);
-                            // }}
-                            >
-                        <React.Suspense /*fallback={<div className="w-full h-full bg-orange-400">Turtles</div>}*/>
-                            <DialogOverlay 
-                                id="carousel-dialog-overlay"
-                                ref={overlayRef} 
-                                className="fixed p-0 m-0 inset-0 z-40 bg-black/40 backdrop-blur-sm"
-                                onClick={dialogOnClick} 
-                                onPointerDownCapture={noPropagate} 
-                                onPointerDown={noPropagate}
-                                />
-                            <VisuallyHidden>
-                                <DialogHeader>
-                                    <DialogTitle>Project Carousel</DialogTitle>
-                                </DialogHeader>
-                            </VisuallyHidden>
-                            <React.Suspense /*fallback={<div className="w-full h-full bg-yellow-300">Turtles</div>}*/>
-                                <ProjectCarousel ref={emblaRef} slides={slides} onCarouselSelect={onSelect} externalApi={embla} showToast={showToast} getHovercardContentForIndex={getHovercardContentForIndex}
-                                    prevRef={prevRef} nextRef={nextRef}
-                                />
-                            </React.Suspense>
-                        </React.Suspense>
-                    </DialogContent>
+                    <React.Suspense fallback={<div className="w-full h-full bg-orange-400 suspense-fallback">LOADING CAROUSEL DIALOG CONTENT</div>}>
+                        <DialogContent 
+                            className="border-0 shadow-none p-0 m-0 items-center justify-center focus:outline-none z-50 [content-visibility:auto] flex w-full h-full inset-0 pointer-events-none overflow-clip" 
+                            aria-describedby={undefined}
+                            showCloseButton={false}
+                            // style={{contentVisibility: 'auto'}}
+                            // onKeyUp={(evt)=>{
+                                //     console.log('Key up:', evt);
+                                // }}
+                                >
+                                <DialogOverlay 
+                                    id="carousel-dialog-overlay"
+                                    ref={overlayRef} 
+                                    className="fixed p-0 m-0 inset-0 z-40 bg-black/40 backdrop-blur-sm"
+                                    onClick={dialogOnClick}
+                                    // onPointerDownCapture={noPropagate}
+                                    // onPointerUpCapture={noPropagate}
+                                    // onPointerDown={noPropagate}
+                                    />
+                                <VisuallyHidden>
+                                    <DialogHeader>
+                                        <DialogTitle>Project Carousel</DialogTitle>
+                                    </DialogHeader>
+                                </VisuallyHidden>
+                                <React.Suspense fallback={dialogFallback} /*fallback={<div className="w-full h-full bg-yellow-300 suspense-fallback">LOADING CAROUSEL</div>}*/>
+                                    <ProjectCarousel ref={emblaRef} slides={slides} onCarouselSelect={onSelect} externalApi={embla} showToast={showToast} getHovercardContentForIndex={getHovercardContentForIndex}
+                                        prevRef={prevRef} nextRef={nextRef}
+                                    />
+                                </React.Suspense>
+                        </DialogContent>
+                    </React.Suspense>
                 </DialogPortal>
             </Dialog>
         </React.Suspense>

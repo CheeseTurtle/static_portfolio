@@ -35,7 +35,7 @@ export function useDebounceCallback<T extends (...args: Parameters<T>) => Return
   });
 
   const func_: T = React.useCallback(((...args) => {
-    console.log('Inside func_')
+    console.log('Inside func_', func, args)
     isPending.current = false;
     return func(...args);
   }) as T, [func]);

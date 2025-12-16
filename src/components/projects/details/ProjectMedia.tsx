@@ -132,8 +132,10 @@ export const ProjectMedia = React.memo(({id, kind, useFallback = true, className
         return <div className="project-media-aside float-left">
             <div className="project-media-aside-inner m-2">
                 <div onClickCapture={(evt)=>{
-                    openLightbox?.(mediaEntry.id, mediaType === 'embed' ? (mediaEntry.source as {path: string}).path : source, caption);
+                    console.log('Opening media:', mediaEntry, caption)
+                    evt.preventDefault();
                     evt.stopPropagation();
+                    openLightbox?.(mediaEntry.id, mediaType === 'embed' ? (mediaEntry.source as {path: string}).path : source, caption);
                 }}>{thumbnail}</div>
                 <div>{caption}</div>
             </div>

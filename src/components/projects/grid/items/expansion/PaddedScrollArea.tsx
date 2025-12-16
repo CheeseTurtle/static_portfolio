@@ -1,5 +1,5 @@
 import React from "react";
-// import { Slot } from "@radix-ui/react-slot";
+import { Slot } from "@radix-ui/react-slot";
 // import { /*ScrollArea,*/ ScrollBar } from "@/components/ui/scroll-area";
 
 import { cn } from "@/lib/utils"

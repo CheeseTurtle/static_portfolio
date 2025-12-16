@@ -77,12 +77,12 @@ const ExpandedPart = React.memo(({setSizeChanging, children, id, ref: externalRe
 
     // Handle expand/collapse animation
     React.useEffect(() => {
-        console.log('Beginning handleExpandedChange effect')
+        // console.log('Beginning handleExpandedChange effect')
         const el = ref.current;
         if (!el) return;
         // React.startTransition(()=>handleExpandedChange(el, expanded));
         handleExpandedChange(el, expanded);
-        console.log('Ending handleExpandedChange effect');
+        // console.log('Ending handleExpandedChange effect');
     }, [expanded, ref]);
 
 

@@ -14,6 +14,16 @@ type PropsWithRef<T, H> = React.PropsWithoutRef<T> & RefAttributesOnly<H>;
 // }
 
 
+export type Defined<T> = Exclude<T, undefined>
+export type NonNull<T> = Exclude<T, null>
+
+export type Optional<T> = T | undefined
+export type MaybeNull<T> = T | null
+export type Nullable<T> = T | null | undefined
+
+
+
+
 
 // export type ArrayOfTypeUnionMembers<U> = [U] extends [infer T1 | infer T2] ? (
 //   IsEquivalentType<T1, T2> extends true ? [U] : [...ArrayOfTypeUnionMembers<T1>, ...ArrayOfTypeUnionMembers<T2>]

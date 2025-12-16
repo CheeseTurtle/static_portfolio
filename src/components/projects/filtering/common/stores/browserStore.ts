@@ -44,6 +44,9 @@ export interface BrowserStoreState {
     urlSyncFlag: URLSyncFlag | number,
 
     readonly tagModes: Record<TagType, TagFilterMode>,
+
+    _lightboxesOpen: number,
+    readonly lightboxOpen: boolean,
     
     // Derived (cheap to compute)
     /*readonly*/ visibleProjectIds: Set<string>;
@@ -65,6 +68,7 @@ export interface BrowserStoreState {
     clearActiveItem: () => void;
 
     setCarouselOpen: (open: boolean) => void;
+    setLightboxOpen: (open: boolean) => void;
     setSheetOpen: (open: boolean) => void;
     handlePopState: (showToast: ShowToastFn) => void;
     initFromUrl: (url: string, showToast: ShowToastFn) => boolean;
@@ -87,7 +91,7 @@ export interface BrowserStoreState {
 export type BrowserStore = ReturnType<typeof createBrowserStore>[0];
 
 
-export function clearURLProject(push?: boolean) {
+export function clearURLProject(_push?: boolean) {
     const search = window.location.search;
     if(!search) return;
     const params = new URLSearchParams(search);
@@ -210,6 +214,8 @@ export const createBrowserStore = (
             activeProjectIndex: null,
             carouselOpen: false,
             sheetOpen: false,
+            _lightboxesOpen: 0,
+            lightboxOpen: false,
 
             urlSyncFlag: URLSyncFlag.DEFER,
             
@@ -251,7 +257,7 @@ export const createBrowserStore = (
             },
             
             clickItem: (itemId, itemIndex, newState?: 'active' | 'open') => {
-                const { activeProjectId, carouselOpen, setCarouselOpen, setActiveProjectIndex } = get();
+                const { activeProjectId, carouselOpen: _carouselOpen, setCarouselOpen, setActiveProjectIndex } = get();
                 // console.log('ITEM CLICKED', activeProjectId, carouselOpen, itemId, itemIndex, newState);
 
                 if(newState === undefined) {
@@ -300,6 +306,11 @@ export const createBrowserStore = (
                 get()._syncUrlToProjectState();
             },
 
+            setLightboxOpen(open) {
+                set({lightboxOpen: open})
+            },
+
+
             onCarouselOpenChange(open) {
                 if(open) {
                     const activeIndex = get().activeProjectIndex;
@@ -344,7 +355,7 @@ export const createBrowserStore = (
                         });
                         scrollTo?.(index, false);
                     } else {
-                        showToast(`Project '${projectId}' not found in current filter`);
+                        showToast(`Project '${projectId}' not found in current filter`, 'error');
                         clearURLProject();
                         // If current active/open is the invalid ID, clear it
                         if (get().activeProjectId === projectId) {
@@ -376,7 +387,7 @@ export const createBrowserStore = (
                             carouselOpen: true
                         });
                     } else {
-                        showToast(`Project '${projectId}' not found`);
+                        showToast(`Project '${projectId}' not found`, 'error');
                         // clearURLProject();
                     }
 
@@ -418,7 +429,7 @@ export const createBrowserStore = (
                     newIndex = findNewIndex(visibleProjects.map(x=>x.id), activeProjectId);
                     
                     if (newIndex === null && showToast) {
-                        showToast(`Active project no longer matches filter`);
+                        showToast(`Active project no longer matches filter`, 'error');
                     }
                 }
                 

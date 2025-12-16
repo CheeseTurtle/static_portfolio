@@ -34,7 +34,7 @@ type ProjectItemProps = {
     project: ProjectInfo;
     projectIndex: number; // Index in the visible projects array
     activeProjectId: string | null;
-    openProjectId: string | null;
+    // openProjectId: string | null;
     carouselOpen: boolean;
     clickItem: (itemId: string, itemIndex: number, newState?: 'active' | 'open') => void;
     extraRef?: React.RefObject<HTMLDivElement | null>,
@@ -125,7 +125,7 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
         evt.preventDefault();
         const pointerType = (evt.nativeEvent as PointerEvent).pointerType;
         const isMouse = pointerType === 'mouse';
-        console.log('%cItem clicked:', 'color: black; background-color: yellow;', id, projectIndex, window.location.search);
+        console.log('%cItem clicked/tapped:', 'color: black; background-color: yellow;', id, projectIndex, window.location.search, isMouse);
         
         // Use the clickItem action from the store
         // This handles both:

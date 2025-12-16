@@ -28,7 +28,7 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
   const projects = useBrowserContext(s=>s.visibleProjects);
   const activeProjectId = useBrowserContext(s => s.activeProjectId);
   const activeProjectIndex = useBrowserContext(s => s.activeProjectIndex);
-  const openProjectId = useBrowserContext(s => s.openProjectId);
+  // const openProjectId = useBrowserContext(s => s.openProjectId);
   const carouselOpen = useBrowserContext(s => s.carouselOpen);
   
   // Get actions from store
@@ -79,11 +79,11 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
   const [requestFrame, cancelFrameRequest] = useAnimationFrameRequest();
 
   const measureBaseHeight = useCallback(() => {
-    console.log('Measure base height')
+    // console.log('Measure base height')
     if (!gridContainerRef.current || isMeasuringRef.current) return;
     
     isMeasuringRef.current = true;
-    console.log('Measuring ref current = true)')
+    // console.log('Measuring ref current = true)')
     cancelFrameRequest()
     
     const container = gridContainerRef.current;
@@ -110,18 +110,18 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
       }
     // })
     requestFrame(() => {
-      console.log('Measuring ref current = false)')
+      // console.log('Measuring ref current = false)')
       isMeasuringRef.current = false;
     });
-    console.log('End measure base height')
+    // console.log('End measure base height')
   }, [requestFrame, cancelFrameRequest]);
 
 
   // Initial measurement
   React.useEffect(() => {
-    console.log('Refreshing projectSizeChanging array')
+    // console.log('Refreshing projectSizeChanging array')
     projectSizeChanging.current = new Array<boolean>(projects.length).fill(false);
-    console.log('Done refreshing projectSizeChanging array')
+    // console.log('Done refreshing projectSizeChanging array')
     measureBaseHeight(); // TODO: Omit??
   }, [projects, columns, measureBaseHeight]);
 
@@ -148,7 +148,7 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
             refIndex={refIndex}
             projectIndex={projectIndex}
             activeProjectId={gridActiveProjectId}
-            openProjectId={openProjectId}
+            // openProjectId={openProjectId}
             carouselOpen={carouselOpen}
             clickItem={clickItem}
             scrollContainer={scrollContainer}
@@ -199,7 +199,7 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
 
 
   const updateSizeChanging = React.useCallback((sizeChangingCurrent: boolean[]) => {
-    console.log('Update size changing')
+    // console.log('Update size changing')
     const value = sizeChangingCurrent.some(x=>x);
     if(handle.current !== undefined) {
       cancelAnimationFrame(handle.current);
@@ -208,7 +208,7 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
     if(value) setAnySizeChanging(true);
     else handle.current = requestAnimationFrame(()=>setAnySizeChanging(false));
 
-    console.log('End update size changing')
+    // console.log('End update size changing')
 
     return ()=>{
       if(handle.current !== undefined) {

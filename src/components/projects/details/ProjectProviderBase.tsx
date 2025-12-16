@@ -32,7 +32,7 @@ export default function ProjectProviderBase({project, children, replacePlacehold
 
         dispatch({type: 'CLEAR_PROJECT'});
         dispatch({type: 'SET_CONTENT', sourceKey: key, sources: [source], captions: [caption || null]});
-        dispatch({type: 'OPEN', slide: 0});
+        dispatch({type: 'OPEN', slide: 1});
     }, [dispatch]);
     
     return <ProjectContext.Provider value={{project, openLightbox}} {...props}>
