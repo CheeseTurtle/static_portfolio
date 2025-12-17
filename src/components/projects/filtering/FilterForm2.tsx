@@ -134,19 +134,19 @@ const FilterForm = (({
 
     const {tagSectionStores} = useFilterFormStoreContext();
     
-    const tagSections = Object.entries(tagSectionStores).map(([tt, ref])=>
-        <TagSectionStoreProvider storeRef={ref} key={tt} tagType={tt as TagType} countStore={countStore} filterStore={filterStore} rangeInfo={rangeInfo} registerReset={registerReset} reset={()=>resetTags(tt as TagType)}>
-            <TagFilterSection key={tt} tagType={tt as TagType} />
-        </TagSectionStoreProvider>
-    )
+    // const tagSections = Object.entries(tagSectionStores).map(([tt, ref])=>
+    //     <TagSectionStoreProvider storeRef={ref} key={tt} tagType={tt as TagType} countStore={countStore} filterStore={filterStore} rangeInfo={rangeInfo} registerReset={registerReset} reset={()=>resetTags(tt as TagType)}>
+    //         <TagFilterSection key={tt} tagType={tt as TagType} />
+    //     </TagSectionStoreProvider>
+    // )
 
-    // const tagSections = React.useRef<Partial<Record<TagType, React.JSX.Element>>>({});
-    // tagSections.current = createRecordFromObject(tagSectionStores, ([tt,ref])=> (
-    //     tagSections.current[tt] ?? (
-    //         <TagSectionStoreProvider storeRef={ref} key={tt} tagType={tt as TagType} countStore={countStore} filterStore={filterStore} rangeInfo={rangeInfo} registerReset={registerReset} reset={()=>resetTags(tt as TagType)}>
-    //             <TagFilterSection key={tt} tagType={tt as TagType} />
-    //         </TagSectionStoreProvider>
-    //     )))
+    const tagSections = React.useRef<Partial<Record<TagType, React.JSX.Element>>>({});
+    tagSections.current = createRecordFromObject(tagSectionStores, ([tt,ref])=> (
+        tagSections.current[tt] ?? (
+            <TagSectionStoreProvider storeRef={ref} key={tt} tagType={tt as TagType} countStore={countStore} filterStore={filterStore} rangeInfo={rangeInfo} registerReset={registerReset} reset={()=>resetTags(tt as TagType)}>
+                <TagFilterSection key={tt} tagType={tt as TagType} />
+            </TagSectionStoreProvider>
+        )))
 
     // #endregion
 
@@ -168,8 +168,8 @@ const FilterForm = (({
         </FilterFormSection>
 
         <FilterFormSection filterField="tags" resetFn={resetTags} canReset={canResetTags}>
-            {/* {Object.values(tagSections.current)} */}
-            {tagSections}
+            {Object.values(tagSections.current)}
+            {/* {tagSections} */}
         </FilterFormSection>
     </>;
 });

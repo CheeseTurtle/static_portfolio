@@ -66,7 +66,7 @@ type ProjectBrowserInnerProps = Omit<ProjectBrowserProps, 'projects' | 'lbConten
     contentElements: React.JSX.Element[],
 };
 
-const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInnerProps>(({ children: _children, projects: _projects, filterRangeInfo: _filterRangeInfo, contentElements, showToast, scrollToRef, scrollTo, scrollContainer }: ProjectBrowserInnerProps, _ref) => {
+const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInnerProps>(({ children: _children, projects: _projects, filterRangeInfo, contentElements, showToast, scrollToRef, scrollTo, scrollContainer }: ProjectBrowserInnerProps, _ref) => {
     console.log('[ProjectBrowserInner] Render start', {
         url: window.location.href,
         search: window.location.search,
@@ -156,6 +156,8 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
     ), [visibleProjects]);
 
     return <>
+        <FilterFormStoreProvider rangeInfo={filterRangeInfo} projects={visibleProjects}>
+
         <h1 className="text-3xl font-black align-middle self-center justify-self-center justify-center text-center w-full xl:p-10 md:p-2 sm:p-1 p-0">Projects</h1>
         <Collapsible open={filterExpanded} onOpenChange={setFilterExpanded} ref={formRef} asChild>
             <div className="flex-col flex max-w-2xl min-w-xl max-md:hidden mx-auto bg-linear-to-tr from-gray-200 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-0"> 
@@ -196,6 +198,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
             contentRef={sheetContentRef}
             triggerRef={sheetTriggerRef}
         />
+        </FilterFormStoreProvider>
     </>
 });
 
@@ -420,7 +423,6 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
                     scrollTo={scrollTo}
                 >
                     <CountStoreProvider>
-                        <FilterFormStoreProvider rangeInfo={filterRangeInfo} projects={projects}>
                             <ProjectBrowserInner 
                                 filterRangeInfo={filterRangeInfo} 
                                 projects={projects} 
@@ -432,7 +434,6 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
                             >
                                 {children}
                             </ProjectBrowserInner>
-                        </FilterFormStoreProvider>
                     </CountStoreProvider>
                 </BrowserStoreProvider>
             </ErrorBoundary>
