@@ -57,7 +57,7 @@ type ShareButtonProps = React.ComponentProps<typeof Button> & {
     openProjectId: string,
 };
 
-export const ShareButton = React.memo(({showToast, openProjectId, hovercardProps, triggerProps, contentProps, className, ...props}: ShareButtonProps) => {
+export const ShareButton = (({showToast, openProjectId, hovercardProps, triggerProps, contentProps, className, ...props}: ShareButtonProps) => {
     const [copy, isCopied] = useCopyToClipboard(); // No delay
 
     const [includeFilters, setIncludeFilters] = useState<boolean>(false);
@@ -122,7 +122,7 @@ function anyFiltersActive(): boolean {
     return (params.size > (params.has('project') ? 1 : 0));
 }
 
-const ShareCard = React.memo(({children, contentProps, triggerProps, copy, isCopied, showToast, openProjectId, doCopy, URLtoCopy, urlChanged, setURLChanged, includeFilters, setIncludeFilters, ...props}: ShareCardProps) => {
+const ShareCard = (({children, contentProps, triggerProps, copy, isCopied, showToast, openProjectId, doCopy, URLtoCopy, urlChanged, setURLChanged, includeFilters, setIncludeFilters, ...props}: ShareCardProps) => {
 
     const buttonRef = useRef<HTMLButtonElement>(null);
     const toggleRef = useRef<HTMLButtonElement>(null);

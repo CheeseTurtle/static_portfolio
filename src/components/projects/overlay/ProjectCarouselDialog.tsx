@@ -365,9 +365,6 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
             const lightboxOpen = bstore.getState().lightboxOpen;
             if(lightboxOpen) {
                 evt.preventDefault()
-                // evt.stopImmediatePropagation()
-                // evt.stopPropagation()
-                // console.log('Stopping propagation')
                 return;
             }
             switch(evt.key) {
@@ -381,8 +378,6 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
                         embla.scrollNext(false);
                     break;
                 }
-                // case 'Escape': {
-                // }
                 default: 
                     return;
                 }
