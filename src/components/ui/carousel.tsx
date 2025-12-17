@@ -169,7 +169,6 @@ function CarouselContent({ children, className, ...props }: React.ComponentProps
 }
 
 function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
-
   return (
     <div
       role="group"
@@ -178,9 +177,6 @@ function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
       className={cn(
         "embla__slide",
         "min-w-0 shrink-0 grow-0 basis-full",
-        // "min-2xl:outline-2 min-2xl:outline-red-400",
-        // orientation === 'horizontal' ? "last-child:mr-4" : 'last-child:mb-4',
-        // orientation === "horizontal" ? "pl-4" : "pt-4",
         className
       )}
       {...props}
@@ -217,10 +213,6 @@ function CarouselPrevious({
           "relative w-full h-full rounded-full size-8",
           "not-disabled:cursor-pointer",
           "disabled:cursor-not-allowed",
-          // "absolute size-8 rounded-full",
-          // orientation === "horizontal"
-          //   ? "top-1/2 -left-12 -translate-y-1/2"
-          //   : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
           className
         )}
         disabled={!canScrollPrev}
@@ -262,10 +254,6 @@ function CarouselNext({
           "relative w-full h-full rounded-full size-8",
           "not-disabled:cursor-pointer",
           "disabled:cursor-not-allowed",
-          // "absolute size-8 rounded-full",
-          // orientation === "horizontal"
-          //   ? "top-1/2 -right-12 -translate-y-1/2"
-          //   : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
           className
         )}
         disabled={!canScrollNext}
@@ -280,16 +268,26 @@ function CarouselNext({
 }
 
 
+const CarouselDotButtonHovercard = React.memo(({hovercardContent, isHovered, onHover, onUnhover, button}: {hovercardContent: React.ReactNode, isHovered: boolean, onHover: ()=>void, onUnhover: ()=>void, button: React.JSX.Element})=>{
+  return hovercardContent ? <HoverCard open={isHovered} defaultOpen={false}>
+      <HoverCardTrigger asChild onPointerOver={onHover} onPointerOut={onUnhover}>{button}</HoverCardTrigger>
+      <HoverCardContent>{hovercardContent}</HoverCardContent>
+    </HoverCard> : button;
+});
 
+type CarouselDotButtonPropType = {onButtonClick: (index: number, evt: React.MouseEvent<HTMLButtonElement>) => void, hoverIndex: number | undefined, setHoverIndex: (index: number | undefined) => void, clearHoverIndex: ()=>void, index: number, selected: boolean, getHovercardContentForIndex: (index: number)=>React.ReactNode} & React.ComponentPropsWithRef<'button'>;
 
-type CarouselDotButtonPropType = {hoverIndex: number | undefined, setHoverIndex: (index: number | undefined) => void, clearHoverIndex: ()=>void, index: number, selected: boolean, getHovercardContentForIndex: (index: number)=>React.ReactNode} & React.ComponentPropsWithRef<'button'>;
-
-function CarouselDotButton ({getHovercardContentForIndex, hoverIndex, setHoverIndex, clearHoverIndex, children, className, index, selected, ...props}: CarouselDotButtonPropType) {
+const CarouselDotButton = React.memo(({onButtonClick, onClick, getHovercardContentForIndex, hoverIndex, setHoverIndex, clearHoverIndex, children, className, index, selected, ...props}: CarouselDotButtonPropType) => {
 
   const isHovered = React.useMemo(()=>hoverIndex===index, [hoverIndex, index]);
 
+  const onClick_: React.MouseEventHandler<HTMLButtonElement> = React.useCallback((evt)=>{
+    onButtonClick(index, evt);
+    onClick?.(evt)
+  }, [index, onClick, onButtonClick])
+
   const button =
-    <button type="button" {...props} data-selected={selected} className={cn(
+    <button type="button" onClick={onClick_} {...props} data-selected={selected} className={cn(
         "appearance-none bg-transparent touch-manipulation inline-flex cursor-pointer border-0 p-0 m-0",
         "w-[2.6rem] h-[2.6rem] flex items-center justify-center rounded-full",
         "tap-highlight-transparent", // you’ll need to define this yourself (see note below)
@@ -309,13 +307,8 @@ function CarouselDotButton ({getHovercardContentForIndex, hoverIndex, setHoverIn
 
     const onHover = React.useCallback(()=>setHoverIndex(index), [setHoverIndex, index]);
     const onUnhover = React.useCallback(clearHoverIndex, [clearHoverIndex]);
-    if(hovercardContent)
-      return <HoverCard open={isHovered} defaultOpen={false}>
-        <HoverCardTrigger asChild onPointerOver={onHover} onPointerOut={onUnhover}>{button}</HoverCardTrigger>
-        <HoverCardContent>{hovercardContent}</HoverCardContent>
-      </HoverCard>
-    return button;
-}
+    return <CarouselDotButtonHovercard hovercardContent={hovercardContent} button={button} onHover={onHover} onUnhover={onUnhover} isHovered={isHovered}/>
+});
 
 
 function CarouselDots({getHovercardContentForIndex}: {getHovercardContentForIndex: (index: number)=>React.ReactNode}) {
@@ -337,7 +330,7 @@ function CarouselDots({getHovercardContentForIndex}: {getHovercardContentForInde
     {slideIndices.map(index=>
       <CarouselDotButton
         key={index}
-        onClick={() => onDotButtonClick(index)}
+        onButtonClick={onDotButtonClick}
         selected={index === selectedIndex}
         getHovercardContentForIndex={getHovercardContentForIndex}
         index={index}
@@ -417,7 +410,7 @@ export function CarouselNav({getHovercardContentForIndex, className}: {getHoverc
         {slideIndices.map(index=>
           <CarouselDotButton
             key={index}
-            onClick={() => onDotButtonClick(index)}
+            onButtonClick={onDotButtonClick}
             selected={index === selectedIndex}
             index={index}
             getHovercardContentForIndex={getHovercardContentForIndex}

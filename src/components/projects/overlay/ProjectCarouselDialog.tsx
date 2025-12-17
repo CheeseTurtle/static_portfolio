@@ -162,8 +162,6 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
         // console.log('Setting (debounced) carousel project index to:', index, debouncedSetCarouselProjectIndex.isPending())
         debouncedSetCarouselProjectIndex(index);
     
-        // if(index !== activeProjectIndex)
-        //     debouncedScrollTo(index, false);
     }, [debouncedSetCarouselProjectIndex/*, activeProjectIndex, debouncedScrollTo*/]);
 
 
@@ -278,8 +276,6 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
     }, []);
 
     const [requestFrame,] = useAnimationFrameRequest();
-    // const [requestIdle, cancelIdleRequest] = useIdleCallbackRequest();
-
 
     const updateNewlyNotVisibleSlides_ = React.useCallback((api: Embla) => {
         if(updateNewlyNotVisibleSlides(api))
@@ -402,21 +398,12 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
                         <DialogContent 
                             className="border-0 shadow-none p-0 m-0 items-center justify-center focus:outline-none z-50 [content-visibility:auto] flex w-full h-full inset-0 pointer-events-none overflow-clip" 
                             aria-describedby={undefined}
-                            showCloseButton={false}
-                            // style={{contentVisibility: 'auto'}}
-                            // onKeyUp={(evt)=>{
-                                //     console.log('Key up:', evt);
-                                // }}
-                                >
+                            showCloseButton={false}>
                                 <DialogOverlay 
                                     id="carousel-dialog-overlay"
                                     ref={overlayRef} 
                                     className="fixed p-0 m-0 inset-0 z-40 bg-black/40 backdrop-blur-sm"
-                                    onClick={dialogOnClick}
-                                    // onPointerDownCapture={noPropagate}
-                                    // onPointerUpCapture={noPropagate}
-                                    // onPointerDown={noPropagate}
-                                    />
+                                    onClick={dialogOnClick}/>
                                 <VisuallyHidden>
                                     <DialogHeader>
                                         <DialogTitle>Project Carousel</DialogTitle>

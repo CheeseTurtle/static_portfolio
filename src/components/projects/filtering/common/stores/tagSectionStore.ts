@@ -6,6 +6,7 @@ import { subscribeWithSelector } from "zustand/middleware";
 import React from "react";
 import type { FilterStore, FilterStoreState } from "./filterStore";
 import { shallow } from "zustand/shallow";
+import { isEqualOptionalTagSet, isEqualTagCounts } from "@/components/projects/util/comparison";
 
 
 export type TagSectionStoreInitProps = {
@@ -62,24 +63,6 @@ export type TagSectionStore = ReturnType<typeof createTagSectionStore>;
 
 
 
-type TagCounts = {[key: string]: number}
-
-function isEqualTagCounts(a: TagCounts, b: TagCounts): boolean {
-    const bKeys = new Set<string>(Object.keys(b));
-    if(Object.entries(a).some(([k,v])=>(bKeys.delete(k) ? b[k] : 0) !== v))
-        return false;
-    if(bKeys.size && [...bKeys].some(k=>b[k]))
-        return false;
-    return true;
-}
-
-function isEqualOptionalTagSet(a: Set<string> | undefined, b: Set<string> | undefined): boolean {
-    if(a?.size && b?.size)
-        return a.size === b.size && [...a].every(x=>b.has(x));
-    return !a?.size && !b?.size;
-}
-
-
 
 function getSectionWords(tt: TagType): [string, string] {
     switch(tt) {
@@ -113,9 +96,6 @@ function getSectionColors(tt: TagType): string {
 
 
 type VisualOrder = [string[], string[]]
-// type DispatchSetStateAction<T> = React.Dispatch<React.SetStateAction<T>>
-// type DispatchSetStateActionParameters<T> = Parameters<DispatchSetStateAction<T>>
-
 
 function isEqualVisualOrder(a: VisualOrder, b: VisualOrder) {
     return shallow(a[0], b[0]) && shallow(a[1], b[1]);
@@ -238,8 +218,3 @@ export const createTagSectionStore = ({countStore, filterStore, rangeInfo, regis
 
     return store;
 }
-
-
-// export function getTagSectionStoreRef(tagType: TagType, storesRef: React.RefObject<Record<TagType, React.RefObject<TagSectionStore | null>>>) {
-//     return storesRef.current[tagType];
-// }

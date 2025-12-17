@@ -1,4 +1,4 @@
-import React, { forwardRef, type ReactNode } from "react";
+import React, { type ReactNode } from "react";
 // import { Accordion, AccordionContent, AccordionHeader, AccordionItem, AccordionTrigger } from "@radix-ui/react-accordion";
 import TagFilterSection from "./sections/TagFilterSection2";
 // import {Slider} from "@/components/ui/slider";
@@ -15,8 +15,6 @@ import { useCountStore } from "./common/stores/countStore";
 import { createRecordFromObject } from "@/lib/objutil";
 
 type FilterFormProps = {
-    // projects: ProjectInfo[],
-    // registerReset: (resetFn: ()=>void) => ()=>void,
     inSheet?: boolean,
 }; // & FilterSheetProps;
 
@@ -24,7 +22,6 @@ type FilterFormProps = {
 export interface FilterFormHandle {};
 
 export type TagType = ('lang' | 'topic' | 'skill');  // | 'concept');
-// const TAGTYPES: TagType[] = ['lang', 'skill', 'topic'];
 
 
 type FilterFormSectionProps = {
@@ -53,9 +50,9 @@ function FilterFormSection({filterField, headingExtra, children, resetFn, canRes
  }
 
 
-const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>(({
+const FilterForm = (({
     inSheet: _inSheet
-}, _ref) => {
+}: FilterFormProps ) => {
 
     const rangeInfo = useFilterContext(s=>s.filterRangeInfo);
     // const {tagSectionStores, filterFormStore} = useFilterFormStoreContext();
@@ -137,19 +134,19 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>(({
 
     const {tagSectionStores} = useFilterFormStoreContext();
     
-    // const tagSections = Object.entries(tagSectionStores).map(([tt, ref])=>
+    const tagSections = Object.entries(tagSectionStores).map(([tt, ref])=>
+        <TagSectionStoreProvider storeRef={ref} key={tt} tagType={tt as TagType} countStore={countStore} filterStore={filterStore} rangeInfo={rangeInfo} registerReset={registerReset} reset={()=>resetTags(tt as TagType)}>
+            <TagFilterSection key={tt} tagType={tt as TagType} />
+        </TagSectionStoreProvider>
+    )
+
+    // const tagSections = React.useRef<Partial<Record<TagType, React.JSX.Element>>>({});
+    // tagSections.current = createRecordFromObject(tagSectionStores, ([tt,ref])=> (
+    //     tagSections.current[tt] ?? (
     //         <TagSectionStoreProvider storeRef={ref} key={tt} tagType={tt as TagType} countStore={countStore} filterStore={filterStore} rangeInfo={rangeInfo} registerReset={registerReset} reset={()=>resetTags(tt as TagType)}>
     //             <TagFilterSection key={tt} tagType={tt as TagType} />
     //         </TagSectionStoreProvider>
-    //     )
-
-    const tagSections = React.useRef<Partial<Record<TagType, React.JSX.Element>>>({});
-    tagSections.current = createRecordFromObject(tagSectionStores, ([tt,ref])=> (
-        tagSections.current[tt] ?? (
-            <TagSectionStoreProvider storeRef={ref} key={tt} tagType={tt as TagType} countStore={countStore} filterStore={filterStore} rangeInfo={rangeInfo} registerReset={registerReset} reset={()=>resetTags(tt as TagType)}>
-                <TagFilterSection key={tt} tagType={tt as TagType} />
-            </TagSectionStoreProvider>
-        )))
+    //     )))
 
     // #endregion
 
@@ -171,7 +168,8 @@ const FilterForm = forwardRef<FilterFormHandle, FilterFormProps>(({
         </FilterFormSection>
 
         <FilterFormSection filterField="tags" resetFn={resetTags} canReset={canResetTags}>
-            {Object.values(tagSections.current)}
+            {/* {Object.values(tagSections.current)} */}
+            {tagSections}
         </FilterFormSection>
     </>;
 });

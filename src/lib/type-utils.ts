@@ -73,6 +73,10 @@ type Obj = typeof obj;
 // type tt = FromArray<(string | boolean)[]>
 
 export type And<A, B> = A extends true ? (B extends true ? true : false) : false;
+
+type Cond<C,T,F> = C extends true ? T : (C extends false ? F : never);
+type Tern<C,T,O> = C extends true ? T : O;
+
 export type IsExtensionOf<A, B> = A extends B ? true : false;
 export type RecipExtends<A, B> = And<
   A extends B ? true : false,
@@ -548,3 +552,45 @@ type Z = {
 // type ZZ = Z extends (a: infer A extends string, b: infer B, c: infer C) => any ? [B,C] : never; // never**
 // type ZZ = Z extends (a: infer A extends string, b: boolean, c: infer C) => any ? C : never; // never**
 // type ZZ = Z extends (a: string, b: boolean, c: infer C extends number | string) => any ? C : never; // never**
+
+type CommonKeyOf<A,B> = keyof A & keyof B;
+type UncommonKeyOf<A,B> = Exclude<keyof A | keyof B, keyof A & keyof B>
+
+type ConflictingPropertyOf<A,B,K extends CommonKeyOf<A,B> = CommonKeyOf<A,B>> = {[P in K]: (
+  IsEquivalentType<A[P], B[P]> extends true ? never : A[P] | B[P]
+)}
+
+type ConflictingKeyOf<A,B,K extends keyof A & keyof B = keyof A & keyof B> = keyof ConflictingPropertyOf<A,B,K>
+
+type ConflictingValueOf<A,B,K extends keyof A & keyof B = keyof A & keyof B> = ValueOf<ConflictingPropertyOf<A,B,K>>
+
+
+type IsEmptyObject<T> = {} extends T ? true : false;
+
+type HasSameKeys<A,B> = never extends Exclude<keyof A, keyof B> ? true : false; // IsEmptyObject<Omit<A, keyof B>>
+
+export type UnAnd<A,B> = A extends B & infer C extends Exclude<A,B> ? C : (
+  A extends B & infer C ? C : A
+);
+
+export type UnOr<A,B> = Exclude<A,UnAnd<A,B>>
+
+// type UnOr<A,B> = And<IsExtensionOf<A, object>, IsExtensionOf<B,object>> extends true ? (
+//   (IsEmptyObject<Omit<A, keyof B>> extends true ? never : Omit<A, keyof B>)
+//   // &
+//   // (
+//   //   {[P in CommonKeyOf<A,B>]: Exclude<A[P], B[P]>}
+//   // )
+//  ) : Exclude<A,B>
+
+// type t1 = {a: string, b: boolean, c: object}
+// type t2 = {a: number, d: string, e: null}
+// // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+// type t3 = {b: undefined, c: Function, e: number}
+
+// type t12 = t1 | t2
+
+
+// type tt = t12['a']
+
+// type _ =  UnAnd<t1 & (t2 | t3), t2 | t3>

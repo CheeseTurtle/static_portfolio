@@ -1,5 +1,4 @@
 import { createStore } from "zustand";
-// import { createWithEqualityFn } from "zustand/traditional";
 import { subscribeWithSelector } from "zustand/middleware";
 import {
   collectFilterRangeInfo,
@@ -9,8 +8,7 @@ import {
   type TagType,
 } from "../filterTypes";
 import type { ProjectInfo, TagKey } from "@/components/projects/types";
-// import { Value } from "@radix-ui/react-select";
-
+// import { compareYearRanges, isEquivalentOptionalSet, isEquivalentTagsFilter } from "@/components/projects/util/comparison";
 
 export enum FilterField {
   MIN_YEAR = 1,
@@ -36,24 +34,20 @@ export enum TagFilterMode {
 }
 
 export interface FilterDataProps {
-  // bears: number,
   year: [number | null, number | null] | null; // min and max
   categories: Set<string>; // selected categories
   tags: Record<TagType, Set<string>> | null; // selected tags by type
-  // openProjectId?: string | null;
-  // urlProjectId?: string | null;
-  // _urlReplace?: boolean;
   tagModes: Record<TagType, TagFilterMode>;
 }
 
 export interface FilterStoreProps extends FilterInitProps, FilterDataProps {
-  filterRangeInfo: FilterRangeInfo;  
+  filterRangeInfo: FilterRangeInfo;
+  // isPassThru: boolean,
 }
 
 export type SetFilterProps = {
   year?: [number | null, number | null] | null; // min and max
   category?: string[] | Set<string>; // selected categories
-  // tags?: Record<TagType, Set<string>>; // selected tags by type
   lang?: string[] | Set<string>;
   skill?: string[] | Set<string>;
   topic?: string[] | Set<string>;
@@ -73,7 +67,6 @@ export interface FilterStoreActions {
   setFilter: (spec: Partial<SetFilterProps>) => void;
 
   setTagMode: (tagType: TagType, mode: TagFilterMode) => void,
-  // canSetFilter: (spec: Partial<SetFilterProps>) => boolean;
   canToggleCategory: (value: string, currentlyActive: boolean ) => boolean,
   canToggleTag: (tagType: TagKey, tagText: string, currentlyActive: boolean, visibleProjects: ProjectInfo[], ) => boolean,
   resetFilter: (payload?: ResetPayload) => void;
@@ -86,7 +79,6 @@ export interface FilterStoreActions {
 }
 
 export interface FilterStoreState extends FilterStoreProps, FilterStoreActions {
-  // addBear: () => void
 }
 
 export type FilterStore = ReturnType<typeof createFilterStore>;
@@ -141,10 +133,41 @@ export function canApplyFilter(spec: Partial<FilterDataProps> & Pick<FilterDataP
   });
 }
 
+
+export function isPassThruTagsFilter(tags: FilterDataProps['tags']): boolean {
+  return !(tags && Object.values(tags).some(x=>x.size))
+}
+
+export function isPassThruYearFilter(year: FilterDataProps['year'], rangeInfo: FilterRangeInfo): boolean {
+  if(year) {
+    if(year[0] && year[0] !== rangeInfo.minYear) return false;
+    if(year[1] && year[1] !== rangeInfo.maxYear) return false;
+  }
+  return true;
+}
+
+export function isPassThruCategoryFilter(categories: FilterDataProps['categories']): boolean {
+  return !!categories?.size;
+}
+
+export function isPassThruFilter(spec: Partial<FilterDataProps>, rangeInfo: FilterRangeInfo): boolean {
+  if(spec.year) {
+    if(spec.year[0] && spec.year[0] !== rangeInfo.minYear) return false;
+    if(spec.year[1] && spec.year[1] !== rangeInfo.maxYear) return false;
+  }
+
+  if(spec.categories?.size)
+    return false;
+
+  if(spec.tags && Object.values(spec.tags).some(x=>x.size))
+      return false;
+
+  return true;
+}
+
 export const createFilterStore = (
   {filterRangeInfo, ...initProps}: FilterInitProps & Partial<FilterDataProps> & { filterRangeInfo?: FilterRangeInfo },
 ) => {
-  // export const createFilterStore = (initProps?: Partial<FilterProps>) => {
   const DEFAULT_PROPS: FilterDataProps = {
     year: null,
     categories: new Set<string>(),
@@ -164,7 +187,7 @@ export const createFilterStore = (
   const store = createStore<FilterStoreState>()(subscribeWithSelector((set, get, _api) => {
 
     
-    const resetFilter: FilterStoreState['resetFilter'] = (payload?) =>
+  const resetFilter: FilterStoreState['resetFilter'] = (payload?) =>
         set((state) => {
           if (payload && payload.mask !== undefined) {
             const year: [number | null, number | null] | null =
@@ -235,10 +258,16 @@ export const createFilterStore = (
       });
     }
 
-    return {
+    const initDataProps = {
       ...DEFAULT_PROPS,
       ...initProps,
+    }
+
+    return {
+      ...initDataProps,
+
       filterRangeInfo: rangeInfo,
+      // isPassThru: isPassThruFilter(initDataProps, rangeInfo),
 
       toggleCategory: (value, active) =>
         set((state) => {
@@ -341,6 +370,11 @@ export const createFilterStore = (
       resetCategories: ()=>resetFilter({mask: FilterField.CATEGORY}),
       resetTags: (tagTypes?: TagType | TagType[]) => resetFilter({mask: FilterField.TAG, tagTypes}),
 
+      // get isPassThru() {
+
+      //   return isPassThruFilter(get(), rangeInfo)
+      // },
+
        setTagMode(tagType, mode) {
           // console.log(`Setting ${tagType} mode to:`, mode);
           set(({tagModes})=>({tagModes: {...tagModes, [tagType]: mode}}));
@@ -377,5 +411,57 @@ export const createFilterStore = (
     }
   }));
 
+  // store.subscribe(s=>s.tags, (tags)=>{
+  //   const isNullTags = isPassThruTagsFilter(tags);
+  //   const wasPassThru = store.getState().isPassThru;
+  //   if(!isNullTags) {
+  //     if(wasPassThru) store.setState({isPassThru: false})
+  //     return;
+  //   } else if(wasPassThru)
+  //     return; // This shouldn't happen
+
+  //   // Handle the case when tags becomes null but some other filter aspect remains in effect
+  //   store.setState((state)=>{
+  //     const isPassThru = isPassThruCategoryFilter(state.categories) && isPassThruYearFilter((state.year), rangeInfo);
+  //     return (isPassThru ? {...state, isPassThru} : state)
+  //   }, true)
+  // }, {equalityFn: isEquivalentTagsFilter})
+
+  // store.subscribe(s=>s.year, (year)=>{
+  //   const isNullTags = isPassThruYearFilter(year, rangeInfo);
+  //   const wasPassThru = store.getState().isPassThru;
+  //   if(!isNullTags) {
+  //     if(wasPassThru) store.setState({isPassThru: false})
+  //     return;
+  //   } else if(wasPassThru)
+  //     return; // This shouldn't happen
+
+  //   // Handle the case when tags becomes null but some other filter aspect remains in effect
+  //   store.setState((state)=>{
+  //     const isPassThru = isPassThruCategoryFilter(state.categories) && isPassThruTagsFilter((state.tags));
+  //     return (isPassThru ? {...state, isPassThru} : state)
+  //   }, true)
+  // }, {equalityFn: (a,b) => compareYearRanges(rangeInfo.minYear, rangeInfo.maxYear, a, b)})
+
+
+  // store.subscribe(s=>s.categories, (categories)=>{
+  //   const isNullTags = isPassThruCategoryFilter(categories);
+  //   const wasPassThru = store.getState().isPassThru;
+  //   if(!isNullTags) {
+  //     if(wasPassThru) store.setState({isPassThru: false})
+  //     return;
+  //   } else if(wasPassThru)
+  //     return; // This shouldn't happen
+
+  //   // Handle the case when tags becomes null but some other filter aspect remains in effect
+  //   store.setState((state)=>{
+  //     const isPassThru = isPassThruYearFilter(state.year, rangeInfo) && isPassThruTagsFilter((state.tags));
+  //     return (isPassThru ? {...state, isPassThru} : state)
+  //   }, true)
+  // }, {equalityFn: isEquivalentOptionalSet})
+
+
   return store;
 };
+
+

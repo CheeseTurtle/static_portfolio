@@ -23,16 +23,6 @@ export function FilterProvider({ children, rangeInfo, carouselOpen, setCarouselO
     tags: (TAGTYPES.reduce((acc, t) => ({ ...acc, [t]: new Set() }), {}) as Record<TagType, Set<string>>),
   } as FilterState);
 
-  // const handleOpenProjectChange = useEffectEvent((openProjectId: string | null) => {
-  //   if (openProjectId && !carouselOpen) setCarouselOpen(true);
-  //   else if(carouselOpen) setCarouselOpen(false);
-  // }); // setCarouselOpen is automatically a dependency
-
-  // useEffect(() => {
-  //   handleOpenProjectChange(state.openProjectId);
-  // }, [state.openProjectId, handleOpenProjectChange]);
-
-
   return <FilterContext.Provider value={{ state, dispatch, carouselOpen, setCarouselOpen }}>{children}</FilterContext.Provider>;
 }
 

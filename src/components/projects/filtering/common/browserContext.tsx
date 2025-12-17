@@ -33,7 +33,7 @@ function BrowserStoreContextInner({
         hasInitialized.current = true;
         
         (store.getState().initFromUrl(window.location.search, showToast))
-            // useCountContext(s=>s.updateCounts)(store.getState().allProjects);
+        // useCountContext(s=>s.updateCounts)(store.getState().allProjects);
     }, [showToast, store]);
     
     // Handle browser back/forward
@@ -82,98 +82,16 @@ export function useBrowserStore() {
 }
 
 
-// type UseBrowserContext = (<T>(
-//     selector: (state: BrowserStoreState) => T,
-//     equalityFn?: (left: T, right: T) => boolean,
-// ) => T) & BrowserStore;
-
-// export const useBrowserContext: UseBrowserContext =  Object.assign(
-//     ((selector: (state: BrowserStoreState) => any, equalityFn?: (left: any, right: any) => boolean) => {
-//         const store = React.useContext(BrowserStoreContext);
-//         if (!store) throw new Error('Missing BrowserStoreContext.Provider in the tree');
-//         // return useStoreWithEqualityFn(store, selector, (a: any, b: any) => {
-//         //     const result = a === b;
-//         //     console.log('COMPARING:', a, b, result);
-//         //     return result;
-//         // });
-//         // return useStoreWithEqualityFn(store, selector, equalityFn);
-//         // return useStore(store, selector);
-//         // console.log(selector);
-//         return equalityFn 
-//             ? useStoreWithEqualityFn(store, selector, equalityFn) 
-//             : useStore(store, selector);
-//     }) as (<T>(
-//         selector: (state: BrowserStoreState) => T,
-//         equalityFn?: (left: T, right: T) => boolean,
-//     ) => T), {
-//         get getInitialState() {
-//             return useBrowserStore().getInitialState;
-//         },
-//         get setState() {
-//             return useBrowserStore().setState;
-//         },
-//         get getState() {
-//             return useBrowserStore().getState;
-//         },
-//         get subscribe() {
-//             return useBrowserStore().subscribe;
-//         }
-//     });
-
-// type UseFilterContext = (<T>(
-//     selector: (state: FilterStoreState) => T,
-//     equalityFn?: (left: T, right: T) => boolean,
-// ) => T) & FilterStore;
-
-
-
 export function useFilterStore() {
     const store = useBrowserContext(state=>state.filterStore);
     return store;
 }
-
-// export const useFilterContext: UseFilterContext = Object.assign(((
-//     selector: (state: FilterStoreState) => any,
-//     equalityFn?: (left: any, right: any) => boolean,
-// ) => {
-//     const filterStore = useBrowserContext(state => state.filterStore);
-//     // return useStoreWithEqualityFn(filterStore, selector, equalityFn);
-//     // return useStore(filterStore, selector);
-//     return equalityFn
-//         ? useStoreWithEqualityFn(filterStore, selector, equalityFn)
-//         : useStore(filterStore, selector);
-// }) as (<T>(selector: (state: FilterStoreState) => T, equalityFn?: (a: T, b: T) => boolean) => T), {
-//     get getInitialState() {
-//         return useFilterStore().getInitialState;
-//     },
-//     get setState() {
-//         return useFilterStore().setState;
-//     },
-//     get getState() {
-//         return useFilterStore().getState;
-//     },
-//     get subscribe() {
-//         return useFilterStore().subscribe;
-//     } 
-// });
-
-
-
 export function useBrowserContext<T>(
     selector: (state: BrowserStoreState) => T,
     equalityFn?: (left: T, right: T) => boolean,
 ): T {
-    // const ctx = React.useContext(BrowserStoreContext);
     const ctx = React.use(BrowserStoreContext);
     if (!ctx) throw new Error('Missing BrowserStoreContext.Provider in the tree');
-    // return useStoreWithEqualityFn(store, selector, (a: any, b: any) => {
-    //     const result = a === b;
-    //     console.log('COMPARING:', a, b, result);
-    //     return result;
-    // });
-    // return useStoreWithEqualityFn(store, selector, equalityFn);
-    // return useStore(store, selector);
-    // console.log(selector);
     return equalityFn 
         ? useStoreWithEqualityFn(ctx.store, selector, equalityFn) 
         : useStore(ctx.store, selector);
@@ -184,7 +102,6 @@ export function useFilterContext<T>(
     equalityFn?: (left: T, right: T) => boolean,
 ): T {
     const filterStore = useBrowserContext(state => state.filterStore);
-    // return useStoreWithEqualityFn(filterStore, selector, equalityFn);
     return equalityFn
         ? useStoreWithEqualityFn(filterStore, selector, equalityFn)
         : useStore(filterStore, selector);

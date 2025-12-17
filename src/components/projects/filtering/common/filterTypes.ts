@@ -34,9 +34,6 @@ export function getTagTypeFromTagKey(tt: TagKey): TagType {
 }
 
 
-// type YearRange = [number, number] | [undefined, number] | [number, undefined]
-
-
 export type FilterState = {
   year: [number | undefined, number | undefined] | undefined; // min and max
   categories: Set<string>; // selected categories
@@ -68,7 +65,6 @@ export type FilterAction =
   | { type: 'TOGGLE_CATEGORY'; payload: string }
   | { type: 'TOGGLE_TAG'; payload: { tagType: TagType; tagText: string } }
   | { type: 'RESET'; payload?: ResetPayload }
-  //   | { type: 'OPEN_PROJECT'; payload: { id?: string | undefined, changeCarouselState?: boolean }}
   | { type: 'INIT_FROM_URL'; payload: InitFromURL & {project?: string | null} }
   | { type: 'UPDATE_URL_PROJECT', payload: {projectId?: string | null, replace?: boolean} }
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -84,7 +80,6 @@ export type FilterRangeInfo = {
     minYear: number,
     maxYear: number,
     categories: Set<string>,
-    // audiences: string[],
     count: number, // number of project items
     categoryNames: string[],
 };
@@ -94,7 +89,7 @@ export type FilterRangeInfo = {
 
 export function collectFilterRangeInfo(allProjects: (ProjectInfo | ProjectInfoWithLBSymbols)[]): FilterRangeInfo {
     const langs: Set<string> = new Set(), topics: Set<string> = new Set(), /*concepts: Set<string> = new Set(),*/ skills: Set<string> = new Set();
-    const categories: Set<string> = new Set();  //, audiences: Set<string> = new Set();
+    const categories: Set<string> = new Set();
     let minYear: number | undefined;
     let maxYear: number | undefined;
     let count: number = 0;
@@ -132,8 +127,6 @@ export function createFilterReducer(rangeInfo: FilterRangeInfo): FilterReducer {
             case 'SET_YEAR': {
                 const minYear = (action.payload[0] > rangeInfo.minYear) ? action.payload[0] : undefined;
                 const maxYear = (action.payload[1] < rangeInfo.maxYear) ? action.payload[1] : undefined;
-                // console.log('payload:', action.payload, [minYear, maxYear]);
-                    
                 return { ...state, year: (minYear === undefined && maxYear === undefined) ? undefined : [minYear, maxYear] };
             }
             case 'TOGGLE_CATEGORY': {
@@ -159,7 +152,7 @@ export function createFilterReducer(rangeInfo: FilterRangeInfo): FilterReducer {
                         [
                             (action.payload.mask & FilterField.MIN_YEAR ? rangeInfo.minYear : state.year[0]),
                             (action.payload.mask & FilterField.MAX_YEAR ? rangeInfo.maxYear : state.year[1])
-                         ]  // as [number, number] | [number, undefined] | [undefined, number]
+                         ]
                         :
                         state.year
                     );
@@ -230,14 +223,7 @@ export function createFilterReducer(rangeInfo: FilterRangeInfo): FilterReducer {
                 return newState;
             }
 
-            // case 'OPEN_PROJECT': {
-            //     const {id, changeCarouselState} = action.payload;
-                
-            // }
-
             default:
-                // state.openProjectId = undefined;
-                // state._urlReplace =
                 return state;
         }
     }

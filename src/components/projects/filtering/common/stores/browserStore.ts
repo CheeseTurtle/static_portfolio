@@ -1,11 +1,12 @@
 import type { ProjectInfo } from "@/components/projects/types";
 import { subscribeWithSelector } from "zustand/middleware";
-import { createFilterStore, TagFilterMode, type FilterDataProps, type FilterStore, type SetFilterProps } from "./filterStore";
+import { createFilterStore, isPassThruFilter, TagFilterMode, type FilterDataProps, type FilterStore, type SetFilterProps } from "./filterStore";
 import { collectFilterRangeInfo, getProjectKeyFromTagType, TAGTYPES, type FilterRangeInfo, type ScrollToFn, type ShowToastFn, type TagType } from "../filterTypes";
 import { createStore } from "zustand";
 import {shallow} from "zustand/shallow";
 // import type { ValueOf } from "node_modules/astro/dist/type-utils";
 import { useDebounceCallback } from "@/hooks/use-debounce-callback";
+// import { compareYearRanges, isEquivalentOptionalSet, isEquivalentTagsFilter } from "@/components/projects/util/comparison";
 
 
 export enum URLSyncFlag {
@@ -47,6 +48,8 @@ export interface BrowserStoreState {
 
     _lightboxesOpen: number,
     readonly lightboxOpen: boolean,
+
+    // readonly isPassThruFilter: boolean,
     
     // Derived (cheap to compute)
     /*readonly*/ visibleProjectIds: Set<string>;
@@ -210,6 +213,7 @@ export const createBrowserStore = (
             allProjects,
             filterRangeInfo,
             filterStore,
+            // isPassThruFilter: isPassThruFilter(filterStore.getState(), filterRangeInfo),
             visibleProjects: [...allProjects],  // new Map(allProjects.map(p => [p.id, p])),
             activeProjectIndex: null,
             carouselOpen: false,
@@ -630,6 +634,59 @@ export const createBrowserStore = (
         const openProjectId = store.getState().getOpenProjectId(carouselOpen, activeProjectId);
         store.setState({openProjectId});
     }, {fireImmediately: true});
+
+    
+//   filterStore.subscribe(s=>s.tags, (tags)=>{
+//     const isNullTags = isPassThruTagsFilter(tags);
+//     const wasPassThru = store.getState().isPassThruFilter;
+//     if(!isNullTags) {
+//       if(wasPassThru) store.setState({isPassThruFilter: false})
+//       return;
+//     } else if(wasPassThru)
+//       return; // This shouldn't happen
+
+//     // Handle the case when tags becomes null but some other filter aspect remains in effect
+//     store.setState((state)=>{
+//         const {categories, year} = filterStore.getState()
+//       const isPassThru = isPassThruCategoryFilter(categories) && isPassThruYearFilter(year, filterRangeInfo);
+//       return (isPassThru ? {...state, isPassThruFilter: isPassThru} : state)
+//     }, true)
+//   }, {equalityFn: isEquivalentTagsFilter})
+
+//   filterStore.subscribe(s=>s.year, (year)=>{
+//     const isNullTags = isPassThruYearFilter(year, filterRangeInfo);
+//     const wasPassThru = store.getState().isPassThruFilter;
+//     if(!isNullTags) {
+//       if(wasPassThru) store.setState({isPassThruFilter: false})
+//       return;
+//     } else if(wasPassThru)
+//       return; // This shouldn't happen
+
+//     // Handle the case when tags becomes null but some other filter aspect remains in effect
+//     store.setState((state)=>{
+//         const {categories, tags} = filterStore.getState()
+//       const isPassThru = isPassThruCategoryFilter(categories) && isPassThruTagsFilter(tags);
+//       return (isPassThru ? {...state, isPassThruFilter: isPassThru} : state)
+//     }, true)
+//   }, {equalityFn: (a,b) => compareYearRanges(filterRangeInfo.minYear, filterRangeInfo.maxYear, a, b)})
+
+
+//   filterStore.subscribe(s=>s.categories, (categories)=>{
+//     const isNullTags = isPassThruCategoryFilter(categories);
+//     const wasPassThru = store.getState().isPassThruFilter;
+//     if(!isNullTags) {
+//       if(wasPassThru) store.setState({isPassThruFilter: false})
+//       return;
+//     } else if(wasPassThru)
+//       return; // This shouldn't happen
+
+//     // Handle the case when tags becomes null but some other filter aspect remains in effect
+//     store.setState((state)=>{
+//         const {year, tags} = filterStore.getState()
+//       const isPassThru = isPassThruYearFilter(year, filterRangeInfo) && isPassThruTagsFilter(tags);
+//       return (isPassThru ? {...state, isPassThruFilter: isPassThru} : state)
+//     }, true)
+//   }, {equalityFn: isEquivalentOptionalSet})
     
     return [store, debounced] as [typeof store, typeof debounced];
 };

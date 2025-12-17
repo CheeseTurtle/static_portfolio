@@ -27,8 +27,8 @@ export function useTagSectionStoreContext() {
 
 export function useFilterFormStore<T>(selector: (state: FilterFormStoreState)=>T, equalityFn?: (left: T, right: T) => boolean): T {
     const {filterFormStore: store} = useFilterFormStoreContext();
-    // return equalityFn ? useStoreWithEqualityFn(store, selector, equalityFn) : useStore(store, selector);
-    return useStoreWithEqualityFn(store, selector, equalityFn || Object.is)
+    return equalityFn ? useStoreWithEqualityFn(store, selector, equalityFn) : useStore(store, selector);
+    // return useStoreWithEqualityFn(store, selector, equalityFn || Object.is)
 }
 export function useTagSectionStore<T>(selector: (state: TagSectionStoreState)=>T, equalityFn?: (left: T, right: T) => boolean): T {
     const store = useTagSectionStoreContext();

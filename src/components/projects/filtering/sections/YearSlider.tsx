@@ -116,9 +116,9 @@ function YearSlider({
         aria-label="Year range"
         aria-describedby={descId}
          data-slot="slider"
-         defaultValue={defaultValue}
+        //  defaultValue={defaultValue}
         //  value={value}
-        // value={_values}
+        value={_values}
          min={min}
          max={max}
          className={cn(

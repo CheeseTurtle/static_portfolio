@@ -56,11 +56,6 @@ export default function FilterSheet({contentRef, triggerRef}: FilterSheetProps) 
 
     const resetAll = useFilterFormStore(s=>s.resetAll);
     
-    // const {state, dispatch} = useFilter();
-
-    // const open = useBrowserContext(s=>s.sheetOpen);
-    // const setOpen = useBrowserContext(s=>s.setSheetOpen);
-
     const onOpenChange = React.useCallback((open: boolean) => {
         if(open) resetAll();
     }, [resetAll]);
@@ -72,7 +67,6 @@ export default function FilterSheet({contentRef, triggerRef}: FilterSheetProps) 
             </Button>
         </SheetTrigger>
         <SheetContent side='top' className='overflow-y-auto max-h-screen top-0 bottom-0 h-min overscroll-none xs:px-1 sm:px-2 mx:px-4 lg:px-8 2xl:px-12' ref={contentRef}>
-            {/* <div className="container overscroll-auto max-h-full"> */}
             <SheetHeader>
                 <SheetTitle>Turtles</SheetTitle>
                 <SheetDescription>Turtles</SheetDescription>
@@ -86,7 +80,6 @@ export default function FilterSheet({contentRef, triggerRef}: FilterSheetProps) 
                     <Button variant="outline">Close</Button>
                 </SheetClose>
             </SheetFooter> */}
-            {/* </div> */}
         </SheetContent>
     </Sheet>
 }   

@@ -18,7 +18,6 @@ import { CountStoreProvider } from "./filtering/common/stores/countStoreContext"
 import { useDomReady } from "@/hooks/use-dom-ready";
 import type { FilterStoreState } from "./filtering/common/stores/filterStore";
 import ErrorBoundary from "@/hooks/ErrorBoundary";
-import FilterSheet from "./filtering/FilterSheet2";
 import type { ValueOf } from "node_modules/astro/dist/type-utils";
 import getYouTubeThumbnail from "./details/getYoutubeThumbnail";
 // import { createEmbed } from "./details/ProjectMedia";
@@ -29,6 +28,8 @@ import { useStore } from "zustand";
 import { useCountContext } from "./filtering/common/stores/countStore";
 
 const ProjectCarouselDialog = React.lazy(()=>import('./overlay/ProjectCarouselDialog'));
+import FilterSheet from "./filtering/FilterSheet2";
+// const FilterSheet = React.lazy(()=>import('./filtering/FilterSheet2'));
 
 type ProjectBrowserProps = {
     projects: ProjectInfoWithLBSymbols[],
@@ -44,19 +45,15 @@ type ProjectBrowserProps = {
 
 export interface ProjectBrowserHandle {
     getActiveProject: () => ProjectInfo | null,
-    // getOpenedProject: () => ProjectData | null,  
 
     getActiveIndex: () => number | null,
 
     setActiveProject: (id: string | ProjectInfo | null) => void,
-    // setActiveProjectFromInfo: (info: ProjectItemInfo | null) => void,
-
-    // setOpenedProjectIndex: (index: number | null) => void,
 
     setOpenProjectFromId: (id: string | null) => void,
 }
 
-function anyFilter(){
+function anyFilterInURL(){
     const params = new URLSearchParams(window.location.search);
     if(!params.size) return false;
     return ['year','category',...TAGTYPES].some((k)=>params.has(k));
@@ -69,7 +66,7 @@ type ProjectBrowserInnerProps = Omit<ProjectBrowserProps, 'projects' | 'lbConten
     contentElements: React.JSX.Element[],
 };
 
-const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInnerProps>(({ children: _children, projects: _projects, filterRangeInfo, contentElements, showToast, scrollToRef, scrollTo, scrollContainer }: ProjectBrowserInnerProps, _ref) => {
+const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInnerProps>(({ children: _children, projects: _projects, filterRangeInfo: _filterRangeInfo, contentElements, showToast, scrollToRef, scrollTo, scrollContainer }: ProjectBrowserInnerProps, _ref) => {
     console.log('[ProjectBrowserInner] Render start', {
         url: window.location.href,
         search: window.location.search,
@@ -82,7 +79,6 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
     
     useEffect(()=>{
         scrollToRef.current = gridHandle.current?.scrollToItem;
-        // console.log(gridRef, scrollToRef);
     });
 
     // Get state from stores
@@ -110,43 +106,6 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
         document.addEventListener('click', handler, opts);
         return () => document.removeEventListener('click', handler, opts);
     }, [clearActiveItem]);
-
-    /*
-        const handleRef = useRef<ProjectBrowserHandle>({
-            getActiveProject: () => activeProject,
-            getActiveIndex: () => activeProjectIndex,
-            setActiveProject: setActiveProjectFromId,
-            setOpenProjectFromId: setOpenProjectFromId
-        });
-
-        
-        // Update ref when callbacks change
-        React.useEffect(() => {
-            handleRef.current = {
-                getActiveProject: () => activeProject,
-                getActiveIndex: () => activeProjectIndex,
-                setActiveProject: setActiveProjectFromId,
-                setOpenProjectFromId: setOpenProjectFromId
-            };
-        }, [activeProject, activeProjectIndex, setActiveProjectFromId, setOpenProjectFromId]);
-
-        useImperativeHandle(ref, () => handleRef.current, []);
-    */
-
-    // // Keep a registry of reset callbacks for each TagButtons
-    // const registeredResets = useRef<Set<() => void>>(new Set());
-    // const registerReset = useCallback((resetFn: () => void) => {
-    //     registeredResets.current.add(resetFn);
-    //     return () => {registeredResets.current.delete(resetFn);} // cleanup
-    // }, []);
-
-    
-    // // This is the shared reset function all TagButtons can call
-    // const resetAll = useEffectEvent(() => {
-    //     // We'll notify children via a callback they register
-    //     registeredResets.current.forEach((fn) => fn());
-    // });
-
     
     const sheetContentRef = useRef<HTMLDivElement>(null);
     const sheetTriggerRef = useRef<HTMLButtonElement>(null);
@@ -163,7 +122,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
     const filterStore = useStore(browserStore, s=>s.filterStore)
 
 
-    const initiallyHasFilter = useMemo(()=>anyFilter(), []);
+    const initiallyHasFilter = useMemo(()=>anyFilterInURL(), []);
     const [filterExpanded, setFilterExpanded] = useState<boolean>(initiallyHasFilter);
     const [domReady, setDomReady] = useState<boolean>(false);
     useDomReady(()=>{
@@ -196,7 +155,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
         : <>No projects match the current filter.</>
     ), [visibleProjects]);
 
-    return <FilterFormStoreProvider rangeInfo={filterRangeInfo} projects={visibleProjects} browserStore={browserStore} filterStore={filterStore}>
+    return <>
         <h1 className="text-3xl font-black align-middle self-center justify-self-center justify-center text-center w-full xl:p-10 md:p-2 sm:p-1 p-0">Projects</h1>
         <Collapsible open={filterExpanded} onOpenChange={setFilterExpanded} ref={formRef} asChild>
             <div className="flex-col flex max-w-2xl min-w-xl max-md:hidden mx-auto bg-linear-to-tr from-gray-200 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-0"> 
@@ -222,7 +181,6 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
         </Collapsible>
         <CaptionedLightboxProvider>
             <div className="mt-5 overflow-y-visible w-full max-w-[100vw]" ref={filterResultsRef}>
-                {/* <div className="pl-4 pr-4 sticky top-[-0.8px] z-1 bg-background">{resultText}</div> */}
                 <StickyDiv className='px-4 top-[-0.8px] z-1 data-[sticky-state="stuck"]:bg-background bg-none'>{resultText}</StickyDiv>
                 <ProjectGrid ref={gridHandle} scrollContainer={scrollContainer} />
             </div>
@@ -234,11 +192,11 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
                 />
             </React.Suspense>
         </CaptionedLightboxProvider>
-         <FilterSheet 
+        <FilterSheet 
             contentRef={sheetContentRef}
             triggerRef={sheetTriggerRef}
         />
-    </FilterFormStoreProvider>;
+    </>
 });
 
 
@@ -366,7 +324,6 @@ function convertProjectInfo(projects: ProjectInfoWithLBSymbols[], contentRecord:
 
 
 function parseToData(src: string): Record<string, React.JSX.Element> {
-    // console.log('src:', src);
     const elems = parse(src);
     if(typeof elems === 'string') {
         throw new TypeError('Unexpected bare string');
@@ -380,7 +337,6 @@ function parseToData(src: string): Record<string, React.JSX.Element> {
             throw new TypeError('Missing or invalid project ID on data item');
         if(id in ret) 
             throw new RangeError('Duplicate project ID');
-        // console.log('elem:', elem);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         ret[id] = (elem.props?.children ?? elem) as React.JSX.Element;
     }
@@ -391,8 +347,6 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
     // console.log(projectsWithLBSymbols);
     const filterRangeInfo = useMemo(() => collectFilterRangeInfo(projectsWithLBSymbols), [projectsWithLBSymbols]);
     const lightboxContentElements: Record<string, React.JSX.Element> = React.useMemo(()=>getLightboxItems(lbContentString, projectsWithLBSymbols), [lbContentString, projectsWithLBSymbols]);
-
-    // console.log('TITLES:', titles);
 
     const projects = useMemo(()=>convertProjectInfo(projectsWithLBSymbols, lightboxContentElements, projectTitles, projectDescriptions, projectSummaries), [projectsWithLBSymbols, lightboxContentElements, projectTitles, projectDescriptions, projectSummaries]);
     
@@ -448,8 +402,6 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
     const scrollContainer = useRef<HTMLDivElement>(null);
     const scrollTo = React.useCallback<ScrollToFn>((index: number, jump?: boolean) => {
         console.log('[ScrollTo]', index, jump, scrollToRef);
-        // Implement your scroll logic here
-        // This might involve scrolling the grid to bring the item at `index` into view
         scrollToRef.current?.(index, jump);
     }, []);
 
@@ -468,17 +420,19 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
                     scrollTo={scrollTo}
                 >
                     <CountStoreProvider>
-                        <ProjectBrowserInner 
-                            filterRangeInfo={filterRangeInfo} 
-                            projects={projects} 
-                            contentElements={contentElements}
-                            showToast={showToast}
-                            scrollTo={scrollTo}
-                            scrollToRef={scrollToRef}
-                            scrollContainer={scrollContainer}
-                        >
-                            {children}
-                        </ProjectBrowserInner>
+                        <FilterFormStoreProvider rangeInfo={filterRangeInfo} projects={projects}>
+                            <ProjectBrowserInner 
+                                filterRangeInfo={filterRangeInfo} 
+                                projects={projects} 
+                                contentElements={contentElements}
+                                showToast={showToast}
+                                scrollTo={scrollTo}
+                                scrollToRef={scrollToRef}
+                                scrollContainer={scrollContainer}
+                            >
+                                {children}
+                            </ProjectBrowserInner>
+                        </FilterFormStoreProvider>
                     </CountStoreProvider>
                 </BrowserStoreProvider>
             </ErrorBoundary>
