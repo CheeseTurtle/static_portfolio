@@ -80,7 +80,7 @@ export function ThumbnailRow({ thumbnails, items, onImageClick }: ThumbnailGalle
 
   // TODO: scrollHideDelay, type
   return (
-      <ScrollArea className="overflow-y-hidden overflow-x-auto w-full @container/thumb-scroll" type="auto" style={{shapeRendering: "optimizeSpeed", textRendering: "optimizeSpeed", colorRendering: "optimizeSpeed", imageRendering: "auto", contentVisibility: "auto"}}>
+      <ScrollArea className="overflow-y-hidden overflow-x-auto w-full @container/thumb-scroll [shape-rendering:optimize-speed] [text-rendering:optimize-speed] [color-rendering:optimize-speed] [image-rendering:auto] [content-visibility:auto]" type="auto">
           <div ref={divRef} className="inline-flex space-x-4 py-2 px-2 box-border w-fit">
             {alreadyMounted ? <>
               {itemElems} 

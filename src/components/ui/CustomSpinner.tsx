@@ -6,7 +6,7 @@ import React from "react"
 
 type LucideIconComponent = React.ForwardRefExoticComponent<Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>
 
-export function CustomSpinner({ className, Icon = LoaderIcon, ...props }: React.ComponentProps<"svg"> & {Icon?: LucideIconComponent}) {
+export function CustomSpinner({ className, Icon = LoaderIcon, ...props }: React.ComponentProps<"svg"> & {Icon?: LucideIconComponent} & React.ComponentProps<LucideIconComponent>) {
 
     return (
         <Icon

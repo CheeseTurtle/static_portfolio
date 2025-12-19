@@ -27,9 +27,13 @@ import { FilterFormStoreProvider } from "./filtering/common/stores/FilterFormSto
 import { useStore } from "zustand";
 import { useCountContext } from "./filtering/common/stores/countStore";
 
+import ProjectBrowserEmpty from "./ProjectBrowserEmpty";
+import ProjectGridSkeleton from "./grid/ProjectGridSkeleton";
+// import useReportingMemo from "@/hooks/useReportingMemo";
+
+// import FilterSheet from "./filtering/FilterSheet2";
+const FilterSheet = React.lazy(()=>import('./filtering/FilterSheet2'));
 const ProjectCarouselDialog = React.lazy(()=>import('./overlay/ProjectCarouselDialog'));
-import FilterSheet from "./filtering/FilterSheet2";
-// const FilterSheet = React.lazy(()=>import('./filtering/FilterSheet2'));
 
 type ProjectBrowserProps = {
     projects: ProjectInfoWithLBSymbols[],
@@ -96,7 +100,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
                 if(!(filterResultsRef.current?.contains(evt.target) || formRef.current?.contains(evt.target)))
                     return;
             }
-            console.log(evt, evt.eventPhase);
+            // console.log(evt, evt.eventPhase);
             // srcElement, explicitOriginalTarget, view
             // console.log('Window click:', evt.target, evt.currentTarget, evt.relatedTarget, evt.bubbles, evt.eventPhase, evt.defaultPrevented, evt.detail);
             clearActiveItem();
@@ -121,13 +125,10 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
     const browserStore = useBrowserStore()
     const filterStore = useStore(browserStore, s=>s.filterStore)
 
-
     const initiallyHasFilter = useMemo(()=>anyFilterInURL(), []);
     const [filterExpanded, setFilterExpanded] = useState<boolean>(initiallyHasFilter);
     const [domReady, setDomReady] = useState<boolean>(false);
-    useDomReady(()=>{
-        setDomReady(true);
-    });
+    useDomReady(()=>setDomReady(true));
     
     
     const _updateCounts = useCountContext(s=>s._updateCounts);
@@ -137,67 +138,80 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
     const countsUpdated = useRef<boolean>(false);
     useEffect(()=>{
         if(domReady && initiallyHasFilter && !countsUpdated.current) {
-            // useBrowserContext(s=>s._refilterProjects)
-            console.log('UPDATING COUNTS');
-            const filterState = filterStore.getState();
-            // updateCounts(initiallyVisibleProjects, filterState.tagModes, filterState);
-            updateCounts(filterState);
+            // console.log('UPDATING COUNTS');
+            updateCounts(filterStore.getState());
             countsUpdated.current = true;
         }
     }, [initiallyHasFilter, domReady, filterStore]);
 
 
+    const resultText = useMemo(()=>{
+        const isPassThru = filterStore.getState().isPassThru;
+        if(isPassThru) {
+            return (
+                visibleProjects?.length
+                    ? <>Showing {visibleProjects.length} project(s).</>
+                    : <>No projects were loaded. (This is a bug; please report.)</>
+            );
+        }
+        return (
+            visibleProjects?.length
+                ? <>Showing {visibleProjects.length} project(s) matching the current filter.</>
+                : <>No projects match the current filter.</>
+        )
+    }, [visibleProjects, filterStore]);
+    
     console.log('[ProjectBrowserInner] Render end');
-
-    const resultText = useMemo(()=>(
-        visibleProjects?.length
-        ? <>Showing {visibleProjects.length} project(s) matching the current filter.</>
-        : <>No projects match the current filter.</>
-    ), [visibleProjects]);
 
     return <>
         <FilterFormStoreProvider rangeInfo={filterRangeInfo} projects={visibleProjects}>
-
-        <h1 className="text-3xl font-black align-middle self-center justify-self-center justify-center text-center w-full xl:p-10 md:p-2 sm:p-1 p-0">Projects</h1>
-        <Collapsible open={filterExpanded} onOpenChange={setFilterExpanded} ref={formRef} asChild>
-            <div className="flex-col flex max-w-2xl min-w-xl max-md:hidden mx-auto bg-linear-to-tr from-gray-200 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-0"> 
-                {/* xl:mx-30 lg:mx-20 md:mx-10 sm:mx-5 mx-2 */}
-                <CollapsibleTrigger asChild>
-                    <div className="text-popover-foreground text-lg font-bold justify-center w-full items-center content-center align-middle text-center p-10 select-none cursor-pointer relative">
-                        <div role="heading" aria-level={2}>Filters</div>
-                        {/* <FilterShareButton className="right-0 top-0 absolute cursor-pointer"/> */}
-                    </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent asChild>
-                    <div className="pt-0 p-10 w-full CollapsibleContent relative">
-                        <FilterForm inSheet={false} />
-                    </div>
-                </CollapsibleContent>
-                <CollapsibleTrigger asChild>
-                    <div className="w-full h-min flex flex-row justify-center cursor-pointer">
-                        <ChevronDown size={40} className={cn("relative flex transition-all duration-300", filterExpanded ? 'rotate-180' : 'rotate-0')}></ChevronDown>
-                    </div>
-                </CollapsibleTrigger>
-                {/* <div ref={sentinelRef} className="h-0 w-full"></div> */}
-            </div>
-        </Collapsible>
-        <CaptionedLightboxProvider>
-            <div className="mt-5 overflow-y-visible w-full max-w-[100vw]" ref={filterResultsRef}>
-                <StickyDiv className='px-4 top-[-0.8px] z-1 data-[sticky-state="stuck"]:bg-background bg-none'>{resultText}</StickyDiv>
-                <ProjectGrid ref={gridHandle} scrollContainer={scrollContainer} />
-            </div>
-            <React.Suspense fallback={<div className="absolute inset-0 w-screen h-screen bg-green-400 suspense-fallback">LOADING PROJECT CAROUSEL DIALOG</div>}>
-                <ProjectCarouselDialog 
-                    showToast={showToast}
-                    scrollTo={scrollTo}
-                    contentElements={contentElements}
-                />
-            </React.Suspense>
-        </CaptionedLightboxProvider>
-        <FilterSheet 
-            contentRef={sheetContentRef}
-            triggerRef={sheetTriggerRef}
-        />
+            <h1 className="text-3xl font-black align-middle self-center justify-self-center justify-center text-center w-full xl:p-10 md:p-2 sm:p-1 p-0">Projects</h1>
+            <Collapsible open={filterExpanded} onOpenChange={setFilterExpanded} ref={formRef} asChild>
+                <div className="flex-col flex max-w-2xl min-w-xl max-md:hidden mx-auto bg-linear-to-tr from-gray-200 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-0"> 
+                    {/* xl:mx-30 lg:mx-20 md:mx-10 sm:mx-5 mx-2 */}
+                    <CollapsibleTrigger asChild>
+                        <div className="text-popover-foreground text-lg font-bold justify-center w-full items-center content-center align-middle text-center p-10 select-none cursor-pointer relative">
+                            <div role="heading" aria-level={2}>Filters</div>
+                            {/* <FilterShareButton className="right-0 top-0 absolute cursor-pointer"/> */}
+                        </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent asChild>
+                        <div className="pt-0 p-10 w-full CollapsibleContent relative">
+                            <FilterForm inSheet={false} />
+                        </div>
+                    </CollapsibleContent>
+                    <CollapsibleTrigger asChild>
+                        <div className="w-full h-min flex flex-row justify-center cursor-pointer">
+                            <ChevronDown size={40} className={cn("relative flex transition-all duration-300", filterExpanded ? 'rotate-180' : 'rotate-0')}></ChevronDown>
+                        </div>
+                    </CollapsibleTrigger>
+                    {/* <div ref={sentinelRef} className="h-0 w-full"></div> */}
+                </div>
+            </Collapsible>
+            <CaptionedLightboxProvider>
+                <div className="mt-5 overflow-y-visible w-full max-w-[100vw]" ref={filterResultsRef}>
+                    <StickyDiv className='px-4 top-[-0.8px] z-1 data-[sticky-state="stuck"]:bg-background bg-none'>{resultText}</StickyDiv>
+                    {/* <ProjectGridSkeleton/> */}
+                    <React.Suspense fallback={<ProjectGridSkeleton/>}>
+                        {
+                            visibleProjects?.length
+                                ? <ProjectGrid ref={gridHandle} scrollContainer={scrollContainer} />
+                                : <ProjectBrowserEmpty/>
+                        }
+                    </React.Suspense>
+                </div>
+                <React.Suspense fallback={<div className="absolute inset-0 w-screen h-screen bg-green-400 suspense-fallback">LOADING PROJECT CAROUSEL DIALOG</div>}>
+                    <ProjectCarouselDialog 
+                        showToast={showToast}
+                        scrollTo={scrollTo}
+                        contentElements={contentElements}
+                        />
+                </React.Suspense>
+            </CaptionedLightboxProvider>
+            <FilterSheet 
+                contentRef={sheetContentRef}
+                triggerRef={sheetTriggerRef}
+            />
         </FilterFormStoreProvider>
     </>
 });
@@ -309,6 +323,7 @@ function convertProjectInfo(projects: ProjectInfoWithLBSymbols[], contentRecord:
 
         if(anyEmbed)
             console.log('Sources:', lightboxSources, thumbnails);
+
         return {
             ...p, 
             title: titles[p.id] ?? p.title,
@@ -348,24 +363,30 @@ function parseToData(src: string): Record<string, React.JSX.Element> {
 
 export default function ProjectBrowser({children, projects: projectsWithLBSymbols, contentString, lbContentString, projectTitles, projectDescriptions, projectSummaries}: ProjectBrowserProps) {
     // console.log(projectsWithLBSymbols);
+    // const prevProjects = React.useRef<typeof projectsWithLBSymbols>(projectsWithLBSymbols);
+
     const filterRangeInfo = useMemo(() => collectFilterRangeInfo(projectsWithLBSymbols), [projectsWithLBSymbols]);
     const lightboxContentElements: Record<string, React.JSX.Element> = React.useMemo(()=>getLightboxItems(lbContentString, projectsWithLBSymbols), [lbContentString, projectsWithLBSymbols]);
 
-    const projects = useMemo(()=>convertProjectInfo(projectsWithLBSymbols, lightboxContentElements, projectTitles, projectDescriptions, projectSummaries), [projectsWithLBSymbols, lightboxContentElements, projectTitles, projectDescriptions, projectSummaries]);
+    const projects = useMemo(()=>convertProjectInfo(projectsWithLBSymbols, lightboxContentElements, projectTitles, projectDescriptions, projectSummaries), [
+        projectsWithLBSymbols, lightboxContentElements, projectTitles, projectDescriptions, projectSummaries]);
     
-    if (!contentString) {
-        // contentString = children!.props!.value;
-        throw new Error('No project details content provided');
-    }
+    // if (!contentString) {
+    //     // contentString = children!.props!.value;
+    //     throw new Error('No project details content provided');
+    // }
 
-    const _contentElements = parse(contentString);
-    const contentElements = (
-        (typeof _contentElements === 'string') 
-            ? [<>{_contentElements}</>] 
-            : Array.isArray(_contentElements) 
-                ? _contentElements 
-                : [_contentElements]
-    ).filter((x) => typeof x === 'object');
+    // const _contentElements = React.useMemo(()=>parse(contentString!), [contentString]);
+    const contentElements = React.useMemo(()=>{
+        const _contentElements = parse(contentString!);
+        return (
+            (typeof _contentElements === 'string') 
+                ? [<>{_contentElements}</>] 
+                : Array.isArray(_contentElements) 
+                    ? _contentElements 
+                    : [_contentElements]
+        ).filter((x) => typeof x === 'object');
+    }, [contentString]);
 
     const showToast = React.useCallback((message: string, type: 'error' | 'success' | 'warn' | 'info' | 'debug' | 'normal' = 'normal') => {
         switch(type) {

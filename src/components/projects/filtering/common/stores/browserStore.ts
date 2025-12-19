@@ -1,6 +1,6 @@
 import type { ProjectInfo } from "@/components/projects/types";
 import { subscribeWithSelector } from "zustand/middleware";
-import { createFilterStore, isPassThruFilter, TagFilterMode, type FilterDataProps, type FilterStore, type SetFilterProps } from "./filterStore";
+import { createFilterStore, TagFilterMode, type FilterDataProps, type FilterStore, type SetFilterProps } from "./filterStore";
 import { collectFilterRangeInfo, getProjectKeyFromTagType, TAGTYPES, type FilterRangeInfo, type ScrollToFn, type ShowToastFn, type TagType } from "../filterTypes";
 import { createStore } from "zustand";
 import {shallow} from "zustand/shallow";
@@ -69,6 +69,8 @@ export interface BrowserStoreState {
     clickItem: (itemId: string, itemIndex: number, newState?: 'active' | 'open') => void;
 
     clearActiveItem: () => void;
+
+    openCarouselToProject: (projectId: string) => boolean,
 
     setCarouselOpen: (open: boolean) => void;
     setLightboxOpen: (open: boolean) => void;
@@ -289,6 +291,20 @@ export const createBrowserStore = (
                 set({activeProjectIndex: null/*, openProjectId: null*/});
                 // set({activeProjectId: null});
             },
+            openCarouselToProject(projectId: string): boolean {
+                if(projectId === get().getActiveProjectId()) {
+                    set({carouselOpen: true})
+                    return true;
+                }
+                const newIndex = get().visibleProjects.findIndex(x=>x.id === projectId);
+                if(newIndex === -1) {
+                    console.error(`Could not find project with id '${projectId}' in the current visible projects.`)
+                    return false;
+                }
+                get().setActiveProjectIndex(newIndex);
+                set({activeProjectIndex: newIndex, carouselOpen: true})
+                return true;
+            },
             
             setCarouselOpen: (open) => {
                 const state = get();
@@ -307,7 +323,7 @@ export const createBrowserStore = (
                     // Closing carousel
                     set({ carouselOpen: false });
                 }
-                get()._syncUrlToProjectState();
+                state._syncUrlToProjectState();
             },
 
             setLightboxOpen(open) {

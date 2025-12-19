@@ -75,7 +75,7 @@ export const BadgeRow = React.memo(({badgeType, badgeItems, ...props}: BadgeRowP
   }, [badgeItems]);
 
   return (
-    <div ref={containerRef} className="flex gap-1 overflow-hidden" data-slot='badge-row' data-badge-type={badgeType} {...props}>
+    <div ref={containerRef} className="flex gap-1 overflow-y-clip overflow-x-hidden" data-slot='badge-row' data-badge-type={badgeType} {...props}>
     {
         visibleBadges.map((label, idx) => (
             <BadgeConstructor key={`${label}${idx}`}>{label}</BadgeConstructor>

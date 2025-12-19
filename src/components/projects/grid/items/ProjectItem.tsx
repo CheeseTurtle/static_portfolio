@@ -60,22 +60,21 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
 
     const clearActiveItem = useBrowserContext(s=>s.clearActiveItem);
 
-    const year = useMemo(() => (date.explicitDate?.year ?? date.getFullYear()), [date]);
+    const dateText = useMemo(()=>{
+        const year = date.explicitDate?.year ?? date.getFullYear();
+        if(!date.explicitDate?.month)
+            return <span className="project-date-year">{year}</span>;
+        const node = <><span className="project-date-year">{year}</span>/<span className="project-date-month">{date.explicitDate.month}</span></>
+        if(!date.explicitDate?.day)
+            return node;
+        return <>{node}/<span className="project-date-day">{date.explicitDate.day}</span></>
+    }, [date])
+
 
     const selfRef = useRef<HTMLDivElement>(null);
     
     const localExtraRef = useRef<HTMLDivElement>(null);
     const extraRef = useMemo(()=>extraRef_ ?? localExtraRef, [extraRef_]);
-
-    // const newEntries = useMemo(() => Object.entries(tags || {}).map(([k, vs]) => {
-    //     const newKey = convertToBadgeType(k as TagKey);
-    //     return [newKey, vs];
-    // }), [tags]);
-    
-    // const badgeRows = useMemo(
-    //     () => (newEntries.length > 0 ? Object.fromEntries(newEntries) : {}) as Record<BadgeType, Set<string>>, 
-    //     [newEntries]
-    // );
 
     const updateBadgeRowsFromTags = React.useCallback((existing: null | Partial<Record<BadgeType, (Set<string> | undefined)>>, tags_: typeof tags)=>{
         let anyTags: boolean = false, anyChange: boolean = false;
@@ -158,9 +157,6 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
                 const ALLOWABLE_MISSED_Y = Math.min(-(selfRect.height - containerRect.height), 0);
                 const ALLOWABLE_MISSED_X = Math.min(-(selfRect.width - containerRect.width), 0);
 
-                // console.log(`(selfRect.bottom - containerRect.top >= MIN_Y_VISIBLE) <==> (${selfRect.bottom} - ${containerRect.top} >= ${MIN_Y_VISIBLE}) <==> ${selfRect.bottom - containerRect.top >= MIN_Y_VISIBLE}`);
-                // console.log(`(containerRect.bottom - selfRect.bottom >= ALLOWABLE_MISSED_Y) <==> (${containerRect.bottom} - ${selfRect.bottom} >= ${ALLOWABLE_MISSED_Y}) <==> ${containerRect.bottom - selfRect.bottom >= ALLOWABLE_MISSED_Y}`);
-                // console.log(`(containerRect.bottom - selfRect.top >= MIN_Y_VISIBLE) <==> (${containerRect.bottom} - ${selfRect.top} >= ${MIN_Y_VISIBLE}) <==> ${containerRect.bottom - selfRect.top >= MIN_Y_VISIBLE}`);
                 if(((selfRect.bottom - containerRect.top >= MIN_Y_VISIBLE) && ((containerRect.bottom - selfRect.bottom >= ALLOWABLE_MISSED_Y) && (containerRect.bottom - selfRect.top >= MIN_Y_VISIBLE)))
                     && ((selfRect.right - containerRect.left >= MIN_X_VISIBLE) && ((containerRect.right - selfRect.right >= ALLOWABLE_MISSED_X) && (containerRect.right - selfRect.left >= MIN_X_VISIBLE)))
                 ) return;
@@ -209,8 +205,8 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
         evt.stopPropagation();
         lightboxDispatch({type: 'SET_PROJECT', projectId: id, projectIndex});
         lightboxDispatch({type: 'SET_CONTENT', sourceKey: id, ...lightboxData});
-        lightboxDispatch({type: 'OPEN', slide: index + 1});
-    }, [lightboxDispatch, lightboxData, id, projectIndex]);
+        lightboxDispatch({type: 'OPEN', slide: index + 1, enableOpenDetails: !carouselOpen});
+    }, [lightboxDispatch, lightboxData, id, projectIndex, carouselOpen]);
 
     const setSizeChanging_ = React.useCallback((changing: boolean)=>setSizeChanging(projectIndex, changing), [setSizeChanging, projectIndex]);
 
@@ -221,6 +217,7 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
             onPointerEnter={onHover}
             onPointerLeave={onUnhover}
             className={`
+                project-item-card
                 h-min
                 relative cursor-pointer overflow-hidden transition-all
                 [text-wrap-mode:wrap] [text-wrap:stable]
@@ -228,27 +225,25 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
                 ${expanded ? "ring-2 ring-primary" : ""}
                 ${isPending ? "outline-4 outline-yellow-500" : ""}
             `}
-            // style={{textWrapMode: "wrap", textWrap: "stable"}}
         >
             {/* Header */}
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-2 project-item-header">
                 <CardTitle className="flex justify-between items-baseline">
-                    <span className="text-lg font-semibold">{title}</span>
-                    <span className="text-sm text-muted-foreground">{year}</span>
+                    <span className="text-lg font-semibold project-title">{title}</span>
+                    <span className="text-sm text-muted-foreground project-date">{dateText}</span>
                 </CardTitle>
+
                 {/* Description */}
-                <p className="text-sm text-muted-foreground">{description}</p>
+                <p className="text-sm text-muted-foreground project-item-description">{description}</p>
 
                 {/* Category */}
-                <div className="absolute w-full inset-0 flex justify-center h-min rounded-t-xl text-sm select-none pointer-events-none text-gray-900 dark:text-gray-400">
-                    
+                <div className="absolute w-full inset-0 flex justify-center h-min rounded-t-xl text-sm select-none pointer-events-none text-gray-900 dark:text-gray-400 project-item-category">
                     {project.category.toUpperCase()}
-
                 </div>
             </CardHeader>
 
             {/* Content */}
-            <CardContent className='space-y-2'>
+            <CardContent className='space-y-2 project-item-content'>
 
                 {/* Category-based tags */}
                 <BadgeRows badgeRows={badgeRows} />

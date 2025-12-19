@@ -41,7 +41,7 @@ type ProjectCarouselDialogProps = {
 
 const HovercardContentItem = ({project, index, numSlides}: {project: ProjectInfo, index: number, numSlides: number}) => {
     const indexSpan = useMemo(()=><span><span>{index}</span>/<span>{numSlides}</span></span>, [index, numSlides]);
-    return <div className="w-full outline-2 outline-green-500">
+    return <div className="w-full">
         <div className="text-center w-full text-xs font-normal tabular-nums">{indexSpan}</div>
         <div className="w-full text-sm font-extrabold">{project.title}</div>
         <p className="text-xs font-light">{project.description}</p>
@@ -50,10 +50,9 @@ const HovercardContentItem = ({project, index, numSlides}: {project: ProjectInfo
 
 
 const CarouselFallback = React.memo(({className, ...props}: React.ComponentPropsWithRef<'div'>) => {
-    
-
-    return <div {...props} className={cn("z-75 pointer-events-none")}>
-        <CustomSpinner Icon={LucideTurtle}/>
+    return <div {...props} className={cn("z-75 pointer-events-none flex flex-col flex-nowrap content-stretch items-center justify-center w-full h-full overflow-clip", className)}>
+        <CustomSpinner Icon={LucideTurtle} size={64} fontSize={64}/>
+        <div className="text-center content-center md:text-lg sm:text-base xs:text-sm text-nowrap overflow-clip">Loading project details...</div>
     </div>
 });
 

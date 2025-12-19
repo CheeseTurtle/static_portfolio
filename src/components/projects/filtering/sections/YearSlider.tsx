@@ -95,7 +95,7 @@ function YearSlider({
   const _values = useFilterFormStore(s=>s.yearValue, shallow);
   // const [_values, set_values] = React.useState<[number, number]>([min, max]);
 
-  console.log('_values:', _values)
+  // console.log('_values:', _values)
 
   // const filterFormStore = useFilterFormStore()
   // filterFormStore.subscribe(s=>s.yearValue, yearValue => set_values(year_value as [number, number]));
@@ -116,9 +116,9 @@ function YearSlider({
         aria-label="Year range"
         aria-describedby={descId}
          data-slot="slider"
-        //  defaultValue={defaultValue}
+         defaultValue={defaultValue}
         //  value={value}
-        value={_values}
+        // value={_values}
          min={min}
          max={max}
          className={cn(

@@ -39,6 +39,7 @@ export type LightboxState = {
     sourceKey?: string,
     activeProjectIndex?: number,
     activeProjectId?: string,
+    enableOpenDetails?: boolean,
 };
 
 // type ImagePath = string;
@@ -62,12 +63,11 @@ export type LightboxCaption = string | React.ReactNode;
 export type LightboxCaptions = Array<LightboxCaption | null>;
 
 export type LightboxAction =
-    | { type: "OPEN"; slide: number }
+    | { type: "OPEN"; slide: number, enableOpenDetails?: boolean }
     | { type: 'ENSURE_OPEN', slide?: number }
     | { type: "CLOSE" }
     | { type: "SET_CONTENT", sourceKey: string, sources: LightboxSource[], captions?: LightboxCaptions }
     | { type: 'SET_PROJECT', projectId: string, projectIndex: number,}
-    // | { type: 'SET_PROJECT', projectId: null, projectIndex: null,}
     | { type: 'CLEAR_PROJECT' }
 
 export function createLightboxReducer(lightboxHandle: React.RefObject<CaptionedLightboxHandle | null>) {
@@ -75,11 +75,11 @@ export function createLightboxReducer(lightboxHandle: React.RefObject<CaptionedL
         const result = (()=>{
             switch (action.type) {
                 case "OPEN":
-                    // console.log('Old state:', state);
                     return {
                         ...state,
                         open: true,
                         initialSlide: action.slide,
+                        enableOpenDetails: undefined === action.enableOpenDetails ? state.enableOpenDetails : action.enableOpenDetails,
                     };
                 case "ENSURE_OPEN":
                     return {
@@ -91,10 +91,8 @@ export function createLightboxReducer(lightboxHandle: React.RefObject<CaptionedL
                     lightboxHandle.current?.hideCaptions()
                     return { ...state, activeProjectIndex: undefined, activeProjectId: undefined, open: false };
                 }
-                // case "SET_SLIDE":
-                //   return { ...state, slide: action.slide };
                 case 'SET_PROJECT': {
-                    return {...state, ...action};
+                    return {...state, activeProjectId: action.projectId, activeProjectIndex: action.projectIndex };
                 }
                 case "CLEAR_PROJECT":
                     return {...state, activeProjectIndex: undefined, activeProjectId: undefined};
@@ -108,8 +106,8 @@ export function createLightboxReducer(lightboxHandle: React.RefObject<CaptionedL
                     return state;
             }
         })();
-        const {type, ...params} = action;
-        console.log('LIGHTBOX REDUCER ACTION', type, params, state, result);
+        // const {type, ...params} = action;
+        // console.log('LIGHTBOX REDUCER ACTION', type, params, state, result);
         return result;
     }
 }
@@ -126,6 +124,6 @@ export const LightboxContext = React.createContext<LightboxContextState | null>(
 
 export function useCaptionedLightbox() {
     const value = React.useContext(LightboxContext);
-    if(!value) throw Error('Turtles');
+    if(!value) throw Error('Not inside CaptionedLightbox context provider');
     return value;
 }

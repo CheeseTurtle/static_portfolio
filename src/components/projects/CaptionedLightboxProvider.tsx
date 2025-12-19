@@ -19,9 +19,9 @@ export default function CaptionedLightboxProvider({children, onClose}: {children
     return <LightboxContext.Provider value={{
         state, dispatch
     }}>
-        {/* <Suspense> */}
+        {/* <React.Suspense> */}
         <CaptionedLightbox ref={lightboxHandle} {...state} onClose={onClose_} />
-        {/* </Suspense> */}
+        {/* </React.Suspense> */}
         {children}
     </LightboxContext.Provider>;
 }

@@ -62,7 +62,7 @@ export default function parseDate(
   stringWithTime: boolean = false
 ): [ParsedDate, string] {
   const m =
-    /(?<year>\d{4})(?:-(?<month>\d\d?)(?:-(?:(?<day>\d\d?)(?: (?<hour>\d\d?):(?<minute>\d\d))?)?)?)?/.exec(
+    /(?<year>\d{4})(?:[-/](?<month>\d\d?)(?:[-/](?:(?<day>\d\d?)(?: (?<hour>\d\d?):(?<minute>\d\d))?)?)?)?/.exec(
       x
     );
   // console.assert(m !== null && m.groups, `Invalid date string: ${x}`);

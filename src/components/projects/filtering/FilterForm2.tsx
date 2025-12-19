@@ -12,7 +12,7 @@ import { useFilterFormStore, useFilterFormStoreContext } from "./common/stores/f
 import { TagSectionStoreProvider } from "./common/stores/FilterFormStoreProvider";
 import { shallow } from "zustand/shallow";
 import { useCountStore } from "./common/stores/countStore";
-import { createRecordFromObject } from "@/lib/objutil";
+// import { createRecordFromObject } from "@/lib/objutil";
 
 type FilterFormProps = {
     inSheet?: boolean,
@@ -77,7 +77,7 @@ const FilterForm = (({
     const yearValue = useFilterFormStore(s=>s.yearValue, shallow);
     const [year0, year1] = yearValue;
 
-    console.log('yearValue:', yearValue)
+    // console.log('yearValue:', yearValue)
 
     const categoryNames = rangeInfo.categoryNames;
 
@@ -97,12 +97,12 @@ const FilterForm = (({
     // #region Year slider
     const showYearSlider = useFilterFormStore(s=>s.showYearSlider);
     const onValueChange = React.useCallback((value: [number, number])=>{
-        console.log('value change:', value);
+        // console.log('value change:', value);
         setURLSyncFlag(URLSyncFlag.SUSPEND, true);
         setYear(value);
     }, [setURLSyncFlag, setYear])
-    const onValueCommit = React.useCallback((value: [number, number]) => {
-        console.log('value commit:', value);
+    const onValueCommit = React.useCallback((_value: [number, number]) => {
+        // console.log('value commit:', value);
         setURLSyncFlag(URLSyncFlag.DEFER, true);   
     }, [setURLSyncFlag])
     const yearSlider = <YearSlider min={rangeInfo.minYear} max={rangeInfo.maxYear} defaultValue={[rangeInfo.minYear, rangeInfo.maxYear]}
@@ -134,19 +134,19 @@ const FilterForm = (({
 
     const {tagSectionStores} = useFilterFormStoreContext();
     
-    // const tagSections = Object.entries(tagSectionStores).map(([tt, ref])=>
-    //     <TagSectionStoreProvider storeRef={ref} key={tt} tagType={tt as TagType} countStore={countStore} filterStore={filterStore} rangeInfo={rangeInfo} registerReset={registerReset} reset={()=>resetTags(tt as TagType)}>
-    //         <TagFilterSection key={tt} tagType={tt as TagType} />
-    //     </TagSectionStoreProvider>
-    // )
+    const tagSections = Object.entries(tagSectionStores).map(([tt, ref])=>
+        <TagSectionStoreProvider storeRef={ref} key={tt} tagType={tt as TagType} countStore={countStore} filterStore={filterStore} rangeInfo={rangeInfo} registerReset={registerReset} reset={()=>resetTags(tt as TagType)}>
+            <TagFilterSection key={tt} tagType={tt as TagType} />
+        </TagSectionStoreProvider>
+    )
 
-    const tagSections = React.useRef<Partial<Record<TagType, React.JSX.Element>>>({});
-    tagSections.current = createRecordFromObject(tagSectionStores, ([tt,ref])=> (
-        tagSections.current[tt] ?? (
-            <TagSectionStoreProvider storeRef={ref} key={tt} tagType={tt as TagType} countStore={countStore} filterStore={filterStore} rangeInfo={rangeInfo} registerReset={registerReset} reset={()=>resetTags(tt as TagType)}>
-                <TagFilterSection key={tt} tagType={tt as TagType} />
-            </TagSectionStoreProvider>
-        )))
+    // const tagSections = React.useRef<Partial<Record<TagType, React.JSX.Element>>>({});
+    // tagSections.current = createRecordFromObject(tagSectionStores, ([tt,ref])=> (
+    //     tagSections.current[tt] ?? (
+    //         <TagSectionStoreProvider storeRef={ref} key={tt} tagType={tt as TagType} countStore={countStore} filterStore={filterStore} rangeInfo={rangeInfo} registerReset={registerReset} reset={()=>resetTags(tt as TagType)}>
+    //             <TagFilterSection key={tt} tagType={tt as TagType} />
+    //         </TagSectionStoreProvider>
+    //     )))
 
     // #endregion
 
@@ -168,8 +168,8 @@ const FilterForm = (({
         </FilterFormSection>
 
         <FilterFormSection filterField="tags" resetFn={resetTags} canReset={canResetTags}>
-            {Object.values(tagSections.current)}
-            {/* {tagSections} */}
+            {/* {Object.values(tagSections.current)} */}
+            {tagSections}
         </FilterFormSection>
     </>;
 });

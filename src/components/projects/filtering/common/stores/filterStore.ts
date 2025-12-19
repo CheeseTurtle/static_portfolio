@@ -42,7 +42,7 @@ export interface FilterDataProps {
 
 export interface FilterStoreProps extends FilterInitProps, FilterDataProps {
   filterRangeInfo: FilterRangeInfo;
-  // isPassThru: boolean,
+  readonly isPassThru: boolean,
 }
 
 export type SetFilterProps = {
@@ -370,10 +370,10 @@ export const createFilterStore = (
       resetCategories: ()=>resetFilter({mask: FilterField.CATEGORY}),
       resetTags: (tagTypes?: TagType | TagType[]) => resetFilter({mask: FilterField.TAG, tagTypes}),
 
-      // get isPassThru() {
+      get isPassThru() {
 
-      //   return isPassThruFilter(get(), rangeInfo)
-      // },
+        return isPassThruFilter(get(), rangeInfo)
+      },
 
        setTagMode(tagType, mode) {
           // console.log(`Setting ${tagType} mode to:`, mode);
