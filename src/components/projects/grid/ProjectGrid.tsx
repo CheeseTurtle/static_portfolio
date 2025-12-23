@@ -260,19 +260,20 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
 
   return (
       <div
-        className="grid w-full overflow-y-visible"
+        className="grid min-w-full overflow-visible"
         style={{
           gridTemplateRows: `auto minmax(0, ${maxExtraHeight}px)`,
           minHeight: collapsedGridHeight > 0 ? `max(100vh, ${totalReservedHeight}px)` : '100vh',
         }}
       >
-        <div ref={gridContainerRef} className={cn("w-full max-w-full grid grid-flow-col auto-cols-fr gap-4 p-8 pt-4 h-min overflow-y-visible",
+        <div ref={gridContainerRef} className={cn("w-full max-w-full grid grid-flow-col auto-cols-fr gap-4 py-4 px-2 md:px-4 xl:p-8 pt-4 h-min overflow-y-visible",
           "justify-start", // justify-content
           "justify-items-stretch", // justify-items
           "content-start", // align-content (distribution of space between/around content items on block/cross axis)
           "items-start", // align-items (alignment of items on cross axis / alignment of items on block axis within grid areas)
           "justify-self-stretch", // inline axis
           "self-start", // align-self -- flexbox: cross axis (possibly ignored), grid: aligns item inside grid area
+          "min-w-xs"
         )}> 
           {/*  sm:grid-flow-col-dense md:grid-flow-col-dense" */}
           {projectGridContents}

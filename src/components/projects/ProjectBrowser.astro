@@ -4,20 +4,29 @@ import { getImagePath } from "../story/util/loadImages";
 
 import { getCollection/*, render*/ } from "astro:content";
 
-import type { ProjectEntry, ProjectFrontmatter, ProjectDataWithFactory, TagKey, ProjectInfoWithLBSymbols, LightboxMediaEntryWithLBSymbols, ProjectMediaType, AnyProjectImageEntry, ProjectMediaEmbedData } from "./types";
+import type { ProjectFrontmatter, ProjectDataWithFactory, TagKey, ProjectInfoWithLBSymbols, LightboxMediaEntryWithLBSymbols, ProjectMediaType, AnyProjectImageEntry, ProjectMediaEmbedData } from "./types";
 import type { MDXInstance } from "astro";
 
 import {convertSymbol} from "./lightbox";
 import parseDate from "../story/util/parseDate";
 import type { AstroComponentFactory } from "astro/runtime/server/index.js";
 // import { createParser } from "./parseMdx";
-
+// import ClientOnly from "./ClientOnly.astro";
 
 import {markdown} from '@astropub/md';
 import type {AstroMarkdownOptions} from '@astrojs/markdown-remark';
+
+// import CollapsibleCodeHydrator from "./details/CollapsibleCodeHydratorWrapper.astro";
+
+
+import type React from 'react';
 // import ClientOnly from "./ClientOnly.astro";
 
 // import {YouTube} from 'astro-embed';
+
+import CollapsibleCode from "./details/CollapsibleCode";
+// import FactoryRenderer from "./details/FactoryRenderer.astro";
+import type { ProjectEntryMDX } from "./types";
 
 const BASE_URL = import.meta.env.BASE_URL;
 
@@ -41,7 +50,11 @@ const imageRecords = import.meta.glob(
     "/public/images/projects/*.{jpeg,jpg,png,gif,webp}",
     "/public/images/posts/*.{jpeg,jpg,png,gif,webp}"], {eager: false, exhaustive: true});
 const imagePaths = new Set<string>(Object.keys((imageRecords)));
-const projectMetadata = await getCollection("projects");
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+const projectMetadata = (await getCollection("projects")) as ProjectEntryMDX[];
+// console.log(projectMetadata.map(e => [e.filePath, typeof e.render]));
+
+
 const contentRecord = import.meta.glob<MDXInstance<ProjectFrontmatter>>(
     '/src/content/projects/*.mdx',
     {eager: false, exhaustive: true});
@@ -59,23 +72,33 @@ function trimID(id: string): string {
     if(m === null || m.length < 2) return id;
     return m[1] || id;
 }
-async function processProjectItems(imagePaths: Set<string>, prepath: string | string[], entries: ProjectEntry[]): Promise<ProjectDataWithFactory[]> {
+async function processProjectItems(imagePaths: Set<string>, prepath: string | string[], entries: ProjectEntryMDX[]): Promise<ProjectDataWithFactory[]> {
     return await Promise.all(
         entries.map(async (entry)=>await processProjectItem(imagePaths, prepath, entry))
     )
 }
 
-async function processProjectItem(imagePaths: Set<string>, prepath: string | string[], entry: ProjectEntry): Promise<ProjectDataWithFactory> {
+const COMPONENTS: Partial<Record<React.HTMLElementType, React.FunctionComponent>> = {
+    pre: CollapsibleCode
+}
+
+async function processProjectItem(imagePaths: Set<string>, prepath: string | string[], entry: ProjectEntryMDX): Promise<ProjectDataWithFactory> {
     let entryPath: string = entry.filePath!;
+
+    // entry.rendered?.metadata?.imagePaths
+    // entry.rendered?.metadata?.html
     
     const contentLoader = ((entryPath in contentRecord) || (!entryPath.startsWith('/') && ((entryPath='/'+entryPath) in contentRecord))) ? contentRecord[entryPath] : undefined;    
     
     const contentPromise = contentLoader?.();
     const contentInstance = await contentPromise;
+
     const rp = (undefined === contentInstance) ? entry.render() : null;
     const rr = rp ? await rp : null;
 
     const Factory: AstroComponentFactory = contentInstance?.Content || rr!.Content;
+    // const components = contentInstance?.components || rr?.components;
+    const components = (rr?.components || contentInstance?.components) ? { ...rr?.components, ...contentInstance?.components } : undefined;
 
     const strippedBody = entry.body?.trim();
     const contentMdx = strippedBody && strippedBody.length > 0 ? strippedBody : undefined;
@@ -90,6 +113,7 @@ async function processProjectItem(imagePaths: Set<string>, prepath: string | str
         contentMdx: contentMdx,
         images: entry.data.images,
         factory: Factory,
+        components,
         exclude: entry.data.exclude,
   };
 } 
@@ -103,6 +127,7 @@ const items: ProjectDataWithFactory[] = await processProjectItems(imagePaths, pr
 const symMap: Record<symbol, string> = {};
 const lbFactories: Record<string, AstroComponentFactory> = {};
 const factories: Record<string, AstroComponentFactory> = {};
+const componentses: Record<string, Record<string, AstroComponentFactory>> = {};
 
 function parseDateValue(value: Date | string | number): [Date, string | undefined] {
     switch(typeof value) {
@@ -232,13 +257,17 @@ const options: AstroMarkdownOptions = {
     },
     shikiConfig: {},
     smartypants: undefined,
-    syntaxHighlight: false,
+    syntaxHighlight: false, // prism or shiki
     // syntaxHighlight: 'prism'
 }
 
 const projects: ProjectInfoWithLBSymbols[] = (await Promise.all(items.filter(x=>!x.exclude).map(async (data: ProjectDataWithFactory): Promise<ProjectInfoWithLBSymbols> => {
     const factory = data.factory;
-    factories[trimID(data.id)] = factory;
+    const trimmedID = trimID(data.id);
+    factories[trimmedID] = factory;
+    if(data.components)
+        componentses[trimmedID] = data.components;
+
     const [date, dateStr] = parseDateValue(data.date);
 
     const pairPromises = data.images?.map(async (x): Promise<[string | symbol | {sym: symbol, key: string, path: string, provider: string}, string | symbol | null, string, ProjectMediaType] | undefined> => {
@@ -301,10 +330,6 @@ const projects: ProjectInfoWithLBSymbols[] = (await Promise.all(items.filter(x=>
 }))).sort((a,b)=>compareDates(a.date, b.date));
 
 
-// function findProject(id: string) {
-//     return projects.find(x=>x.id === id)!;
-// }
-
 
 ---
 
@@ -316,7 +341,9 @@ const projects: ProjectInfoWithLBSymbols[] = (await Promise.all(items.filter(x=>
 }))} symMap={symMap}>
     <Fragment slot="project-titles">
         {
-            projects.map(p=><article data-project-id={p.id}><Fragment set:html={p.title}></Fragment></article>)
+            projects.map(p=>
+                <article data-project-id={p.id}><Fragment set:html={p.title}></Fragment></article>
+            )
         }
     </Fragment>
     <Fragment slot="project-descriptions">
@@ -332,17 +359,20 @@ const projects: ProjectInfoWithLBSymbols[] = (await Promise.all(items.filter(x=>
     <Fragment slot="carousel-content">
     {
         Object.entries(factories).map(([id, Factory]) =>
-            <article data-project-id={id}>
-                <Factory/>
-                {/* <ClientOnly><Factory/></ClientOnly> */}
-            </article>
+            // <Fragment>
+                <article class="project-details" data-project-id={id}>
+                    <Factory components={{...COMPONENTS, ...componentses[id]}}/>
+                </article>
+                // <CollapsibleCodeHydrator projectId="hi" client:only="react"/>
+            // </Fragment>
         )
     }
     </Fragment>
+    <!-- <CollapsibleCodeHydrator projectId="hi" client:only="react" /> -->
     <Fragment slot="lightbox-content">
         {
             Object.entries(lbFactories).map(([key, Factory])=>
-                <article data-item-id={key} class:list={['backdrop-blur-xs backdrop-grayscale']}><Factory></Factory></article>
+                <article data-item-id={key} class:list={['backdrop-blur-xs backdrop-grayscale']}><Factory/></article>
             )
         }
     </Fragment>

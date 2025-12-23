@@ -9,22 +9,48 @@ tags:
     skills: ["abc"]
     topics: ["def"]
 # images: ['testImage', 'photo-1506744038136-46273834b3fb (1)']
-images: [
-  ['testImage', 'A test image.'],
-  ['testImage', 'A test image.'],
-  ['testImage', 'A test image.'],
-  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
-  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
-  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
-  {
-    type: content,
-    path: testFigure,
-    captionPath: testCaption,  
-  }
-]
+# images: [
+#   ['testImage', 'A test image.'],
+#   ['testImage', 'A test image.'],
+#   ['testImage', 'A test image.'],
+#   ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+#   ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+#   ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+#   {
+#     type: content,
+#     path: testFigure,
+#     captionPath: testCaption,  
+#   }
+# ]
 ---
 
-#let proj-dodgy-car = (
+Dodgy Car (not affiliated with Flappy Bird) is a two-line side-scrolling arcade game. The objective is to avoid obstacles by moving the car up and down, as well as toggle "flight" mode (indicated by inverted graphic) to cross chasms or duck below arches. The high score (number of turns survived) is persistently stored.
+
+A description of what's going on in the video is available in the English subtitles. (There is no speech in the video.)
+
+
+ADDITIONAL NOTES:
+
+Note that this game features dynamic and sophisticated terrain generation. The spawn probabilities for each obstacle type and combination depends on the type of and time elapsed since the previous obstacle. The probability of a new obstacle spawning increases pseudo-exponentially in relation to the number of turns elapsed without spawning an obstacle. A cleverly-configured bit mask allows this pseudo-exponential "function" is achieved by three or fewer bitwise operations (AND, right shift) per turn --that is, without the use of floating-point calculations.
+
+The developer also devised a simple yet effective encoding scheme for the obstacle types and car positions. As a result, the game's collision detection procedure is very simple and efficient (one or two bitwise operations).
+
+Furthermore, special care is taken to observe the limitations of the LCD used for the project. The LCD requires a minimum time to elapse between commands, and the drawing of the characters on the screen is not instantaneous. To maximize the smoothness and speed of the LCD graphics, the developer made use of several LCD features, of which the most important was the built-in "shift" drawing mode. This feature configures the LCD so that when it receives a character-draw command, it automatically shifts the entire display to the left. Additionally, once the entire first "page" of characters is off-screen, the program begins to successively overwrite these with a duplicate of the characters it is shifting onto the visible display positions. The result is that when the end of the writable display positions is reached, rather than needing to clear the display and redrawing the whole screen, the program can merely performs a "shift home" since at that point, the first "page" of display positions contains an exact copy of the last-displayed "page". This innovative approach to LCD graphics, attuned to the nuances of the LCD display positions, greatly improves draw performance.
+
+Lastly, the developer creatively used a combination of several types of interrupts to trigger and "run" the start and end screens, as well as during gameplay to continuously read (ADC) the capacitive touchpads while still maintaining a constant framerate. The touchpads' input is passed through a custom state machine (coded using structs and pointers) before the result is delivered to the game logic; by requiring (except for certain special cases) three consecutive (or three semi-consecutive with one intervening) same-valued inputs before reporting a change in value,  a much smoother touchpad response is achieved.
+
+
+
+
+Dodgy Car is a minimalist yet technically sophisticated two-line side-scrolling arcade game where players navigate a car through dynamically generated terrain, avoiding obstacles by moving vertically and toggling a "flight" mode to cross gaps or duck under arches. The game’s simplicity belies its depth: every mechanic, from collision detection to terrain generation, is optimized for performance and precision, making it a compelling study in low-level programming and hardware-aware design.
+
+At its core, Dodgy Car demonstrates ingenuity in **procedural generation** and **real-time computation**. The terrain system employs a **pseudo-exponential obstacle spawning algorithm**, where spawn probabilities adjust based on elapsed time and previous obstacle types—all computed using **bitwise operations** (AND, right shift) to avoid floating-point calculations. This approach ensures smooth, responsive gameplay while conserving computational resources. Collision detection is equally efficient, leveraging a **custom encoding scheme** for obstacle types and car positions, reducing checks to just one or two bitwise operations per frame.
+
+The game’s **LCD optimization** further sets it apart. By exploiting the display’s built-in "shift" mode, the developer eliminates the need for full-screen redraws, instead seamlessly cycling through display pages to maintain fluid animation. This technique, combined with **interrupt-driven input handling**, ensures a consistent framerate while reading capacitive touchpad inputs. A **custom state machine** filters input noise, requiring multiple consecutive readings for responsiveness without jitter, showcasing meticulous attention to user experience.
+
+Dodgy Car is more than a game—it’s a **case study in constrained innovation**. Every design choice, from bitmask-based probability functions to interrupt-driven workflows, reflects a deep understanding of **embedded systems, performance optimization, and hardware limitations**. For employers, this project highlights expertise in **low-level programming, real-time systems, and resource-efficient design**, making it a standout addition to any portfolio in game development, embedded engineering, or systems programming.
+
+{/* #let proj-dodgy-car = (
   title: "Video game for microcontroller and capacitive touch",
   year: [2022],
   summary: [Microcontrollers I solo project #sym.dash.em Won 1#super("st") prize in department-wide competition],    
@@ -58,4 +84,4 @@ images: [
       // [Created pointer-based ==state machine== for tap debouncing],              
     ))
   )  
-)
+) */}

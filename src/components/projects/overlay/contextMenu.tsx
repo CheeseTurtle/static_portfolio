@@ -18,6 +18,7 @@ export type ProjectCarouselContextMenuContentHandle = {
 }
 
 export const ProjectCarouselContextMenuContent = React.memo(({isProjectActive, selectableText, setSelectableText, className, handleRef, ref, ...props}: ProjectCarouselContextMenuContentProps)=>{
+
     // const localContentRef = React.useRef<HTMLDivElement>(null);
     // const contentRef = React.useMemo(()=>ref ?? localContentRef, [ref]);
     // const contentRef = useEnsureRef<HTMLDivElement>(ref, null);

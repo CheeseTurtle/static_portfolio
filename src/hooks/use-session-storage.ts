@@ -16,7 +16,7 @@ export function useSessionStorage<T>(
     try {
       const item = window.sessionStorage.getItem(key)
       return item
-        ? JSON.parse(item)
+        ? JSON.parse(item) as T
         : typeof initialValue === "function"
           ? (initialValue as () => T)()
           : initialValue
@@ -51,7 +51,7 @@ export function useSessionStorage<T>(
       if (event.key === key && event.storageArea === sessionStorage) {
         try {
           const newValue = event.newValue
-            ? JSON.parse(event.newValue)
+            ? JSON.parse(event.newValue) as T
             : typeof initialValue === "function"
               ? (initialValue as () => T)()
               : initialValue

@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import useMutationObserver from "@/hooks/use-mutation-observer";
 import { type LightboxCaptions, type LightboxSources } from "./lightbox";
 
-import {Flip} from "gsap/Flip";
 import {gsap} from "gsap";
 import useThrottledDebounce from "@/hooks/useThrottledDebounce";
 import { cn } from "@/lib/utils";
@@ -17,6 +16,7 @@ import type { Defined } from "@/lib/type-utils";
 
 import * as DOMClient from 'react-dom/client';
 import { LucideArrowUpRightFromSquare } from "lucide-react";
+import { useGSAP } from "@gsap/react";
 
 
 // import FSLightbox from "fslightbox-react";
@@ -245,7 +245,8 @@ const LightboxCaption = React.memo(({ref, children, divRef, sourceElem, classNam
     // console.log(index, activeIndex, active);
 
     const activated = React.useRef<boolean | undefined>(undefined);
-    React.useEffect(()=>{
+    // React.useEffect(()=>{
+    useGSAP(()=>{
         const div = divRef.current;
         // console.log('LightboxCaption layout effect begin', div, active, activated.current)
         if(!div) return;
@@ -266,6 +267,7 @@ const LightboxCaption = React.memo(({ref, children, divRef, sourceElem, classNam
                 // },
                 onStart: ()=>{
                     // console.log('Lightbox caption animation beginning (to visible)', index)
+                    activated.current = undefined;
                     gsap.set(div, {visibility: 'visible'});
                 },
                 onComplete: ()=>{
@@ -279,9 +281,10 @@ const LightboxCaption = React.memo(({ref, children, divRef, sourceElem, classNam
                 opacity: 0,
                 delay: 0,
                 duration: 0.5,
-                // onStart: () => {
-                //     console.log('Lightbox caption animation beginning (to hidden)', index)
-                // },
+                onStart: () => {
+                    console.log('Lightbox caption animation beginning (to hidden)', index)
+                    activated.current = undefined;
+                },
                 onComplete: ()=>{
                     // quickSet('hidden');
                     gsap.set(div, {visibility: 'hidden'});
@@ -427,7 +430,8 @@ const LightboxCaptionsOverlay = (({sources, captions, open, ref, divRef, activeI
 
 
     const opened = React.useRef<boolean | undefined>(undefined);
-    React.useEffect(()=>{
+    // React.useEffect(()=>{
+    useGSAP(()=>{
         const div = divRef.current;
         if(!div) return;
         if(open === opened.current) return;
@@ -523,10 +527,6 @@ export default function CaptionedLightbox({
     const snRef = React.useRef<HTMLSpanElement | null>(null);
 
     const setLightboxOpen = useBrowserContext(s=>s.setLightboxOpen);
-
-    React.useEffect(()=>{
-        gsap.registerPlugin(Flip);
-    }, []);
 
     const openCarouselToProject = useBrowserContext(s=>s.openCarouselToProject);
 

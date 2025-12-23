@@ -1,6 +1,7 @@
 import type { MarkdownInstance, MDXInstance } from "astro";
 import type { AstroComponentFactory } from "astro/runtime/server/index.js";
-import type { CollectionEntry/*, RenderResult*/ } from "astro:content";
+import type { CollectionEntry,/*, RenderResult*/ 
+Render} from "astro:content";
 // import type { JSXElementConstructor } from "react";
 import type { ParsedDate } from "../story/util/parseDate";
 import type React from "react";
@@ -227,11 +228,15 @@ export interface ProjectInfo extends ProjectDataBase<Set<string>, ParsedDate, st
 }
 
 export type ProjectEntry = CollectionEntry<"projects">;
+export type ProjectEntryMDX = Omit<ProjectEntry, 'render'> & {
+  render(): Render['.mdx']
+};
+
 export type Project = ProjectEntry["data"] & { id: string };
 export type ProjectData = Project & {
     contentHtml?: string; contentMdx?: string; contentElem?: ReturnType<MDXInstance<ProjectFrontmatter>["Content"]>;
 };
 
-export type ProjectDataWithFactory = ProjectData & { factory: AstroComponentFactory };
+export type ProjectDataWithFactory = ProjectData & { factory: AstroComponentFactory, components?: Record<string, AstroComponentFactory>  };
     // contentLoader?: () => Promise<MDXInstance<ProjectFrontmatter>>;};
     // renderResult: JSXElementConstructor<any>; }

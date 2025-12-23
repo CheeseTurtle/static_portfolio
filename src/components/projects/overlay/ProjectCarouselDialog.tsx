@@ -50,9 +50,9 @@ const HovercardContentItem = ({project, index, numSlides}: {project: ProjectInfo
 
 
 const CarouselFallback = React.memo(({className, ...props}: React.ComponentPropsWithRef<'div'>) => {
-    return <div {...props} className={cn("z-75 pointer-events-none flex flex-col flex-nowrap content-stretch items-center justify-center w-full h-full overflow-clip", className)}>
+    return <div {...props} className={cn("z-75 pointer-events-none flex flex-col flex-nowrap content-stretch items-center justify-center w-full h-full overflow-hidden", className)}>
         <CustomSpinner Icon={LucideTurtle} size={64} fontSize={64}/>
-        <div className="text-center content-center md:text-lg sm:text-base xs:text-sm text-nowrap overflow-clip">Loading project details...</div>
+        <div className="text-center content-center md:text-lg sm:text-base xs:text-sm text-nowrap overflow-hidden">Loading project details...</div>
     </div>
 });
 
@@ -395,7 +395,7 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
                 <DialogPortal container={document.getElementById('modal-root')}>
                     <React.Suspense fallback={<div className="w-full h-full bg-orange-400 suspense-fallback">LOADING CAROUSEL DIALOG CONTENT</div>}>
                         <DialogContent 
-                            className="border-0 shadow-none p-0 m-0 items-center justify-center focus:outline-none z-50 [content-visibility:auto] flex w-full h-full inset-0 pointer-events-none overflow-clip" 
+                            className="border-0 shadow-none p-0 m-0 items-center justify-center focus:outline-none z-50 [content-visibility:auto] flex w-full h-full inset-0 pointer-events-none overflow-hidden" 
                             aria-describedby={undefined}
                             showCloseButton={false}>
                                 <DialogOverlay 

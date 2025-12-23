@@ -4,12 +4,13 @@ import ProjectBrowserReact from "./ProjectBrowserReact";
 import type { ProjectInfoWithLBSymbols } from "./types";
 
 import "../../styles/projects.css";
+import CollapsibleCodeHydratorWrapper from "./details/CollapsibleCodeHydratorWrapper.astro";
 
 const props = Astro.props as {projects: ProjectInfoWithLBSymbols[], symMap: Record<symbol, string>};
 
-// const rp = Astro.slots.has('default') && Astro.slots.render('default');
 const rp = Astro.slots.has('carousel-content') && Astro.slots.render('carousel-content');
 const html = rp ? await rp : undefined;
+// console.log(html);
 
 const lp = Astro.slots.has('lightbox-content') && Astro.slots.render('lightbox-content');
 const lbHTML = lp ? await lp : undefined;
@@ -19,20 +20,16 @@ const lbHTML = lp ? await lp : undefined;
 // const ep = Astro.slots.has('lightbox-embed') && Astro.slots.render('lightbox-embed');
 // const epHTML = ep ? await ep : undefined;
 
-// console.log(epHTML);
-
 const titlesPromise = Astro.slots.render('project-titles');
 const descriptionsPromise = Astro.slots.render('project-descriptions');
 const summariesPromise = Astro.slots.render('project-summaries');
 
 const [titles, descriptions, summaries] = await Promise.all([titlesPromise, descriptionsPromise, summariesPromise]);
 
-// console.log(titles, descriptions, summaries);
 
 ---
 
 <ProjectBrowserReact projects={props.projects} contentString={html} projectTitles={titles} projectDescriptions={descriptions} projectSummaries={summaries} lbContentString={lbHTML ?? ''} client:only="react">
-    <!-- <slot name="carousel-content"/>
-    <slot name="lightbox-content"/>
-    <slot name="lightbox-embed"/> -->
+    <slot/>
+    <CollapsibleCodeHydratorWrapper/>
 </ProjectBrowserReact>

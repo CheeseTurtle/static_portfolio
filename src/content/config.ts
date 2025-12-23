@@ -132,7 +132,6 @@ const loremIpsumCollection = defineCollection({
 
 
 const projectCollection = defineCollection({
-  // type: "content",
   type: "content",
   schema: z.object({
     title: z.string(),
@@ -163,7 +162,7 @@ const projectCollection = defineCollection({
     exclude: z.boolean().optional(),
   }),
   // loader() {
-  //   const files = import.meta.glob<MDXInstance<ProjectFrontmatter>>('/src/conent/projects/**.mdx', {exhaustive: false, eager: false});
+  //   const files = import.meta.glob<MDXInstance<ProjectFrontmatter>>('/src/content/projects/**.mdx', {exhaustive: false, eager: false});
     
   // },
 });

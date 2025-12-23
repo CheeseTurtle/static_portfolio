@@ -63,3 +63,100 @@
 .fslightbox-container {
 	pointer-events: auto;
 }
+
+
+
+
+.project-carousel-item-card.overflow-y-auto > ::-webkit-scrollbar {
+	outline: 2px solid green;
+}
+
+
+/* .project-carousel-item-card {
+    --scrollbar-color-thumb: hotpink;
+    --scrollbar-color-track: blue;
+    --scrollbar-width: thin;
+    --scrollbar-width-legacy: 10px;
+}*/
+
+.project-carousel-item-card {
+	scrollbar-gutter: stable;
+}
+
+
+/* Modern browsers with `scrollbar-*` support */
+@supports(scrollbar-color: inherit) {
+	/* @keyframes fadeIn {
+		from {
+			scrollbar-color: transparent transparent;
+		}
+		to {
+			scrollbar-color: unset unset;
+		}
+	}
+	@keyframes fadeOut {
+		from {
+			scrollbar-color: unset unset;
+		}
+		to {
+			scrollbar-color: transparent transparent;
+		}
+	} */
+	.project-carousel-item-card {
+		/* scrollbar-color: unset; */
+		transition-property: scrollbar-color;
+		transition-duration: 250ms;
+		transition-delay: 300ms;
+	}
+	.project-carousel-item-card:not(.overflow-y-auto) {
+		scrollbar-color: transparent transparent;
+	}
+}
+/* @supports (scrollbar-width: auto) {
+    .project-carousel-item-card {
+        scrollbar-color: var(--scrollbar-color-thumb) var(--scrollbar-color-track);
+        scrollbar-width: var(--scrollbar-width);
+    }
+} */
+
+/* Legacy browsers with `::-webkit-scrollbar-*` support */
+@supports selector(::-webkit-scrollbar) {
+	.project-carousel-item-card:not(.overflow-y-auto)::-webkit-scrollbar-thumb,
+	.project-carousel-item-card:not(.overflow-y-auto)::-webkit-scrollbar-track,
+	.project-carousel-item-card:not(.overflow-y-auto)::-webkit-scrollbar-button,
+	.project-carousel-item-card:not(.overflow-y-auto)::-webkit-scrollbar-track-piece,
+	.project-carousel-item-card:not(.overflow-y-auto)::-webkit-scrollbar-corner {
+		background: transparent;
+		transition-property: background-color;
+		transition-duration: 250ms;
+		transition-delay: 300ms;
+	}
+}
+/* @supports selector(::-webkit-scrollbar) {
+    .project-carousel-item-card::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-color-thumb);
+    }
+    .project-carousel-item-card::-webkit-scrollbar-track {
+        background: var(--scrollbar-color-track);
+    }
+    .project-carousel-item-card::-webkit-scrollbar {
+        max-width: var(--scrollbar-width-legacy);
+        max-height: var(--scrollbar-width-legacy);
+    }
+} */
+
+
+
+.collapsible-code[data-disabled] .collapsible-content-overlay {
+	display: none;
+}
+
+.collapsible-content-overlay {
+	transition-property: opacity;
+	transition-duration: 150ms;
+}
+
+.collapsible-code[data-state="open"] .collapsible-content-overlay {
+	opacity: 0;
+}
+

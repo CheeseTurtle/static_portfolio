@@ -1,0 +1,5 @@
+@import "@wooorm/starry-night/style/github-light.css";
+
+.dark {
+  @import "@wooorm/starry-night/style/github-dark.css";
+}

@@ -1,0 +1,11 @@
+---
+import type { ComponentProps } from 'react';
+import CollapsibleCodeReact from './CollapsibleCode.tsx';
+
+type Props = ComponentProps<typeof CollapsibleCodeReact>;
+const props: Props = Astro.props;
+---
+
+<CollapsibleCodeReact {...props} client:load>
+    <slot/>
+</CollapsibleCodeReact>

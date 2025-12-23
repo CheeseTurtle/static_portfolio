@@ -90,6 +90,7 @@
     "astro.config.mjs",
     "src/**/*.mdx",
     ".remarkrc.js",
+    "tailwind.config.cjs",
     "**/*.astro",
   ],
   "exclude": [

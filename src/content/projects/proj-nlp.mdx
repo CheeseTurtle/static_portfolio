@@ -8,24 +8,29 @@ tags:
     languages: ["Python", "Javascript"]
     skills: ["abc"]
     topics: ["def"]
-images: [
-  ['testImage', 'A test image.'],
-  ['testImage', 'A test image.'],
-  ['testImage', 'A test image.'],
-  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
-  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
-  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
-  {
-    type: content,
-    path: testFigure,
-    captionPath: testCaption,  
-  }
-]
+# images: [
+#   ['testImage', 'A test image.'],
+#   ['testImage', 'A test image.'],
+#   ['testImage', 'A test image.'],
+#   ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+#   ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+#   ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+#   {
+#     type: content,
+#     path: testFigure,
+#     captionPath: testCaption,  
+#   }
+# ]
 
 ---
 
+This presentation examines the role of **prosody**—the melodic and rhythmic elements of speech, including pitch, intonation, and pacing—in advancing **automatic speech recognition (ASR)**. Unlike conventional ASR systems that rely on textual transcripts, this work integrates prosodic features to improve accuracy, particularly for **spontaneous speech**, where disfluencies and natural conversational patterns often pose challenges. Research highlighted in the presentation demonstrates that prosody enhances **disfluency detection** and **punctuation prediction**, offering a more nuanced understanding of speech that transcends lexical or syntactic dependencies. By treating prosody as a universal signal, the approach achieves broader applicability across languages and dialects, addressing a long-standing limitation in ASR technology.
 
-#let proj-nlp = (
+The technical foundation combines **wavelet-based time-frequency analysis** with **neural network architectures** like **WaveCNNs** and **spiking neural networks (SNNs)**. These methods enable precise feature extraction and efficient processing, with parallelization techniques ensuring scalability. The use of **synchrosqueezing** refines time-frequency representations, while adaptive thresholding and attention mechanisms optimize performance for real-world audio signals. This blend of **signal processing** and **deep learning** reflects a sophisticated approach to speech recognition, emphasizing both **theoretical innovation** and **practical implementation**.
+
+The research also explores the **cognitive dimensions of speech**, framing communication as a dynamic process shaped by anticipation, prediction, and shared conventions. By investigating **embodied interaction** and **sequential meaning construction**, the work aligns with emerging trends in **human-centered AI**, where context and experience play critical roles in interpretation. Future directions, such as **language-agnostic disfluency correction**, further extend its impact, positioning the project at the intersection of **linguistics, computational neuroscience, and AI**. The result is a framework that not only improves ASR performance but also contributes to broader discussions on **natural language understanding** and **machine cognition**.
+
+{/* #let proj-nlp = (
   title: "",
   year: 2024,
   summary: "",
@@ -42,4 +47,4 @@ images: [
     ))
   )
 )
-
+ */}

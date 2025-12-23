@@ -29,6 +29,8 @@ import { useCountContext } from "./filtering/common/stores/countStore";
 
 import ProjectBrowserEmpty from "./ProjectBrowserEmpty";
 import ProjectGridSkeleton from "./grid/ProjectGridSkeleton";
+import { transformTree } from "./details/transformTree";
+import CollapsibleCode from "./details/CollapsibleCode";
 // import useReportingMemo from "@/hooks/useReportingMemo";
 
 // import FilterSheet from "./filtering/FilterSheet2";
@@ -70,7 +72,7 @@ type ProjectBrowserInnerProps = Omit<ProjectBrowserProps, 'projects' | 'lbConten
     contentElements: React.JSX.Element[],
 };
 
-const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInnerProps>(({ children: _children, projects: _projects, filterRangeInfo, contentElements, showToast, scrollToRef, scrollTo, scrollContainer }: ProjectBrowserInnerProps, _ref) => {
+const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInnerProps>(({ children, projects: _projects, filterRangeInfo, contentElements, showToast, scrollToRef, scrollTo, scrollContainer }: ProjectBrowserInnerProps, _ref) => {
     console.log('[ProjectBrowserInner] Render start', {
         url: window.location.href,
         search: window.location.search,
@@ -189,8 +191,8 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
                 </div>
             </Collapsible>
             <CaptionedLightboxProvider>
-                <div className="mt-5 overflow-y-visible w-full max-w-[100vw]" ref={filterResultsRef}>
-                    <StickyDiv className='px-4 top-[-0.8px] z-1 data-[sticky-state="stuck"]:bg-background bg-none'>{resultText}</StickyDiv>
+                <div className="mt-5 overflow-visible min-w-full w-fit" ref={filterResultsRef}>
+                    <StickyDiv className='w-full px-4 top-[-0.8px] z-1 data-[sticky-state="stuck"]:bg-background bg-none transition-all transition-duration-500'>{resultText}</StickyDiv>
                     {/* <ProjectGridSkeleton/> */}
                     <React.Suspense fallback={<ProjectGridSkeleton/>}>
                         {
@@ -213,6 +215,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
                 triggerRef={sheetTriggerRef}
             />
         </FilterFormStoreProvider>
+        {children}
     </>
 });
 
@@ -255,13 +258,19 @@ function convertProjectInfo(projects: ProjectInfoWithLBSymbols[], contentRecord:
     const titles = parseToData(projectTitles);
     const descriptions = parseToData(projectDescriptions);
     const summaries = parseToData(projectSummaries);
+
+    // console.log('TITLES:', titles);
     
     
     return projects.map(({lightboxData, ...p}): ProjectInfo =>{
-        // console.log(lightboxData);
+        if(undefined === lightboxData) return {
+            ...p,
+            title: titles[p.id] ?? p.title,
+            description: descriptions[p.id] ?? p.description,
+            summary: summaries[p.id] ?? p.summary,
+        };
         let anyEmbed: boolean = false;
         const thumbnails: (string | null)[] = [];
-        if(undefined === lightboxData) return p;
         const oldRecord = lightboxData.record;
         const lightboxCaptions = lightboxData.lightboxCaptions?.map(x=>{
             if(x === null)
@@ -321,8 +330,11 @@ function convertProjectInfo(projects: ProjectInfoWithLBSymbols[], contentRecord:
         })
         // console.log('RECORD:', oldRecord, newRecord);
 
-        if(anyEmbed)
-            console.log('Sources:', lightboxSources, thumbnails);
+        // if(anyEmbed)
+        //     console.log('Sources:', lightboxSources, thumbnails);
+        if(!titles[p.id]) {
+            console.error('Could not find title for project:', p.id, titles)
+        }
 
         return {
             ...p, 
@@ -361,6 +373,47 @@ function parseToData(src: string): Record<string, React.JSX.Element> {
     return ret;
 }
 
+
+// type PreElement = React.ReactHTMLElement<HTMLPreElement>; //
+type PreElement =  React.ReactElement<React.HTMLAttributes<HTMLPreElement>, 'pre'>;
+
+
+function shouldTransformNode(node: React.ReactNode): node is PreElement {
+    // console.log('Should transform node?', node);
+    if(node && typeof node === 'object' && React.isValidElement(node) && node.type === 'pre') {
+        const children = (node as PreElement).props?.children;
+        console.log('NODE CHILDREN:', node, children);
+        if(!children || typeof children !== 'object') return false;
+        if(React.isValidElement(children)) {
+            if(children.type !== 'code')
+                return false;
+        } else if(Symbol.iterator in children) {
+            const array = [...children];
+            if(array.length !== 1)
+                return false;
+            if(!React.isValidElement(array[0]) || array[0].type !== 'code')
+                return false;
+        } else {
+            return false;
+        }
+    } else {
+        if(node && typeof node === 'object' && React.isValidElement(node))
+            console.log('wRONG TYPE:', node.type)
+        else if(node) {
+            console.log('NOT NODE:', node);
+        }
+        return false;
+    }
+    return true;
+}
+
+function transformNode(node: React.ReactNode): React.ReactNode {
+    // if(shouldTransformNode(node)) {
+    console.log('TRANSFORMING NODE:', node);
+    return <CollapsibleCode {...(node as PreElement).props}/>
+    // return node;
+}
+
 export default function ProjectBrowser({children, projects: projectsWithLBSymbols, contentString, lbContentString, projectTitles, projectDescriptions, projectSummaries}: ProjectBrowserProps) {
     // console.log(projectsWithLBSymbols);
     // const prevProjects = React.useRef<typeof projectsWithLBSymbols>(projectsWithLBSymbols);
@@ -376,6 +429,8 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
     //     throw new Error('No project details content provided');
     // }
 
+    // console.log('Children:', children);
+
     // const _contentElements = React.useMemo(()=>parse(contentString!), [contentString]);
     const contentElements = React.useMemo(()=>{
         const _contentElements = parse(contentString!);
@@ -385,7 +440,7 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
                 : Array.isArray(_contentElements) 
                     ? _contentElements 
                     : [_contentElements]
-        ).filter((x) => typeof x === 'object');
+        ).filter((x) => typeof x === 'object').map(x=>transformTree(x, transformNode, shouldTransformNode, false)) as React.ReactElement[];
     }, [contentString]);
 
     const showToast = React.useCallback((message: string, type: 'error' | 'success' | 'warn' | 'info' | 'debug' | 'normal' = 'normal') => {
@@ -430,7 +485,7 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
     }, []);
 
     return <>
-        <div ref={scrollContainer} id='project-browser-wrapper' className="overflow-y-scroll inset-0 w-full h-full p-0 m-0 bg-none border-none outline-none">
+        <div ref={scrollContainer} id='project-browser-wrapper' className="overflow-y-auto overflow-x-auto inset-0 w-full h-full p-0 m-0 bg-none border-none outline-none">
         <StrictMode>
             <AlertToast/>
             {/* <AlertToast message={toastMessage} onClose={() => setToastMessage(null)} /> */}

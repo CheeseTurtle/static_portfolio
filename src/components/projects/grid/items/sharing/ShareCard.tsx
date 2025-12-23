@@ -107,7 +107,7 @@ export const ShareButton = (({showToast, openProjectId, hovercardProps, triggerP
             </div>
             {/* <div ref={divRef} className="relative text-nowrap text-sm overflow-visible outline-1 outline-red-500 inset-0 ml-3.5 pr-1 select-none overflow-y-visible overflow-x-clip max-h-full h-5 my-auto align-middle text-right w-[0%] group-hover:w-full transition-all rounded-r-full"
                 style={{textBoxTrim: "trim-both", textBox: "cap", lineHeight: 'calc(5*var(--spacing))', textAnchor: "end"}}> */}
-            <div ref={divRef} className="relative pointer-events-none text-nowrap text-sm bg-blue-300 select-none overflow-y-visible overflow-x-clip max-h-full h-5 my-auto align-middle text-right w-[0%] group-hover:w-full transition-[width] duration-300 ease-out will-change-auto
+            <div ref={divRef} className="relative pointer-events-none text-nowrap text-sm bg-blue-300 select-none overflow-y-visible overflow-x-hidden max-h-full h-5 my-auto align-middle text-right w-[0%] group-hover:w-full transition-[width] duration-300 ease-out will-change-auto
                                         rounded-r-full
                                         ml-[calc(-3*var(--spacing))] self-end justify-self-end content-end z-0"
                 style={{textBoxTrim: "trim-both", textBox: "cap", lineHeight: 'calc(5*var(--spacing))', textAnchor: "end"}}>

@@ -9,6 +9,31 @@ import mdx from "@astrojs/mdx";
 // import preactVite from "@preact/preset-vite";
 // import reactVite from "@vitejs/plugin-react";
 
+/*
+import rehypeStarryNight from "rehype-starry-night";
+import { common } from '@wooorm/starry-night';
+
+
+import sourceAstro from "@wooorm/starry-night/source.astro";
+
+import sourceJs from "@wooorm/starry-night/source.js";
+import sourceTs from "@wooorm/starry-night/source.ts";
+import sourceTsx from "@wooorm/starry-night/source.tsx";
+import textMd from "@wooorm/starry-night/text.md";
+
+import sourceMdx from "@wooorm/starry-night/source.mdx";
+
+import sourceProlog from "@wooorm/starry-night/source.prolog";
+import sourceYAML from "@wooorm/starry-night/source.yaml";
+
+import sourcePowerShell from "@wooorm/starry-night/source.powershell";
+import sourcePython from "@wooorm/starry-night/source.python";
+*/
+
+// import remarkFrontmatter from 'remark-frontmatter';
+// import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
+
+
 
 const isProduction = process.env.GITHUB_PAGES === "true";
 
@@ -31,6 +56,30 @@ export default defineConfig({
     react(),
     icon(),
     mdx(),
+    // mdx({
+    //   // components: 'src/components/mdx.ts',
+    //   // extendMarkdownConfig: true,
+    //   // syntaxHighlight: true,
+    //   // remarkPlugins: [
+    //   //   remarkFrontmatter,
+    //   //   remarkMdxFrontmatter,
+    //   // ],
+    //   // rehypePlugins: [
+    //   //   //  [ rehypeStarryNight,
+    //   //   //   {
+    //   //   //     allowMissingScopes: false,
+    //   //   //     plainText: [],
+    //   //   //     grammars: [...common, sourceAstro, sourceJs, sourceTs, sourceTsx, textMd, sourceMdx, sourceProlog, sourcePowerShell, sourceYAML, sourcePython],
+    //   //   //     // aliases: {
+    //   //   //     //   js: "javascript",
+    //   //   //     //   ts: "typescript",
+    //   //   //     //   tsx: "tsx",
+    //   //   //     //   mdx: "mdx",
+    //   //   //     // }
+    //   //   //   }
+    //   //   // ]
+    //   // ]
+    // }),
     sitemap({
       filter: (page) =>
         !page.includes("/blog/tags") &&
@@ -73,8 +122,9 @@ export default defineConfig({
     },
   },
   markdown: {
+    // syntaxHighlight: true,
     shikiConfig: {
-      theme: "github-dark",
+      theme: "solarized-dark",
     },
   },
 });

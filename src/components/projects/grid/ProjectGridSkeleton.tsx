@@ -57,7 +57,7 @@ function TagButtonSkeleton({className, variant}: {className?: string, variant?: 
 
 function TagRowSkeleton({numTags, className: tagClassName}: {className?: string, numTags?: number}) {
     return numTags ? <div
-        className="flex flex-row gap-1 grow overflow-clip max-w-full min-w-[30%] content-stretch justify-stretch justify-items-stretch flex-nowrap"
+        className="flex flex-row gap-1 grow overflow-hidden max-w-full min-w-[30%] content-stretch justify-stretch justify-items-stretch flex-nowrap"
     >
         {
             createElemArray(numTags, (i)=><TagButtonSkeleton className={tagClassName} key={i}/>)
@@ -102,7 +102,7 @@ const ProjectGridItemSkeleton = React.memo(({ref}: {ref: React.RefObject<HTMLDiv
 const ITEMS_PER_COLUMN: number = 4
 
 const ProjectGridSkeletonColumn = React.memo(({elemRefs}: {elemRefs: React.RefObject<HTMLDivElement | null>[]}) => {
-    return <div className="relative flex flex-col gap-2 flex-nowrap overflow-clip min-w-max min-h-max h-full justify-start justify-items-start outline-2 outline-blue-500">
+    return <div className="relative flex flex-col gap-2 flex-nowrap overflow-hidden min-w-max min-h-max h-full justify-start justify-items-start outline-2 outline-blue-500">
         {elemRefs.map((ref, i) =>
             <ProjectGridItemSkeleton key={i} ref={ref} />)
         }

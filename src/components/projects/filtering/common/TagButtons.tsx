@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import React, { useCallback, useEffect, useEffectEvent, useInsertionEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import TagButton, { type TagButtonProps } from "./TagButton";
 import type { TagType } from "../FilterForm";
 import type { ProjectInfo } from "../../types";
@@ -21,15 +21,12 @@ type TagButtonsProps = {
 };
 
 export default function TagButtons({toggleTag: propsToggleTag, availableTags: availableTagsSet, selectedTags, tagType, registerReset, colorClassName}: TagButtonsProps) {    
-    useEffect(()=>{
+    useInsertionEffect(()=>{
         gsap.registerPlugin(Flip);
     }, []);
 
-
-
     const tagKey = useMemo(()=>getProjectKeyFromTagType(tagType), [tagType]);
     const availableTags = useMemo(() => Array.from(availableTagsSet.values()), [availableTagsSet]);
-
 
     // [selected tags, unselected tags]
     const [visualOrder, setVisualOrder] = useState<[string[],string[]]>([[],availableTags]);

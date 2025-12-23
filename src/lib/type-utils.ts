@@ -52,14 +52,15 @@ const obj = {
 }
 type Obj = typeof obj;
 
-// type Flatten<T> = T extends any[] ? T[number] : T;
-// type Flatten2<T> = T extends Array<infer Item> ? Item : T;
+type Flatten<T> = T extends any[] ? T[number] : T;
+type Flatten2<T> = T extends Array<infer Item> ? Item : T;
 
-// type ToArrayDist<Type> = Type extends any ? Type[] : never;
-// type ToArrayNonDist<Type> = [Type] extends [any] ? Type[] : never;
+type ToArrayDist<Type> = Type extends any ? Type[] : never;
+type ToArrayNonDist<Type> = [Type] extends [any] ? Type[] : never;
 
-// // type ToArrayDist2<Type> = Type extends infer ? Type[] : never;
-// // type ToArrayNonDist2<Type> = [Type] extends [any] ? Type[] : never;
+type ToArrayDist2<Type> = Type extends infer _ extends any ? Type[] : never;
+type ToArrayNonDist2<Type> = [Type] extends [any] ? Type[] : never;
+
 
 // // type oe = [keyof Obj] extends [infer X] ? X[] : never
 // // type oe = keyof Obj extends infer X ? X[] : never
@@ -553,19 +554,28 @@ type Z = {
 // type ZZ = Z extends (a: infer A extends string, b: boolean, c: infer C) => any ? C : never; // never**
 // type ZZ = Z extends (a: string, b: boolean, c: infer C extends number | string) => any ? C : never; // never**
 
-type CommonKeyOf<A,B> = keyof A & keyof B;
-type UncommonKeyOf<A,B> = Exclude<keyof A | keyof B, keyof A & keyof B>
+export type CommonKeyOf<A,B> = keyof A & keyof B;
+export type UncommonKeyOf<A,B> = Exclude<keyof A | keyof B, keyof A & keyof B>
 
-type ConflictingPropertyOf<A,B,K extends CommonKeyOf<A,B> = CommonKeyOf<A,B>> = {[P in K]: (
-  IsEquivalentType<A[P], B[P]> extends true ? never : A[P] | B[P]
-)}
+// export type ConflictingPropertyOf<A,B,K extends CommonKeyOf<A,B> = CommonKeyOf<A,B>> = {[P in K]: (
+//   IsEquivalentType<A[P], B[P]> extends true ? never : A[P] | B[P]
+// )}
 
-type ConflictingKeyOf<A,B,K extends keyof A & keyof B = keyof A & keyof B> = keyof ConflictingPropertyOf<A,B,K>
+export type ConflictingKeyOf<A,B,K extends keyof A & keyof B = keyof A & keyof B> = IsEquivalentType<A[K],B[K]> extends true ? never : K;
+export type ConflictingPropsOf<A,B,K extends CommonKeyOf<A,B> = CommonKeyOf<A,B>> = {[P in ConflictingKeyOf<A,B,K>]: A[P] | B[P]}
+export type ConflictingValueOf<A,B,K extends keyof A & keyof B = keyof A & keyof B> = ValueOf<ConflictingPropsOf<A,B,K>>
 
-type ConflictingValueOf<A,B,K extends keyof A & keyof B = keyof A & keyof B> = ValueOf<ConflictingPropertyOf<A,B,K>>
+
+export type IncompatibleKeyOf<A,B,K extends CommonKeyOf<A,B> = CommonKeyOf<A,B>> = IsEquivalentType<A[K],B[K]> extends true ? never : (
+  (Or<IsExtensionOf<never, A[K]>,IsExtensionOf<never, B[K]>> extends true ? K : (
+    never extends A[K] & B[K] ? K : never
+  ))
+);
+export type IncompatiblePropsOf<A,B,K extends CommonKeyOf<A,B> = CommonKeyOf<A,B>> = {[P in IncompatibleKeyOf<A,B,K>]: [A[P], B[P]]}
+export type IncompatibleValueOf<A,B,K extends CommonKeyOf<A,B> = CommonKeyOf<A,B>> = ValueOf<IncompatiblePropsOf<A,B,K>>
 
 
-type IsEmptyObject<T> = {} extends T ? true : false;
+export type IsEmptyObject<T> = {} extends T ? true : false;
 
 type HasSameKeys<A,B> = never extends Exclude<keyof A, keyof B> ? true : false; // IsEmptyObject<Omit<A, keyof B>>
 
@@ -594,3 +604,57 @@ export type UnOr<A,B> = Exclude<A,UnAnd<A,B>>
 // type tt = t12['a']
 
 // type _ =  UnAnd<t1 & (t2 | t3), t2 | t3>
+
+// type x = Text extends Element ? true : false;
+
+
+type ElementConstructor<T, S extends string = string> = React.JSXElementConstructor<T> | S;
+
+type ReactHTMLElement<E extends HTMLElement | React.HTMLElementType, 
+  // T extends (E extends React.HTMLElementType ? E : React.HTMLElementType) | React.JSXElementConstructor<any> = (E extends React.HTMLElementType ? E : React.HTMLElementType) | React.JSXElementConstructor<any>> 
+  T extends React.HTMLElementType | React.JSXElementConstructor<any> = (E extends React.HTMLElementType ? E : React.HTMLElementType | React.JSXElementConstructor<any>)> 
+  = React.ReactElement<React.HTMLAttributes<E>, T>;
+type ReactHTMLElement2<E extends HTMLElement | React.HTMLElementType, 
+  T extends React.HTMLElementType | React.JSXElementConstructor<any> = (E extends React.HTMLElementType ? E : React.HTMLElementType | React.JSXElementConstructor<any>)> 
+  = React.ReactElement<React.DetailedHTMLProps<React.HTMLAttributes<E>, E>, T>;
+
+type DetailedReactHTMLElement<T extends HTMLElement, P extends React.HTMLAttributes<T> = React.HTMLAttributes<T>>
+  = React.DetailedReactHTMLElement<P, T>;
+type DetailedReactHTMLElement2<T extends HTMLElement, P extends React.DetailedHTMLProps<React.HTMLAttributes<T>, T> = React.DetailedHTMLProps<React.HTMLAttributes<T>, T>>
+  = React.DetailedReactHTMLElement<P, T>;
+
+type ReactHTMLElemFromDetailedProps<T extends React.HTMLElementType, S extends T | React.JSXElementConstructor<ReactHTMLElement<T>> = T> = React.ReactElement<React.DetailedHTMLProps<React.HTMLAttributes<T>, T>, S>
+type ReactHTMLElemFromComponentProps<T extends React.HTMLElementType>
+  = React.ReactElement<React.ComponentProps<T>, T>;
+
+type TT = {
+  z: React.ReactHTMLElement<HTMLDivElement>,
+
+  a1: ReactHTMLElement<HTMLDivElement, 'div'>, // React.ReactElement<React.HTMLAttributes<HTMLDivElement>, "div">;
+  a2: ReactHTMLElement2<HTMLDivElement, 'div'>, // React.ReactElement<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "div">;
+  
+  b1: ReactHTMLElement<'div'>, // React.ReactElement<React.HTMLAttributes<"div">, "div">
+  b2: ReactHTMLElement2<'div'>, // React.ReactElement<React.DetailedHTMLProps<React.HTMLAttributes<"div">, "div">, "div">
+  
+  
+  c1: DetailedReactHTMLElement<HTMLDivElement>, // React.DetailedReactHTMLElement<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>
+  c2: DetailedReactHTMLElement2<HTMLDivElement>, // React.DetailedReactHTMLElement<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, HTMLDivElement>
+  
+  d1: ReactHTMLElemFromDetailedProps<'div'>, // React.ReactElement<React.DetailedHTMLProps<React.HTMLAttributes<"div">, "div">, "div">
+  
+  e1: ReactHTMLElemFromComponentProps<'div'>, // React.ReactElement<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "div">
+}
+
+
+
+// type TT0 = React.ReactHTMLElement<HTMLDivElement> | React.ReactHTMLElement<any>;
+// type TT1 = TT['z'] | TT['a1'] | TT['a2'] | TT['b1'] | TT['b2'] | TT['c1'] | TT['c2'] | TT['d1'] | TT['e1']
+
+// type xx = React.HTMLAttributes<Text>;
+
+// | 
+// type Overlap = React.ReactElement<React.HTMLAttributes<Text>> | React.DetailedReactHTMLElement<React.HTMLAttributes<HTMLSpanElement>, HTMLSpanElement> | React.ReactElement<React.ComponentProps<'span'>, 'span'> | React.ReactElement<React.DetailedHTMLProps<React.HTMLAttributes<HTMLSpanElement>, HTMLSpanElement>, 'span'>;
+
+// function TTF(): TT['z'] | TT['a1'] | TT['a2'] | TT['b1'] | TT['b2'] | TT['c1'] | TT['c2'] | TT['d1'] | TT['e1'] {
+  
+// }

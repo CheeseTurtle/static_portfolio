@@ -1,12 +1,17 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import ProjectBrowser from "../components/projects/ProjectBrowser.astro";
+// import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css';
+import "../styles/carousel.css";
+// import "../styles/starry-night-tailwind.css";
 // import ZustandTest from "../components/projects/ZustandTest";
 
-import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css';
-import "../styles/carousel.css";
-
 // import SuspenseTest from "@/components/projects/SuspenseTest";
+
+
+// import '@wooorm/starry-night/style/github-dark';
+// import '@wooorm/starry-night/style/both';
+
 
 export const ssr = false;
 
@@ -14,7 +19,6 @@ export const ssr = false;
 
 
 <Layout pageTitle="Turtle" description="Turtles turtles" storyPage="true" overflowHidden="true">
-    
   <ProjectBrowser/>
 <!-- 
   {

@@ -124,7 +124,7 @@ const ProjectItem = memo(forwardRef<ProjectItemHandle, ProjectItemProps>(({
         evt.preventDefault();
         const pointerType = (evt.nativeEvent as PointerEvent).pointerType;
         const isMouse = pointerType === 'mouse';
-        console.log('%cItem clicked/tapped:', 'color: black; background-color: yellow;', id, projectIndex, window.location.search, isMouse);
+        // console.log('%cItem clicked/tapped:', 'color: black; background-color: yellow;', id, projectIndex, window.location.search, isMouse);
         
         // Use the clickItem action from the store
         // This handles both:

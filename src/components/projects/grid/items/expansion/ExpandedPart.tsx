@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { gsap } from "gsap";
 import { cn } from '@/lib/utils';
+import { useGSAP } from '@gsap/react';
 
 
 type ExpandedPartProps = React.ComponentProps<"div"> & {
@@ -76,7 +77,8 @@ const ExpandedPart = React.memo(({setSizeChanging, children, id, ref: externalRe
     });
 
     // Handle expand/collapse animation
-    React.useEffect(() => {
+    // React.useEffect(() => {
+    useGSAP(()=>{
         // console.log('Beginning handleExpandedChange effect')
         const el = ref.current;
         if (!el) return;
@@ -89,10 +91,10 @@ const ExpandedPart = React.memo(({setSizeChanging, children, id, ref: externalRe
     if(canUnmount && !expanded) return null;
     // return <React.Suspense fallback={<div className='w-full min-h-20 h-min bg-blue-500'>Placeholder</div>}>
     return <div ref={ref} className={cn(
-        "h-0 overflow-clip opacity-0 w-full invisible",
+        "h-0 overflow-hidden opacity-0 w-full invisible",
         className,
     )}
-        // style={{ height: 0, overflow: 'clip', opacity: 0, width: '100%', visibility: 'hidden'}} 
+        // style={{ height: 0, overflow: 'hidden', opacity: 0, width: '100%', visibility: 'hidden'}} 
         data-slot='project-item-extra' {...props}>{children}</div>
     // </React.Suspense>
 });
