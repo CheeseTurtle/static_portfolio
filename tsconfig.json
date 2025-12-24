@@ -92,6 +92,7 @@
     ".remarkrc.js",
     "tailwind.config.cjs",
     "**/*.astro",
+    "src/**/*.js",
   ],
   "exclude": [
     "node_modules",

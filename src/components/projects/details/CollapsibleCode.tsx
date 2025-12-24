@@ -1,34 +1,7 @@
-import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { LucideChevronDown, LucideChevronUp } from "lucide-react";
 import React from "react";
-
-// import {common, createStarryNight} from '@wooorm/starry-night';
-
-
-// const starryNight = await createStarryNight(common)
-
-// const scope = starryNight.flagToScope('markdown')
-// const tree = starryNight.highlight('# hi', scope!)
-
-// console.log(tree)
-
-
-// type NodeObject = Exclude<Extract<React.ReactNode, object>, Promise<any>>;
-// type NodeIter = Extract<NodeObject, Iterable<any>>;
-// type NodeElemOrPortal = Extract<NodeObject, React.ReactElement>;
-// type NodeElem = Exclude<NodeElemOrPortal, React.ReactPortal>;
-
-// type NodeObjectKeys = keyof NodeObject;
-// type NodeElemKeys = keyof NodeElem;
-// type NodeIterKeys = keyof NodeIter;
-// type NodeElemOrPortalKeys = keyof NodeElemOrPortal;
-
-// type NodeIterOnlyKeys = Omit<NodeIter, NodeObjectKeys>;
-
-
-
 function isStaticHtmlNode(node: unknown): node is React.ReactElement<StaticHtmlProps> {
   return (
     React.isValidElement(node) &&
@@ -36,15 +9,6 @@ function isStaticHtmlNode(node: unknown): node is React.ReactElement<StaticHtmlP
     node.type.name === 'StaticHtml'
   );
 }
-
-
-// if(!node || typeof node !== 'object')
-//   return false;
-// if(node instanceof Promise)
-//   return false;
-// if(Symbol.iterator in node)
-//   return false;
-
 interface StaticHtmlProps {
   value: string;
   hydrate?: boolean;
@@ -157,8 +121,8 @@ function isHighlightedCodeBlock(children: React.ReactNode, props: React.HTMLAttr
   if(tf === false) return [false, children_];
   if(props['data-language'])
     return [true, children_];
-  if(props.className && (props.className.includes('starry-night') || props.className.includes('astro-code')))
-    return [true, children_];
+  // if(props.className && (props.className.includes('starry-night') || props.className.includes('astro-code')))
+    // return [true, children_];
   return [false, children_];
 }
 
@@ -269,12 +233,10 @@ const CollapsibleCodeInner = React.memo(({children: propsChildren, className, ..
   const [above, below] = React.useMemo(()=>[codeTransformSpec?.[0], codeTransformSpec?.[1]], [codeTransformSpec]);
 
   if (!tf) {
-    return <pre {...props} children={children} />;
+    return <pre {...props} children={children} className={className} />;
   }
 
   const language = props['data-language']?.toUpperCase();
-
-
     
   return (
       <Collapsible open={open} onOpenChange={setOpen} data-collapsible-open={open} disabled={!codeTransformSpec} className="collapsible-code" asChild>

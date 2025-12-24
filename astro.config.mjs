@@ -9,8 +9,8 @@ import mdx from "@astrojs/mdx";
 // import preactVite from "@preact/preset-vite";
 // import reactVite from "@vitejs/plugin-react";
 
-/*
 import rehypeStarryNight from "rehype-starry-night";
+import rehypeSplitCodeLines from "./plugins/rehypeStarryNightLines.js";
 import { common } from '@wooorm/starry-night';
 
 
@@ -28,7 +28,6 @@ import sourceYAML from "@wooorm/starry-night/source.yaml";
 
 import sourcePowerShell from "@wooorm/starry-night/source.powershell";
 import sourcePython from "@wooorm/starry-night/source.python";
-*/
 
 // import remarkFrontmatter from 'remark-frontmatter';
 // import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
@@ -37,10 +36,13 @@ import sourcePython from "@wooorm/starry-night/source.python";
 
 const isProduction = process.env.GITHUB_PAGES === "true";
 
+// console.log(rehypeSplitCodeLines);
+
 
 // https://astro.build/config
 // // eslint-disable-next-line @typescript-eslint/no-unsafe-call
 export default defineConfig({
+
   tsconfig: "./tsconfig.json",
   // prefetch: true,
   site: "https://cheeseturtle.github.io/static_profile",
@@ -55,31 +57,31 @@ export default defineConfig({
   integrations: [
     react(),
     icon(),
-    mdx(),
-    // mdx({
-    //   // components: 'src/components/mdx.ts',
-    //   // extendMarkdownConfig: true,
-    //   // syntaxHighlight: true,
-    //   // remarkPlugins: [
-    //   //   remarkFrontmatter,
-    //   //   remarkMdxFrontmatter,
-    //   // ],
-    //   // rehypePlugins: [
-    //   //   //  [ rehypeStarryNight,
-    //   //   //   {
-    //   //   //     allowMissingScopes: false,
-    //   //   //     plainText: [],
-    //   //   //     grammars: [...common, sourceAstro, sourceJs, sourceTs, sourceTsx, textMd, sourceMdx, sourceProlog, sourcePowerShell, sourceYAML, sourcePython],
-    //   //   //     // aliases: {
-    //   //   //     //   js: "javascript",
-    //   //   //     //   ts: "typescript",
-    //   //   //     //   tsx: "tsx",
-    //   //   //     //   mdx: "mdx",
-    //   //   //     // }
-    //   //   //   }
-    //   //   // ]
-    //   // ]
-    // }),
+    mdx({
+      // components: 'src/components/mdx.ts',
+      extendMarkdownConfig: true,
+      syntaxHighlight: false,
+      // remarkPlugins: [
+      //   remarkFrontmatter,
+      //   remarkMdxFrontmatter,
+      // ],
+      rehypePlugins: [
+         [ rehypeStarryNight,
+          {
+            allowMissingScopes: false,
+            // plainText: [],
+            grammars: [...common, sourceAstro, sourceJs, sourceTs, sourceTsx, textMd, sourceMdx, sourceProlog, sourcePowerShell, sourceYAML, sourcePython],
+            // aliases: {
+            //   js: "javascript",
+            //   ts: "typescript",
+            //   tsx: "tsx",
+            //   mdx: "mdx",
+            // }
+          }
+        ],
+        rehypeSplitCodeLines,
+      ]
+    }),
     sitemap({
       filter: (page) =>
         !page.includes("/blog/tags") &&
@@ -97,14 +99,18 @@ export default defineConfig({
   //   }
   // },
   vite: {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     plugins: [tailwindcss()],
     logLevel: 'info',
     build: {
       rollupOptions: {
         onwarn(warning, warn) {
-          console.log('WARNING:', warning);
+          // console.log('WARNING:', warning);
+          // warn(warning);
+
+           // ignore circular dependency warnings in node_modules
+          if (warning.code === 'CIRCULAR_DEPENDENCY' && warning.ids.some(id => id.includes('node_modules'))) {
+            return;
+          }
           warn(warning);
         }
       }

@@ -31,6 +31,7 @@ import ProjectBrowserEmpty from "./ProjectBrowserEmpty";
 import ProjectGridSkeleton from "./grid/ProjectGridSkeleton";
 import { transformTree } from "./details/transformTree";
 import CollapsibleCode from "./details/CollapsibleCode";
+import StarryNightStyleInjector from "./details/StarryNightStyleInjector";
 // import useReportingMemo from "@/hooks/useReportingMemo";
 
 // import FilterSheet from "./filtering/FilterSheet2";
@@ -215,6 +216,7 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
                 triggerRef={sheetTriggerRef}
             />
         </FilterFormStoreProvider>
+        <StarryNightStyleInjector theme="default"/>
         {children}
     </>
 });
@@ -269,7 +271,7 @@ function convertProjectInfo(projects: ProjectInfoWithLBSymbols[], contentRecord:
             description: descriptions[p.id] ?? p.description,
             summary: summaries[p.id] ?? p.summary,
         };
-        let anyEmbed: boolean = false;
+        // let anyEmbed: boolean = false;
         const thumbnails: (string | null)[] = [];
         const oldRecord = lightboxData.record;
         const lightboxCaptions = lightboxData.lightboxCaptions?.map(x=>{
@@ -283,8 +285,8 @@ function convertProjectInfo(projects: ProjectInfoWithLBSymbols[], contentRecord:
         });
         const newRecord: Exclude<ProjectInfo['lightboxData'], undefined>['record'] = {};
         const lightboxSources = lightboxData.lightboxSources.map(([type, id, x], i)=>{
-            if(type === 'embed')
-                anyEmbed = true;
+            // if(type === 'embed')
+            //     anyEmbed = true;
             const oldEntry = (oldRecord[type]!)[id];
             const caption = lightboxCaptions[i];
             const source = (()=>{
@@ -382,7 +384,7 @@ function shouldTransformNode(node: React.ReactNode): node is PreElement {
     // console.log('Should transform node?', node);
     if(node && typeof node === 'object' && React.isValidElement(node) && node.type === 'pre') {
         const children = (node as PreElement).props?.children;
-        console.log('NODE CHILDREN:', node, children);
+        // console.log('NODE CHILDREN:', node, children);
         if(!children || typeof children !== 'object') return false;
         if(React.isValidElement(children)) {
             if(children.type !== 'code')
@@ -398,7 +400,7 @@ function shouldTransformNode(node: React.ReactNode): node is PreElement {
         }
     } else {
         if(node && typeof node === 'object' && React.isValidElement(node))
-            console.log('wRONG TYPE:', node.type)
+            console.log('WRONG TYPE:', node.type)
         else if(node) {
             console.log('NOT NODE:', node);
         }
