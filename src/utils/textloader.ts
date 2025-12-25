@@ -5,7 +5,7 @@ import path from "node:path";
 const fileNameExtractionRegex = /(?<=\/|^)[^/.]+(?=\.(?:txt|md)$)/;
 function extractFileName(filePath: string): string {
   const match = fileNameExtractionRegex.exec(filePath);
-  if (match === null) throw `Invalid filepath/name: '${filePath}'`;
+  if (match === null) throw new Error(`Invalid filepath/name: '${filePath}'`);
   return match[0];
 }
 

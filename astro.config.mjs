@@ -33,6 +33,15 @@ import sourcePython from "@wooorm/starry-night/source.python";
 // import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
 
 
+import staticCopy from './plugins/tailwindStaticCopy.js';
+
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+
+
 
 const isProduction = process.env.GITHUB_PAGES === "true";
 
@@ -99,7 +108,10 @@ export default defineConfig({
   //   }
   // },
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss(),
+      staticCopy,
+    ], // Don't pass config here --use config file
     logLevel: 'info',
     build: {
       rollupOptions: {
@@ -117,6 +129,12 @@ export default defineConfig({
     },
     resolve: {
       alias: {
+        // "#globals": "src/styles/globals.css",
+        '@': path.resolve(__dirname, './src'),
+        // '@components': path.resolve(__dirname, './src/components'),
+        '@styles': path.resolve(__dirname, './src/styles'),
+        // '@lib': path.resolve(__dirname, './src/lib'),
+        // '@utils': path.resolve(__dirname, './src/utils'),
         "preact": "react",
         "preact/hooks": "react",
          'react/hooks': 'react', // Redirect bad imports to main react

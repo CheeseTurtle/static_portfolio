@@ -496,12 +496,12 @@ function conditionallyAddClassName(el) {
     : existing
     ? [existing.toString()]
     : [];
-  console.log('CONDITIONALLY ADDING CLASS NAME:', className, el.properties)
+  // console.log('CONDITIONALLY ADDING CLASS NAME:', className, el.properties)
   if(className.length && (className.includes('astro-code') || className.includes('starry-night')))
     return;
   className.push('starry-night');
   el.properties.className = className;
-  console.log('CONDITIONALLY ADDED CLASS NAME:', className)
+  // console.log('CONDITIONALLY ADDED CLASS NAME:', className)
 }
 
 /**
@@ -522,19 +522,19 @@ export default function rehypeSplitCodeLines() {
       const codeElem = getSingleCodeChild(node);
 
       if(!codeElem) {
-        console.log('NO CODEELEM');
+        // console.log('NO CODEELEM');
         return CONTINUE;
       }
       const langName = isHighlightedPre(node) || isHighlightedCode(codeElem);
       if(!langName) {
-        console.log('Neither pre nor its child code are highlighted:', node, codeElem);
+        // console.log('Neither pre nor its child code are highlighted:', node, codeElem);
         return CONTINUE;
       }
     
       const children = codeElem.children;
       
       if(!children) {
-        console.log('No non-empty code elem child:', node, codeElem)
+        // console.log('No non-empty code elem child:', node, codeElem)
         return SKIP;
       }
       // console.log('Node:', node);
@@ -560,7 +560,7 @@ export default function rehypeSplitCodeLines() {
         children: lineChildren,
       }));
 
-      console.log(node);
+      // console.log(node);
       return SKIP;
     });
   }

@@ -50,7 +50,7 @@ const HovercardContentItem = ({project, index, numSlides}: {project: ProjectInfo
 
 
 const CarouselFallback = React.memo(({className, ...props}: React.ComponentPropsWithRef<'div'>) => {
-    return <div {...props} className={cn("z-75 pointer-events-none flex flex-col flex-nowrap content-stretch items-center justify-center w-full h-full overflow-hidden", className)}>
+    return <div {...props} className={cn("z-75 pointer-events-none flex flex-col flex-nowrap  text-background content-stretch items-center justify-center w-full h-full overflow-hidden", className)}>
         <CustomSpinner Icon={LucideTurtle} size={64} fontSize={64}/>
         <div className="text-center content-center md:text-lg sm:text-base xs:text-sm text-nowrap overflow-hidden">Loading project details...</div>
     </div>

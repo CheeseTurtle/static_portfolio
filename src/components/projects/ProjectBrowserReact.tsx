@@ -194,7 +194,6 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
             <CaptionedLightboxProvider>
                 <div className="mt-5 overflow-visible min-w-full w-fit" ref={filterResultsRef}>
                     <StickyDiv className='w-full px-4 top-[-0.8px] z-1 data-[sticky-state="stuck"]:bg-background bg-none transition-all transition-duration-500'>{resultText}</StickyDiv>
-                    {/* <ProjectGridSkeleton/> */}
                     <React.Suspense fallback={<ProjectGridSkeleton/>}>
                         {
                             visibleProjects?.length
@@ -399,11 +398,11 @@ function shouldTransformNode(node: React.ReactNode): node is PreElement {
             return false;
         }
     } else {
-        if(node && typeof node === 'object' && React.isValidElement(node))
-            console.log('WRONG TYPE:', node.type)
-        else if(node) {
-            console.log('NOT NODE:', node);
-        }
+        // if(node && typeof node === 'object' && React.isValidElement(node))
+        //     console.log('WRONG TYPE:', node.type)
+        // else if(node) {
+        //     console.log('NOT NODE:', node);
+        // }
         return false;
     }
     return true;
@@ -487,7 +486,7 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
     }, []);
 
     return <>
-        <div ref={scrollContainer} id='project-browser-wrapper' className="overflow-y-auto overflow-x-auto inset-0 w-full h-full p-0 m-0 bg-none border-none outline-none">
+        <div ref={scrollContainer} id='project-browser-wrapper' className="overflow-auto inset-0 w-full h-full p-0 m-0 bg-none border-none outline-none">
         <StrictMode>
             <AlertToast/>
             {/* <AlertToast message={toastMessage} onClose={() => setToastMessage(null)} /> */}

@@ -2,6 +2,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { cn } from "@/lib/utils";
 import { LucideChevronDown, LucideChevronUp } from "lucide-react";
 import React from "react";
+import {gsap} from 'gsap';
+
+// import _ from '@/styles/details.css';
+
 function isStaticHtmlNode(node: unknown): node is React.ReactElement<StaticHtmlProps> {
   return (
     React.isValidElement(node) &&
@@ -55,7 +59,7 @@ async function getUnistUtilVisit() {
 let parser: DOMParser | null = null;
 
 const isCodeStaticHtmlElem: (value: string) => boolean = (typeof window === 'undefined') ? await ( async ()=>{
-  console.log('ON SERVER');
+  // console.log('ON SERVER');
   const unified = await getUnified();
   if(!unified) throw new Error();
   const rehypeParse = await getRehypeParse();
@@ -204,20 +208,20 @@ function useCodeElemTransformSpec(elem: React.ReactNode): CodeElemTransformSpec 
 //   </code>
 // }
 
-const TransformedCodeElement = ({above, below, children, ...props}: {above: SpanElems | undefined, below: SpanElems | undefined, } & React.ComponentProps<'code'>) => {
+const TransformedCodeElement = ({contentRef, above, below, children, ...props}: {contentRef: React.RefObject<HTMLDivElement | null> | ((el: HTMLDivElement | null)=>void), above: SpanElems | undefined, below: SpanElems | undefined, } & React.ComponentProps<'code'>) => {
   if(!below) return <code {...props}>{children}</code>;
-  if(!above) return <CollapsibleContent>
+  if(!above) return <CollapsibleContent asChild>
     <code {...props}>{children}</code>
   </CollapsibleContent>;
 
   return <code {...props}>
     {above}
-    <CollapsibleContent asChild>
-      <div className="inline pb-2em">{below}</div>
+    <CollapsibleContent ref={contentRef} asChild>
+      <div className="inline pb-2em h-0">{below}</div>
     </CollapsibleContent>    
     {/* bg-blue-900/50 */}
     <div className="collapsible-content-overlay absolute bottom-2 left-2 w-[calc(100%-4*var(--spacing))] h-[3em] rounded-b-sm pointer-events-none
-      bg-linear-to-t from-white/75 dark:from-black/75
+      bg-linear-to-t from-black/25 via-black/10 via-25% dark:from-black/75
     "/>
   </code>
 }
@@ -225,12 +229,54 @@ const TransformedCodeElement = ({above, below, children, ...props}: {above: Span
 
 
 const CollapsibleCodeInner = React.memo(({children: propsChildren, className, ...props}: React.HTMLAttributes<HTMLPreElement> & {'data-language'?: string}) => {
+  'use:client';
   const [tf, children] = isHighlightedCodeBlock(propsChildren, props);
   const [open, setOpen] = React.useState<boolean>(false);
   const toggleOpen = React.useCallback(()=>setOpen(v=>!v), []);
 
   const [codeProps, codeTransformSpec] = tf ? useCodeElemTransformSpec(children) : [undefined, undefined];
   const [above, below] = React.useMemo(()=>[codeTransformSpec?.[0], codeTransformSpec?.[1]], [codeTransformSpec]);
+
+  const contentRef = React.useRef<HTMLDivElement|null>(null);
+  const contentRefCallback = React.useCallback((el: HTMLDivElement | null)=>{
+    contentRef.current = el;
+
+  }, []);
+
+  React.useEffect(()=>{
+    if(!tf) return;
+    const div = contentRef.current;
+    if(!div) return;
+    const tween = (()=>{
+      if(open) {
+        if(div.clientHeight === div.scrollHeight) return;
+        return gsap.fromTo(div, {
+          height: div.clientHeight,
+        }, {
+          height: div.scrollHeight,
+          // onStart: () => {
+          //   gsap.set(div, {visibility: 'visible'});
+          // }
+          onComplete: () => {
+            gsap.set(div, {height: 'auto'});
+          },
+          duration: 0.3,
+        })
+      } else if(div.clientHeight) {
+        return gsap.fromTo(div, {
+          height: div.clientHeight,
+        }, {
+          height: 0,
+          duration: 0.3,
+        })
+      }
+    })();
+
+    if(!tween) return;
+    return ()=>{
+      tween.kill();
+    }
+  }, [tf, open])
 
   if (!tf) {
     return <pre {...props} children={children} className={className} />;
@@ -241,17 +287,17 @@ const CollapsibleCodeInner = React.memo(({children: propsChildren, className, ..
   return (
       <Collapsible open={open} onOpenChange={setOpen} data-collapsible-open={open} disabled={!codeTransformSpec} className="collapsible-code" asChild>
         <div className="flex flex-col flex-nowrap mx-4 my-3 relative">
-          {language && <div className="absolute self-center text-center bg-white/70 dark:bg-white/20 text-foreground px-1 py-0.5 font-light rounded-md backdrop-blur-sm backdrop-brightness-125">
+          {language && <div className="absolute self-center text-center bg-white/20 text-foreground px-1 py-0.5 font-light rounded-md backdrop-blur-sm backdrop-brightness-125">
             {language}
           </div>}
 
-          <div className="bg-green-100 dark:bg-green-900 p-2 rounded-md">
+          <div className="bg-emerald-300 dark:bg-green-900 p-2 rounded-md">
             <pre {...props} className={cn(
               "rounded-sm p-4",
               "overflow-x-auto overflow-y-hidden",
               "text-nowrap",
               className)}>
-                <TransformedCodeElement above={above} below={below} {...codeProps}/>
+                <TransformedCodeElement contentRef={contentRefCallback} above={above} below={below} {...codeProps}/>
               {/* {content} */}
               {/* <div className="absolute self-center">Turtles</div> */}
             </pre>
@@ -260,7 +306,7 @@ const CollapsibleCodeInner = React.memo(({children: propsChildren, className, ..
           {/* <div className="flex flex-row bg-green-100 dark:bg-green-900 h-2"></div> */}
           {codeTransformSpec && 
             <div className="absolute bottom-0 self-center text-center rounded-full block justify-self-center place-self-center mx-auto">
-              <CollapsibleTrigger onClick={toggleOpen} className="text-center not-disabled:cursor-pointer" asChild>
+              <CollapsibleTrigger onClick={toggleOpen} className="text-center not-disabled:cursor-pointer rounded-full bg-white/20 backdrop-blur-sm backdrop-brightness-125 text-foreground p-1 min-w-6 min-h-6 hover:bg-white/50 hover:backdrop-blur-lg shadow-xs shadow-accent-foreground drop-shadow-accent-foreground" asChild>
                 {open ? <LucideChevronUp/> : <LucideChevronDown/>}
               </CollapsibleTrigger>
             </div>

@@ -105,5 +105,6 @@
 		"javascript.inlayHints.parameterTypes.enabled": true,
 		// "eslint.debug": true,
 		"eslint.trace.server": "verbose",
+		"css.lint.unknownAtRules": "ignore",
 	},
 }
