@@ -3,8 +3,8 @@
 import ProjectBrowserReact from "./ProjectBrowserReact";
 import type { ProjectInfoWithLBSymbols } from "./types";
 
-import "../../styles/projects.css";
-import CollapsibleCodeHydratorWrapper from "./details/CollapsibleCodeHydratorWrapper.astro";
+// import "../../styles/projects.css";
+// import CollapsibleCodeHydratorWrapper from "./details/CollapsibleCodeHydratorWrapper.astro";
 
 const props = Astro.props as {projects: ProjectInfoWithLBSymbols[], symMap: Record<symbol, string>};
 
@@ -31,5 +31,5 @@ const [titles, descriptions, summaries] = await Promise.all([titlesPromise, desc
 
 <ProjectBrowserReact projects={props.projects} contentString={html} projectTitles={titles} projectDescriptions={descriptions} projectSummaries={summaries} lbContentString={lbHTML ?? ''} client:only="react">
     <slot/>
-    <CollapsibleCodeHydratorWrapper/>
+    <!-- <CollapsibleCodeHydratorWrapper/> -->
 </ProjectBrowserReact>

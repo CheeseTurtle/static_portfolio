@@ -494,13 +494,13 @@ function conditionallyAddClassName(el) {
   const className = Array.isArray(existing)
     ? [...existing]
     : existing
-    ? [existing.toString()]
+    ? (typeof existing === 'string' ? existing.split(' ') : [existing.toString()])
     : [];
   // console.log('CONDITIONALLY ADDING CLASS NAME:', className, el.properties)
   if(className.length && (className.includes('astro-code') || className.includes('starry-night')))
     return;
   className.push('starry-night');
-  el.properties.className = className;
+  el.properties.className = className.join(' ');
   // console.log('CONDITIONALLY ADDED CLASS NAME:', className)
 }
 
@@ -553,7 +553,7 @@ export default function rehypeSplitCodeLines() {
         type: 'element',
         tagName: 'span',
         properties: {
-          className: 'line code-line',
+          className: 'line',
           // If any child has `dataLineSpan`, attach it
           'data-line-span': getLineSpan(lineChildren),
         },

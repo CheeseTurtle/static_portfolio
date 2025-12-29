@@ -25,7 +25,7 @@ export const SelectionToolbar = (({buttonGroupProps, anySelection, fullSelection
 
     React.useEffect(()=>{
         if(targetElementsRef.current) {
-            console.log('Clearing selection')
+            // console.log('Clearing selection')
             clearSelection();
         }
         targetElementsRef.current = targetElements;
@@ -50,6 +50,12 @@ export const SelectionToolbar = (({buttonGroupProps, anySelection, fullSelection
         onOpenChange?.(false);
     }, [setTextSelectionMode, onOpenChange]);
 
+    const openedRef = React.useRef<boolean>(open);
+    React.useEffect(()=>{
+        if(open === openedRef.current) return;
+        openedRef.current = open;
+        if(open) onOpenChange?.(true);
+    }, [open, onOpenChange]);
     if(!open) return null;
 
     return <div className={

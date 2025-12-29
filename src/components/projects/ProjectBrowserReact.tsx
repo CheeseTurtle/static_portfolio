@@ -38,6 +38,19 @@ import StarryNightStyleInjector from "./details/StarryNightStyleInjector";
 const FilterSheet = React.lazy(()=>import('./filtering/FilterSheet2'));
 const ProjectCarouselDialog = React.lazy(()=>import('./overlay/ProjectCarouselDialog'));
 
+import {gsap} from 'gsap';
+import {Flip} from 'gsap/dist/Flip';
+import { hydrateWithLoaderMap } from "../hydration/hydrate";
+
+import '@/styles/projects.css';
+
+// import.meta.hot?.accept(['@/styles/projects.css'], (mods)=>{
+
+
+// })
+
+// import { HydrationProvider, useHydrationContext } from "../hydration/HydrationContext";
+
 type ProjectBrowserProps = {
     projects: ProjectInfoWithLBSymbols[],
     contentString?: string,
@@ -410,12 +423,19 @@ function shouldTransformNode(node: React.ReactNode): node is PreElement {
 
 function transformNode(node: React.ReactNode): React.ReactNode {
     // if(shouldTransformNode(node)) {
-    console.log('TRANSFORMING NODE:', node);
+    // console.log('TRANSFORMING NODE:', node);
     return <CollapsibleCode {...(node as PreElement).props}/>
     // return node;
 }
 
-export default function ProjectBrowser({children, projects: projectsWithLBSymbols, contentString, lbContentString, projectTitles, projectDescriptions, projectSummaries}: ProjectBrowserProps) {
+
+
+
+
+
+
+const loaderMap = import.meta.glob<React.ComponentType<any>>('@/components/**/*.{tsx,jsx}', {eager: false, exhaustive: true, import: 'default'});
+export default function ProjectBrowserOuter({children, projects: projectsWithLBSymbols, contentString, lbContentString, projectTitles, projectDescriptions, projectSummaries}: ProjectBrowserProps) {
     // console.log(projectsWithLBSymbols);
     // const prevProjects = React.useRef<typeof projectsWithLBSymbols>(projectsWithLBSymbols);
 
@@ -441,7 +461,7 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
                 : Array.isArray(_contentElements) 
                     ? _contentElements 
                     : [_contentElements]
-        ).filter((x) => typeof x === 'object').map(x=>transformTree(x, transformNode, shouldTransformNode, false)) as React.ReactElement[];
+        ).filter((x) => typeof x === 'object').map(x=>hydrateWithLoaderMap(loaderMap, transformTree(x, transformNode, shouldTransformNode, false), undefined === x.key || null === x.key ? undefined : [x.key])) as React.ReactElement[];
     }, [contentString]);
 
     const showToast = React.useCallback((message: string, type: 'error' | 'success' | 'warn' | 'info' | 'debug' | 'normal' = 'normal') => {
@@ -485,6 +505,10 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
         scrollToRef.current?.(index, jump);
     }, []);
 
+    React.useInsertionEffect(()=>{
+        gsap.registerPlugin(Flip);
+    }, [])
+
     return <>
         <div ref={scrollContainer} id='project-browser-wrapper' className="overflow-auto inset-0 w-full h-full p-0 m-0 bg-none border-none outline-none">
         <StrictMode>
@@ -493,26 +517,28 @@ export default function ProjectBrowser({children, projects: projectsWithLBSymbol
             <ErrorBoundary displayName="myBoundary" callback={(err: Error) => {
                 console.error(err, err.cause, err.message, err.name, err.stack);
             }}>
-                <BrowserStoreProvider 
-                    allProjects={projects}
-                    filterRangeInfo={filterRangeInfo}
-                    showToast={showToast}
-                    scrollTo={scrollTo}
-                >
-                    <CountStoreProvider>
-                            <ProjectBrowserInner 
-                                filterRangeInfo={filterRangeInfo} 
-                                projects={projects} 
-                                contentElements={contentElements}
-                                showToast={showToast}
-                                scrollTo={scrollTo}
-                                scrollToRef={scrollToRef}
-                                scrollContainer={scrollContainer}
-                            >
-                                {children}
-                            </ProjectBrowserInner>
-                    </CountStoreProvider>
-                </BrowserStoreProvider>
+                {/* <HydrationProvider loaderMap={loaderMap}> */}
+                    <BrowserStoreProvider 
+                        allProjects={projects}
+                        filterRangeInfo={filterRangeInfo}
+                        showToast={showToast}
+                        scrollTo={scrollTo}
+                    >
+                        <CountStoreProvider>
+                                <ProjectBrowserInner 
+                                    filterRangeInfo={filterRangeInfo} 
+                                    projects={projects} 
+                                    contentElements={contentElements}
+                                    showToast={showToast}
+                                    scrollTo={scrollTo}
+                                    scrollToRef={scrollToRef}
+                                    scrollContainer={scrollContainer}
+                                >
+                                    {children}
+                                </ProjectBrowserInner>
+                        </CountStoreProvider>
+                    </BrowserStoreProvider>
+                {/* </HydrationProvider> */}
             </ErrorBoundary>
         </StrictMode>
         </div>

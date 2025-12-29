@@ -64,7 +64,11 @@ function findTextNodes(node: Node | ChildNode) {
 function checkSingleElementSelection(selection: Selection | null, element: HTMLElement, textOnly?: boolean) {
     if(!selection) return [false, false];
 
-    if(!textOnly) return [selection.containsNode(element, true), selection.containsNode(element, false)]
+    if(!textOnly) return [selection.containsNode(element, true), (
+        selection.containsNode(element, false)
+        ||
+        element.hasChildNodes() && [...element.childNodes].every(x=>selection.containsNode(x, false))
+    )]
 
     const textNodes = findTextNodes(element);
     if(!textNodes) return [undefined, undefined];
@@ -80,7 +84,7 @@ function checkSingleElementSelection(selection: Selection | null, element: HTMLE
 }
 
 export function checkSelection(element?: NodeListOf<HTMLElement> | HTMLElement | HTMLElement[], textOnly?: boolean) {
-    console.log('Checking selection:', element, textOnly)
+    // console.log('Checking selection:', element, textOnly);
     if(!element) return [undefined, undefined];
     
     if(element instanceof Element)
@@ -89,13 +93,14 @@ export function checkSelection(element?: NodeListOf<HTMLElement> | HTMLElement |
     if(!element.length) return [undefined, undefined];
     
     const selection = window.getSelection()
-    console.log('Selection:', selection);
-    if(!selection) return [false, false];
+    // console.log('Selection:', selection);
+    if(!selection || selection.isCollapsed) return [false, false];
+    // console.log('Selection:', [selection.anchorNode, selection.anchorOffset], [selection.focusNode, selection.focusOffset],  [selection.rangeCount, selection.getComposedRanges()]);
 
     let allSelected = true, anySelected = false;
     for(const elem of element) {
         const [any, all] = checkSingleElementSelection(selection, elem, textOnly);
-        console.log('any/all for element:', elem, any, all);
+        // console.log('any/all for element:', elem, any, all);
         if(all === undefined || any === undefined)
             continue;
         anySelected ||= any;

@@ -13,6 +13,9 @@ import rehypeStarryNight from "rehype-starry-night";
 import rehypeSplitCodeLines from "./plugins/rehypeStarryNightLines.js";
 import { common } from '@wooorm/starry-night';
 
+import remarkHighlight from './plugins/remarkHighlight.js';
+import rehypeHighlight from './plugins/rehypeHighlight.js';
+
 
 import sourceAstro from "@wooorm/starry-night/source.astro";
 
@@ -28,6 +31,18 @@ import sourceYAML from "@wooorm/starry-night/source.yaml";
 
 import sourcePowerShell from "@wooorm/starry-night/source.powershell";
 import sourcePython from "@wooorm/starry-night/source.python";
+
+import sourceASM from "@wooorm/starry-night/source.assembly";
+
+import textTeX from "@wooorm/starry-night/text.tex";
+import textLaTeX from "@wooorm/starry-night/text.tex.latex";
+import textHTML from "@wooorm/starry-night/text.html";
+import textHTML_JS from "@wooorm/starry-night/text.html.js";
+// import textHTML_CSS from "@wooorm/starry-night/text.html.cshtml";
+import sourceCSS from "@wooorm/starry-night/source.css";
+import sourceSCSS from "@wooorm/starry-night/source.css.scss";
+// import postCSS from "@wooorm/starry-night/source.postcss";
+
 
 // import remarkFrontmatter from 'remark-frontmatter';
 // import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
@@ -45,8 +60,29 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const isProduction = process.env.GITHUB_PAGES === "true";
 
-// console.log(rehypeSplitCodeLines);
 
+//  // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+//  function debugRemarkLog(when) {
+//   return ()=>{
+//     return (tree) => {
+//       // run this immediately after remarkHighlight in the pipeline
+//       const str = JSON.stringify(tree, null, false);
+//       if(str.includes('=='))
+//         console.log(`MDAST ${when} remarkHighlight:`, str);
+//     };
+//   }
+// }
+
+// // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+// function debugRehypeLog(when) {
+//   return () => { 
+//     return (tree) => {
+//       const str = JSON.stringify(tree, null, false);
+//       if(str.includes('mark'))
+//         console.log(`HAST ${when} rehypeHighlight:`, str);
+//     };
+//   }
+// }
 
 // https://astro.build/config
 // // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -70,16 +106,23 @@ export default defineConfig({
       // components: 'src/components/mdx.ts',
       extendMarkdownConfig: true,
       syntaxHighlight: false,
-      // remarkPlugins: [
+      remarkPlugins: [
       //   remarkFrontmatter,
       //   remarkMdxFrontmatter,
-      // ],
+        // debugRemarkLog('pre'),
+        remarkHighlight,
+        // debugRemarkLog('post'),
+      ],
       rehypePlugins: [
-         [ rehypeStarryNight,
+        rehypeHighlight,
+        [ 
+          rehypeStarryNight,
           {
             allowMissingScopes: false,
             // plainText: [],
-            grammars: [...common, sourceAstro, sourceJs, sourceTs, sourceTsx, textMd, sourceMdx, sourceProlog, sourcePowerShell, sourceYAML, sourcePython],
+            grammars: [...common, sourceAstro, sourceJs, sourceTs, sourceTsx, textMd, sourceMdx, sourceProlog, sourcePowerShell, sourceYAML, sourcePython,
+              sourceASM, sourceCSS, sourceSCSS, textTeX, textLaTeX, textHTML, textHTML_JS,
+            ],
             // aliases: {
             //   js: "javascript",
             //   ts: "typescript",
@@ -88,7 +131,9 @@ export default defineConfig({
             // }
           }
         ],
+        // debugRehypeLog('pre'),
         rehypeSplitCodeLines,
+        // debugRehypeLog('post'),
       ]
     }),
     sitemap({

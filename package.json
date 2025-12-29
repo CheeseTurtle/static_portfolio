@@ -54,7 +54,7 @@
     "estree-util-visit": "^2.0.0",
     "fslightbox-react": "^2.0.0",
     "gray-matter": "^4.0.3",
-    "gsap": "^3.13.0",
+    "gsap": "^3.14.2",
     "hast-util-to-jsx-runtime": "^2.3.6",
     "html-react-parser": "^5.2.8",
     "imagesloaded": "^5.0.0",

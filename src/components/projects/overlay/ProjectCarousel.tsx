@@ -19,7 +19,6 @@ import useSelection from "./useSelection";
 import useAnimateMount from "@/hooks/useAnimateHeight";
 
 import {gsap} from 'gsap';
-import { Flip } from "gsap/Flip";
 import { useDebounceCallback } from "@/hooks/use-debounce-callback";
 
 type ProjectCarouselProps = Omit<React.ComponentProps<typeof Carousel>, 'externalCarouselRef'> & {
@@ -59,10 +58,10 @@ const CarouselSlideContentSkeleton = React.memo((props: React.ComponentProps<'di
     return (
         <div {...props}>
             <div className="flex flex-col space-y-3">
-                <Skeleton className="h-[125px] w-[250px] rounded-xl" />
+                <Skeleton className="h-31.25 w-62.5 rounded-xl" />
                 <div className="space-y-2">
-                    <Skeleton className="h-4 w-[250px]" />
-                    <Skeleton className="h-4 w-[200px]" />
+                    <Skeleton className="h-4 w-62.5" />
+                    <Skeleton className="h-4 w-50" />
                 </div>
             </div>
         </div>
@@ -150,7 +149,7 @@ const ProjectCarouselItemCard = React.memo(({ ref, isCurrent, divRef, selectable
     const skeletonHeight = React.useRef<number | undefined>(undefined);
    
     const animateCardIn = React.useCallback((el: HTMLDivElement, changed: boolean): void =>{
-        console.log('Animating height in', project.id, el, changed, skeletonHeight.current)
+        // console.log('Animating height in', project.id, el, changed, skeletonHeight.current)
         if(!changed || undefined === skeletonHeight.current) return;
         startHeightTransition(()=>{
             currAnim.current?.kill()
@@ -179,7 +178,7 @@ const ProjectCarouselItemCard = React.memo(({ ref, isCurrent, divRef, selectable
         animateCardInDebounced.cancel();
     }, [animateCardInDebounced])
     const animateSkeletonOut = React.useCallback((el: HTMLDivElement | null, changed: boolean) => {
-        console.log('Animating height out:', project.id, changed, el, skeletonHeight.current)
+        // console.log('Animating height out:', project.id, changed, el, skeletonHeight.current)
         if(!changed || !el) return;
         // animateCardInDebounced.cancel()
         setIsAnimating(true);
@@ -254,8 +253,6 @@ const ProjectCarousel = (({
     getHovercardContentForIndex,
 }: ProjectCarouselProps) => {
 
-    gsap.registerPlugin(Flip);
-
     const slideHandles = React.useRef<Record<string, React.RefObject<ProjectCarouselItemHandle>>>({});
     slideHandles.current = Object.fromEntries(slides.map((slide) => [slide.props["data-project-id"], slideHandles.current[slide.props['data-project-id']] ?? React.createRef()]));
 
@@ -283,7 +280,7 @@ const ProjectCarousel = (({
     }, [selectionTargetElements]);
 
 
-    const toolbarOpen = React.useMemo(()=>selectableText===1, [selectableText]);
+    const toolbarOpen = React.useMemo(()=>!!selectableText, [selectableText]);
     const onToolbarOpenChange = React.useCallback((open: boolean) => {
         startTransition(()=>{
             setSelectionMonitoringEnabled(open)

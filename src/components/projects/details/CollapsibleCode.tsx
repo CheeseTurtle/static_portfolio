@@ -1,8 +1,9 @@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+// import type { CombinedPropertiesOf } from "@/lib/type-utils";
 import { cn } from "@/lib/utils";
 import { LucideChevronDown, LucideChevronUp } from "lucide-react";
 import React from "react";
-import {gsap} from 'gsap';
+// import {gsap} from 'gsap';
 
 // import _ from '@/styles/details.css';
 
@@ -130,21 +131,49 @@ function isHighlightedCodeBlock(children: React.ReactNode, props: React.HTMLAttr
   return [false, children_];
 }
 
-const NUM_PREVIEW_LINES: number = 2;
-const NUM_BUFFER_LINES: number = 3;
+const NUM_PREVIEW_LINES: number = 3;
+const NUM_BUFFER_LINES: number = 2;
 
 const NUM_THRESH_LINES = NUM_BUFFER_LINES + NUM_PREVIEW_LINES;
 
+function isBlankNode(node: React.ReactNode): boolean | Promise<boolean> {
+  const isBlank = (()=>{
+    if(!node && node !== 0 && node !== false) return true;
+    if(typeof node === 'string') return !node.trim().length;
+    if(typeof node !== 'object') return false;
+    if(Symbol.iterator in node) {
+      const arr = Array.from(node);
+      return !arr.length || arr.every(x=>isBlankNode(x)===true);
+    }
+    if(node instanceof Promise) return node.then(isBlankNode);
+    // @ts-expect-error Props may be empty object type
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return isBlankNode(node.props?.children);
+  })();
+  // console.log('isBlankNode:', node, isBlank)
+  return isBlank
+}
+
 function splitChildLines(children: Iterable<React.ReactNode>): [React.ReactNode, React.ReactNode] {
   const arr = Array.from(children);
+  // if(arr.length <= NUM_PREVIEW_LINES)
+  //   return [children, null];
   if(arr.length <= NUM_THRESH_LINES)
     return [children, null];
-
-  return [arr.slice(0, NUM_THRESH_LINES), arr.slice(NUM_THRESH_LINES)];
+  // return [arr.slice(0, NUM_THRESH_LINES), arr.slice(NUM_THRESH_LINES)];
+  let n = NUM_THRESH_LINES;
+  while(n > NUM_BUFFER_LINES) {
+    const child = arr[n];
+    if(isBlankNode(child))
+      n--;
+    else
+      break;
+  }
+  if(!n) return [null, children];
+  const above = arr.splice(0, n);
+  return [above, arr];
 }
 type CodeElement = React.ReactElement<React.HTMLAttributes<HTMLElement>, 'code'>;
-
-
 
 type SpanElem = React.ReactHTMLElement<HTMLSpanElement>;
 type SpanElems = Iterable<SpanElem>;
@@ -179,45 +208,19 @@ function useCodeElemTransformSpec(elem: React.ReactNode): CodeElemTransformSpec 
 
 
 
+// type HTMLDivOrCodeElement = CombinedPropertiesOf<HTMLDivElement, HTMLElement, true, false>
 
-// function transformCodeElement(elem: React.ReactNode) {
-//   if(!React.isValidElement(elem)) return elem;
-//   if(elem.type !== 'code') return elem;
-//   const {children: grandchildren, ...props} = (elem as CodeElement).props;
-//   if(!grandchildren || typeof grandchildren !== 'object' || !(Symbol.iterator in grandchildren)) return elem;
 
-//   const [above, below] = splitChildLines(grandchildren);
-//   if(!below) return elem;
-
-//   return <code key={elem.key} {...props}>
-//     {/* <div className="inline-block relative w-full inset-0"> */}
-//       {above}
-//       {/* <div className="absolute left-0 bottom-0 w-full h-[2em] bg-blue-900/50 pointer-events-none"></div> */}
-//     {/* </div> */}
-
-//     <CollapsibleContent asChild>
-//       <div className="inline pb-2em">
-//         {below}
-//       </div>
-//     </CollapsibleContent>
-
-//     {/* bg-blue-900/50 */}
-//     <div className="absolute bottom-2 left-2 w-[calc(100%-4*var(--spacing))] h-[3em] rounded-b-sm pointer-events-none
-//       bg-linear-to-t from-white/75 dark:from-black/75
-//     "></div>
-//   </code>
-// }
-
-const TransformedCodeElement = ({contentRef, above, below, children, ...props}: {contentRef: React.RefObject<HTMLDivElement | null> | ((el: HTMLDivElement | null)=>void), above: SpanElems | undefined, below: SpanElems | undefined, } & React.ComponentProps<'code'>) => {
+const TransformedCodeElement = ({contentRef, above, below, children, ...props}: {contentRef: React.RefObject<HTMLDivElement | null> | ((el: HTMLDivElement | HTMLElement | null)=>void), above: SpanElems | undefined, below: SpanElems | undefined, } & React.ComponentProps<'code'>) => {
   if(!below) return <code {...props}>{children}</code>;
-  if(!above) return <CollapsibleContent asChild>
+  if(!above) return <CollapsibleContent className="CollapsibleContent" asChild>
     <code {...props}>{children}</code>
   </CollapsibleContent>;
 
   return <code {...props}>
     {above}
-    <CollapsibleContent ref={contentRef} asChild>
-      <div className="inline pb-2em h-0">{below}</div>
+    <CollapsibleContent asChild>
+      <div ref={contentRef} className="CollapsibleContent pb-2em overflow-y-hidden overflow-x-visible m-0 p-0 inset-0 border-none bg-none outline-none shadow-none drop-shadow-none">{below}</div>
     </CollapsibleContent>    
     {/* bg-blue-900/50 */}
     <div className="collapsible-content-overlay absolute bottom-2 left-2 w-[calc(100%-4*var(--spacing))] h-[3em] rounded-b-sm pointer-events-none
@@ -237,46 +240,57 @@ const CollapsibleCodeInner = React.memo(({children: propsChildren, className, ..
   const [codeProps, codeTransformSpec] = tf ? useCodeElemTransformSpec(children) : [undefined, undefined];
   const [above, below] = React.useMemo(()=>[codeTransformSpec?.[0], codeTransformSpec?.[1]], [codeTransformSpec]);
 
-  const contentRef = React.useRef<HTMLDivElement|null>(null);
-  const contentRefCallback = React.useCallback((el: HTMLDivElement | null)=>{
+  const contentRef = React.useRef<HTMLDivElement|HTMLElement|null>(null);
+  const contentRefCallback = React.useCallback((el: HTMLDivElement | HTMLElement | null)=>{
     contentRef.current = el;
-
   }, []);
 
-  React.useEffect(()=>{
-    if(!tf) return;
-    const div = contentRef.current;
-    if(!div) return;
-    const tween = (()=>{
-      if(open) {
-        if(div.clientHeight === div.scrollHeight) return;
-        return gsap.fromTo(div, {
-          height: div.clientHeight,
-        }, {
-          height: div.scrollHeight,
-          // onStart: () => {
-          //   gsap.set(div, {visibility: 'visible'});
-          // }
-          onComplete: () => {
-            gsap.set(div, {height: 'auto'});
-          },
-          duration: 0.3,
-        })
-      } else if(div.clientHeight) {
-        return gsap.fromTo(div, {
-          height: div.clientHeight,
-        }, {
-          height: 0,
-          duration: 0.3,
-        })
-      }
-    })();
+  // const openedRef = React.useRef<boolean|undefined>(undefined);
+  // React.useEffect(()=>{
+  //   if(!tf) return;
+  //   const div = contentRef.current;
+  //   if(!div) return;
+  //   console.log('open, client/scroll height:', open, div.clientHeight, div.scrollHeight);
+  //   const tween = (()=>{
+  //     if(open) {
+  //       if(div.clientHeight === div.scrollHeight) return;
+  //       return gsap.fromTo(div, {
+  //         height: div.clientHeight,
+  //       }, {
+  //         height: div.scrollHeight,
+  //         duration: 0.5,
+  //         paused: false,
+  //         onStart: () => { openedRef.current = undefined; },
+  //         onComplete: () => {
+  //           openedRef.current = true;
+  //           console.log('client/scroll height (complete):', div.clientHeight, div.scrollHeight);
+  //           gsap.set(div, {height: 'auto'});
+  //           console.log('client/scroll height (complete):', div.clientHeight, div.scrollHeight);
 
-    if(!tween) return;
-    return ()=>{
-      tween.kill();
-    }
-  }, [tf, open])
+  //         },
+  //       })
+  //     } else if(div.clientHeight) {
+  //       return gsap.fromTo(div, {
+  //         height: div.clientHeight,
+  //       }, {
+  //         height: 0,
+  //         duration: 0.5,
+  //         onStart: () => { openedRef.current = undefined; 
+  //           // console.log('client/scroll height (complete):', div.clientHeight, div.scrollHeight);
+  //         },
+  //         onComplete: () => { openedRef.current = false; 
+  //           console.log('client/scroll height (complete):', div.clientHeight, div.scrollHeight);
+  //         },
+  //       })
+  //     }
+  //   })();
+
+  //   if(!tween) return;
+  //   return ()=>{
+  //     console.log('Killing tween')
+  //     tween.kill();
+  //   }
+  // }, [tf, open])
 
   if (!tf) {
     return <pre {...props} children={children} className={className} />;

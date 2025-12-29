@@ -14,12 +14,13 @@ export default function useSelection(initiallyEnabled?: boolean) {
 
     const setSelection = React.useCallback((select: boolean)=>{
         const elements = targetElements.current.map(x=>x.current).filter(x=>!!x);
-        console.log((select ? 'Selecting':'Deselecting') + 'text in elements:', elements);
+        // console.log((select ? 'Selecting':'Deselecting') + 'text in elements:', elements);
         if(select) 
             void Promise.resolve().then(()=>{
                 selectElementsText(elements);
-                setAnySelection(true);
-                setFullSelection(true);
+                const [anySelection, fullSelection] = checkSelection(elements, true);
+                setAnySelection(anySelection ?? false);
+                setFullSelection(fullSelection ?? false);
             });
         else 
             void Promise.resolve().then(()=>{
@@ -31,15 +32,17 @@ export default function useSelection(initiallyEnabled?: boolean) {
 
     const enabledRef = React.useRef<boolean>(enabled);
     React.useEffect(()=>{
+        // console.log('SELECTION MONITORING ENABLED:', enabled);
         enabledRef.current = enabled;
     }, [enabled]);
 
     React.useEffect(()=>{
         const listener = (_evt: Event) => {
+            // console.log('SELECTION CHANGED:', enabledRef.current)
             if(!enabledRef.current) return;
             const elements = targetElements.current.map(x=>x.current).filter(x=>!!x);
-            const [anySelection, fullSelection] = checkSelection(elements, false);
-            console.log('Selection changed:', anySelection, fullSelection);
+            const [anySelection, fullSelection] = checkSelection(elements, true);
+            // console.log('Selection changed:', anySelection, fullSelection);
             setAnySelection(anySelection ?? false);
             setFullSelection(fullSelection ?? false);
         }

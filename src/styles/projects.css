@@ -161,3 +161,79 @@
 	opacity: 0;
 }
 
+/* 
+*:has(>.followup-block) {
+	overflow-y: visible;
+} */
+
+
+
+@media (hover: hover) { 
+	.followup-block:is(:where(.group):hover *), .followup-block:hover {
+		--hover-opacity: 1.0;
+		--underline-opacity: 0.8;
+		--underline-height: 38%;
+
+	}
+}
+
+.followup-block {
+	--underline-offset: 15%;
+	--border-color-default-rgb: 120,120,120;
+	--underline-opacity: 0.4; 
+	--underline-height: 16%; 
+	--underline-saturation: 1;
+	pointer-events: all;
+	--hover-opacity: 1.0;
+	/* --underline-opacity: 1.0; */
+	vertical-align: baseline;
+	line-height: 1; 
+	overflow-y: visible;
+	box-sizing: content-box;
+	background-clip: border-box;
+	background-origin: border-box;
+	
+	border-bottom-width: calc(var(--underline-offset,15%) + var(--underline-height,12%));
+	border-bottom-color: rgba(255, 255, 255, 0.25);
+	border-bottom-style: solid;
+
+	/* background-color: blue; */
+}
+
+.followup-block {
+  &:not(:hover, :where(.group):hover *) {
+    background-image: linear-gradient(to right,rgba(var(--border-color-default-rgb),var(--hover-opacity,0)) 0,rgba(var(--border-color-default-rgb),var(--hover-opacity,0)) 66%,transparent 66%,transparent 100%);
+    background-position: 0 calc(100% - var(--underline-height) + var(--underline-offset, 15%));
+    background-size: 8px var(--underline-height,16%);
+    background-repeat: repeat-x;
+	/* border-bottom-width: calc(var(--underline-offset,15%) + var(--underline-height,12%));
+	border-bottom-color: rgba(255, 255, 255, 0.25);
+	border-bottom-style: solid; */
+	/* border-bottom-style: hidden; */
+	/* border-color: green; */
+	/* background-attachment: fixed; */
+  }
+}
+.followup-block {
+	background-image: linear-gradient(to right,hsla(51,calc(var(--underline-saturation, 1) * 100%),50%,calc(var(--hover-opacity, 0) * var(--underline-opacity, 0))) 0,
+											   hsla(17,calc(var(--underline-saturation, 1) * 96%),52%,calc(var(--hover-opacity, 0) * var(--underline-opacity, 0))) 100%);
+	/* background-position: 0px 100%; */
+	background-position: 0 calc(100% - var(--underline-height) + var(--underline-offset, 15%));
+	background-size: 100% var(--underline-height,38%);
+	background-repeat: no-repeat;
+
+	/* border-bottom-style: hidden; */
+	/* border-color: green; */
+	
+}
+
+
+.followup-block {
+  transition: --underline-opacity .2s ease-in-out,
+	--underline-height .2s ease-in-out,
+	background-position-y .2s ease-in-out,
+	--underline-offset .2s ease-in-out,
+	background-size-y .2s ease-in-out,
+	background-image .2s ease-in-out;
+
+}

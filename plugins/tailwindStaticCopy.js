@@ -58,11 +58,11 @@ async function maybeCopyTransformedStatic(inputPath, outputPath) {
     if(fs.existsSync(outputPath)) {
         const src = fs.readFileSync(outputPath);
         if(src.toString() === result.css) {
-            console.log('Skipping identical', inputPath, outputPath);
+            // console.log('Skipping identical', inputPath, outputPath);
             return;
         }
     }
-    console.log('Updating theme CSS:', inputPath, outputPath);
+    // console.log('Updating theme CSS:', inputPath, outputPath);
     await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
     await fs.promises.writeFile(outputPath, result.css);
 }

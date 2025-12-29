@@ -1,4 +1,3 @@
-// useFlipAnimation.ts
 import { useRef, useCallback, useEffect } from 'react';
 
 interface UseFlipAnimationOptions {

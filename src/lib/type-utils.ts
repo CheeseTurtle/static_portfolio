@@ -658,3 +658,226 @@ type TT = {
 // function TTF(): TT['z'] | TT['a1'] | TT['a2'] | TT['b1'] | TT['b2'] | TT['c1'] | TT['c2'] | TT['d1'] | TT['e1'] {
   
 // }
+
+// type x = `abc def` extends `abc ${infer T}` ? T : never;
+
+
+type PickRequired<T, K extends keyof T = keyof T> = {[P in K]-?: T[P]}
+// type PickOptional<T, K extends keyof T = keyof T> = Omit<T, keyof PickNonOptional<T, keyof T>> extends infer TT ? Pick<TT, Extract<keyof TT, K>> : never;
+type PickOptional<T, K extends keyof T = keyof T> = {[P in K]+?: T[P]}
+type PickMutable<T, K extends keyof T = keyof T> = {-readonly [P in K]: T[P]}
+type PickReadonly<T, K extends keyof T = keyof T> = {+readonly [P in K]: T[P]}
+
+type PickProperties<T, Optional extends boolean, Readonly extends boolean = boolean, K extends keyof T = keyof T> = (
+  (
+    Optional extends true ? (
+      (
+        Readonly extends true ?
+        {+readonly [P in K]+?: T[P]}
+        : never
+      ) |
+      (
+        Readonly extends false ?
+        {-readonly [P in K]+?: T[P]}
+        : never
+      )
+    ) : never
+  )
+  |
+  (
+    Optional extends false ? (
+      (
+        Readonly extends true ?
+        {+readonly [P in K]-?: T[P]}
+        : never
+      ) |
+      (
+        Readonly extends false ?
+        {-readonly [P in K]-?: T[P]}
+        : never
+      )
+    ) : never
+  )
+)
+
+
+type OptionalKeyOf<T> = keyof PickOptional<T>
+type ReadonlyKeyOf<T> = keyof PickReadonly<T>
+type MutableKeyOf<T> = keyof PickMutable<T>
+type RequiredKeyOf<T> = keyof PickRequired<T>
+
+
+type CommonOptionalKeyOf<A,B> = CommonKeyOf<PickOptional<A>,PickOptional<B>>
+type CommonReadonlyKeyOf<A,B> = CommonKeyOf<PickReadonly<A>,PickReadonly<B>>
+type CommonRequiredKeyOf<A,B> = CommonKeyOf<PickRequired<A>,PickRequired<B>>
+
+type CommonMixedKeyOf<A,B> = CommonKeyOf<PickRequired<A>,PickOptional<B>> | CommonKeyOf<PickOptional<A>,PickRequired<B>>
+type UncommonOptionalKeyOf<A,B> = Exclude<UncommonKeyOf<PickOptional<A>, PickOptional<B>>, CommonKeyOf<A,B>>
+type UncommonRequiredKeyOf<A,B> = Exclude<UncommonKeyOf<PickRequired<A>, PickRequired<B>>, CommonKeyOf<A,B>>
+
+
+type _Combine<A extends object, B extends object> = (
+  {} extends A ? B : ({} extends B ? A : A & B)
+)
+
+type OptionalPropertiesOf<A, K extends keyof A = OptionalKeyOf<A>> = {[P in Extract<K, OptionalKeyOf<A>>]+?: A[P]}
+
+type RequiredPropertiesOf<A, K extends keyof A = RequiredKeyOf<A>> = {[P in Extract<K, RequiredKeyOf<A>>]-?: A[P]}
+
+type CommonOptionalPropertiesOf<A,B> = {[P in CommonOptionalKeyOf<A,B>]+?: A[P] | B[P]}
+type UncommonOptionalPropertiesOf<A,B, Merge extends boolean = true> = (
+  (Merge extends true ? {[P in UncommonOptionalKeyOf<A,B>]+?: (P extends OptionalKeyOf<A> ? A[P] : (P extends OptionalKeyOf<B> ? B[P] : never))} : never)
+  |
+  (Merge extends false ? {[P in Extract<UncommonOptionalKeyOf<A,B>,OptionalKeyOf<A>>]+?: A[P]} | {[P in Extract<UncommonOptionalKeyOf<A,B>,OptionalKeyOf<B>>]+?: B[P]} : never)
+
+)
+// type CombinedOptionalPropertiesOf<A,B> = {[P in (OptionalKeyOf<A> | OptionalKeyOf<B>)]+?: A[Extract<P, OptionalKeyOf<A>>] | B[Extract<P, OptionalKeyOf<B>>]}
+type CombinedOptionalPropertiesOf<A,B, MergeMixed extends boolean = true> = (
+  (MergeMixed extends true ? {[P in (OptionalKeyOf<A> | OptionalKeyOf<B>)]+?: A[Extract<OptionalKeyOf<A>, P>] | B[Extract<OptionalKeyOf<B>, P>]} : never)
+  |
+  (MergeMixed extends false ? CommonOptionalPropertiesOf<A,B> & UncommonOptionalPropertiesOf<A,B,false> : never)
+)
+
+
+type CommonRequiredPropertiesOf<A,B> = {[P in CommonRequiredKeyOf<A,B>]-?: A[P] | B[P]}
+type UncommonRequiredProperties<A,B, AsOptional extends boolean = false> = (
+  (AsOptional extends false ? {[P in Extract<UncommonRequiredKeyOf<A,B>, RequiredKeyOf<A>>]-?: A[P]} | {[P in Extract<UncommonRequiredKeyOf<A,B>, RequiredKeyOf<B>>]-?: B[P]} : never)
+  |
+  (AsOptional extends true ? {[P in UncommonRequiredKeyOf<A,B>]+?: P extends RequiredKeyOf<A> ? A[P] : (P extends RequiredKeyOf<B> ? B[P] : never)} : never)
+)
+type CombinedRequiredPropertiesOf<A,B, MixedAsOptional extends boolean = false> = CommonRequiredPropertiesOf<A,B> & UncommonRequiredProperties<A,B,MixedAsOptional>
+
+export type CombinedPropertiesOf<A,B, MixedRequiredAsOptional extends boolean = false, MergeMixedOptional extends boolean = true> = CombinedRequiredPropertiesOf<A,B,MixedRequiredAsOptional> & CombinedOptionalPropertiesOf<A,B,MergeMixedOptional>
+
+
+// export type CombineOptional<A, B> = {[K in CommonKeyOf<A,B>]: A[K] | B[K]};
+
+
+type NonEmptyString = Exclude<string, ''>
+type NonEmptyStringable = Exclude<Stringable, ''>
+type Stringable = string | number | bigint | boolean | null | undefined;
+
+
+type StrRemovePrefix<A extends string, B extends Stringable, Fallback = never> = A extends `${B}${infer C}` ? C : Fallback;
+type StrRemoveSuffix<A extends string, B extends Stringable, Fallback = never> = A extends `${infer C}${B}` ? C : Fallback;
+type StrRemoveInfix<A extends string, B extends Stringable, Fallback = never> = A extends `${infer C1}${B}${infer C2}` ? `${C1}${C2}` : A;
+
+// type StrExtractPrefix<S extends string, Pre extends Stringable = NonEmptyString, Rest extends Stringable = Stringable, Fallback = never> = S extends `${infer P extends Pre}${infer _R extends Rest}` ? P : Fallback;
+// type StrExtractSuffix<S extends string, Post extends Stringable = NonEmptyString, Lead extends Stringable = Stringable, Fallback = never> = S extends `${infer _L extends Lead}${infer P extends Post}` ? P : Fallback;
+// type StrExtractInfix<S extends string, Infix extends Stringable = NonEmptyString, Pre extends Stringable = Stringable, Post extends Stringable = Stringable, Fallback = never> = S extends `${infer _L extends Pre}${infer I extends Infix}${infer _P extends Post}` ? I : Fallback;
+
+type StrExtractPrefix<S extends string, Pre extends Stringable = Stringable, Rest extends Stringable = NonEmptyString> = S extends `${Pre}${infer R extends Rest}` ? R : never;
+type StrExtractSuffix<S extends string, Pre extends Stringable = Stringable, Rest extends Stringable = NonEmptyString> = S extends `${Pre}${infer R extends Rest}` ? R : never;
+type StrExtractInfix<S extends string, Pre extends Stringable = Stringable,  Infix extends Stringable = NonEmptyString, Rest extends Stringable = Stringable> = S extends `${Pre}${infer I extends Infix}${Rest}` ? I : never;
+
+
+type _PrefixOf<S extends string> = S extends `${infer Prefix extends NonEmptyString}${infer Rest}` ? Prefix | `${Prefix}${PrefixOf<Rest>}` : never;
+type _SuffixOf<S extends string> = S extends `${infer Lead}${infer Suffix extends NonEmptyString}` ? Suffix | `${SuffixOf<Lead>}${Lead}`: never;
+type PrefixOf<S extends string> = S extends `${infer Prefix extends NonEmptyString}${infer Rest extends NonEmptyString}` ? Prefix | `${Prefix}${PrefixOf<AsString<Rest>>}` : never;
+type SuffixOf<S extends string> = S extends `${infer Lead extends NonEmptyString}${infer Suffix extends NonEmptyString}` ? Suffix | `${SuffixOf<AsString<Lead>>}${Lead}`: never;
+
+type AsString<S extends Stringable> = S extends string ? S : (`${S}` extends infer Str ? Str : never);
+
+// type AsStringable<S extends Stringable, T extends Stringable = Exclude<Stringable, string>> = S extends `${infer X extends T}` ? X : never;
+
+// type xxx = PrefixOf<'turtles'>
+
+
+type NonStringStringable = Exclude<Stringable, string>
+type LowercaseString<T extends string> = Extract<T, Lowercase<T>>;
+// type LowercaseStringable<T extends Stringable> = T extends string ? LowercaseString<T> : T;
+type UppercaseString<T extends string> = Extract<T, Uppercase<T>>;
+type CapitalizedString<T extends string> = Extract<T, Capitalize<T>>;
+type UncapitalizedString<T extends string> = Extract<T, Uncapitalize<T>>;
+
+// type xxx = ['abc' | 'ABC', 'def' | 'DEF'] extends (infer S extends string)[] ? UppercaseString<S>[] : never;
+
+// type CapitalizedStrings<T extends Array<string>> = {[K in Extract<keyof T, number>]: [K, T[K]]}
+// type CapitalizedStrings<T extends Array<string>> = {[K in Exclude<keyof T, number>]: [K, T[K]]}
+// type CapitalizedStrings<T extends Array<string>> = {[K in keyof T]: [K, T[K]]}
+type CapitalizedStrings<T extends Array<string>> = {[K in keyof T]: CapitalizedString<T[K]>}
+
+// type xxx = CapitalizedStrings<['abc'|'ABC', 'aaa', 'def'|'DEF']>
+
+
+type KeysWhereValueExtends<T, V, K extends keyof T = keyof T> = T[K] extends V ? K : never;
+type KeysWhereValueNotExtends<T, V, K extends keyof T = keyof T> = Omit<T, KeysWhereValueExtends<T, V, K>>;
+
+type OmitValues<T, V extends ValueOf<T>> = Omit<T, KeysWhereValueExtends<T,V>>;
+type PickValues<T, V extends ValueOf<T>> = Pick<T, KeysWhereValueExtends<T,V>>
+
+
+type _CapitalizedString = Capitalize<string>
+type _UncapitalizedString = Uncapitalize<string>
+
+
+type StrExtractCapitalizedPrefix<S extends string, Pre extends Capitalize<string> = Capitalize<string>, Rest extends string = string> = S extends `${infer P extends Pre}${Rest}` ? P : never;
+type StrExtractLowercasePrefix<S extends string, Pre extends Lowercase<string> = Lowercase<string>, Rest extends string = string> = S extends `${infer P extends Pre}${Rest}` ? P : never;
+
+type LowercasePrefixOf<S extends string> = S extends NonEmptyString ? (
+  S extends `${infer Pre extends Lowercase<NonEmptyString>}${infer Rest}` ? Pre | (Rest extends NonEmptyString ? `${Pre}${LowercasePrefixOf<Rest>}` : never) : never
+) : '';
+
+type _MaxLowercasePrefixOf<S extends string> = S extends NonEmptyString ? (
+  S extends `${infer Pre extends Lowercase<NonEmptyString>}${infer Rest}` ? (Rest extends NonEmptyString ? `${Pre}${_MaxLowercasePrefixOf<Rest>}` : `${Pre}`) : ''
+) : '';
+
+type MaxLowercasePrefixOf<S extends string> = S extends NonEmptyString ? (
+  S extends `${infer Pre extends Lowercase<NonEmptyString>}${infer Rest}` ? (Rest extends NonEmptyString ? `${Pre}${_MaxLowercasePrefixOf<Rest>}` : `${Pre}`) : never
+) : never;
+
+// type MaxCapitalizedPrefixOf<S extends string> = S extends NonEmptyString ? (
+//   (S extends `${infer F extends NonEmptyString}${infer Rest}` ? (
+//     (Rest extends NonEmptyString ? `${F}${_MaxLowercasePrefixOf<Rest>}` : `${F}`)
+//   ) : never)
+// ) : never;
+
+type MaxCapitalizedPrefixOf<S extends string> = S extends Capitalize<NonEmptyString> ? (
+  (S extends `${infer F extends Uppercase<NonEmptyString>}${infer Rest}` ? (
+    (Rest extends NonEmptyString ? (
+      Rest extends Capitalize<string> ? `${F}${MaxCapitalizedPrefixOf<Rest>}` : `${F}${_MaxLowercasePrefixOf<Rest>}`)
+    : `${F}`)
+  ) : never)
+) : never;
+
+
+type MaxWordCasePrefixOf<S extends string> = S extends Capitalize<NonEmptyString> ? MaxCapitalizedPrefixOf<S> : MaxLowercasePrefixOf<S>;
+
+type StrReplaceAll<S extends string, A extends NonEmptyString, B extends string = ''> = (
+  S extends `${infer Pre}${A}${infer Post}` ? (
+    `${Pre}${B}${Post extends NonEmptyString ? StrReplaceAll<Post,A,B> : ''}`
+  ) : S
+)
+
+
+type StrContains<S extends string, Sub extends NonEmptyString> = IsSameType<S, StrReplaceAll<Sub, ''>>
+
+type StrWithout<S extends string, Sub extends NonEmptyString> = StrContains<S, Sub> extends true ? never : S;
+type StrWith<S extends string, Sub extends NonEmptyString> = StrContains<S, Sub> extends true ? S : never;
+
+
+// type WordCasePartsOf<S extends string> = MaxWordCasePrefixOf<S> extends infer Pre extends NonEmptyString ? (
+//   StrRemovePrefix<S, Pre> extends infer Rest extends NonEmptyString ? WordCasePartsOf<Rest> : []
+// ) : [];
+
+// type WordCasePartsOf<S extends string> = MaxWordCasePrefixOf<S> extends infer Pre extends NonEmptyString ? (StrRemovePrefix<S, Pre> extends infer Rest ? (
+//   Rest extends NonEmptyString ? [Pre, ..._WordCasePartsOf<Rest>] : [Pre]
+// ) : never) : never;
+
+// type xxx = WordCasePartsOf<'AbcDefGhi'>;
+
+
+
+export function allKeys(obj: object): Generator<string, void, string>;
+export function allKeys(obj: object, includeOwn: false): Generator<string, void, string>;
+export function allKeys(obj: object, includeOwn: false, includeHidden: false): Generator<string, void, string>;
+export function allKeys(obj: object, includeOwn: true, includeHidden: boolean): Generator<string, void, string>;
+export function* allKeys(obj: object, includeOwn: boolean = true, includeHidden: boolean = true): Generator<string, void, string> {
+    const visibleKeys = includeHidden ? undefined : new Set(Object.keys(obj));
+    // see also: Reflect.ownKeys
+    // Object.prototype.hasOwnProperty(v)
+    for(const key in obj) {
+        if((includeOwn && !visibleKeys?.has(key)) || !Object.hasOwn(obj, key))
+            yield key;
+    }
+}

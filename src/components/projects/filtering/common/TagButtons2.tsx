@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import TagButton, { type TagButtonProps } from "./TagButton";
 
-import { Flip } from "gsap/Flip";
-import {gsap} from "gsap";
+import Flip from "gsap/dist/Flip";
 import { useFlipAnimation } from "@/hooks/useFlip";
 import { useMounted } from "@/hooks/use-mounted";
 import { useTagSectionStore } from "./stores/filterFormStoreContext";
@@ -15,11 +14,6 @@ type TagButtonsProps = {
 
 // eslint-disable-next-line no-empty-pattern
 export default function TagButtons({}: TagButtonsProps) {
-    // TODO: Move elsewhere
-    useEffect(()=>{
-        gsap.registerPlugin(Flip);
-    }, []);
-
     // {toggleTag: propsToggleTag, availableTags: availableTagsSet, selectedTags, tagType, registerReset, colorClassName}
 
     const {tagKey, availableTags, registerReset, computeTagOrders, setVisualOrder, toggleTag, canToggleTag, colorClassName, } = useTagSectionStore(s=>({

@@ -24,10 +24,18 @@ tags:
 
 ---
 
+import Details from "@/components/projects/details/interp/HoverDetails.tsx";
+
+
+
 This portfolio website was originally envisioned as a single scrollable page of content recounting the past decade or so of my life through the projects I've worked on in that timeframe.
 To that end, I learned the Preact web framework and pored over the GSAP animation library documentation to create a dynamic, scroll-synced sidebar of multimedia items to go along with the main column.
 
-However, once I began writing real content to replace the placeholder text, I realized that due to the large number of projects and wide variety of subject areas, this was not an effective way to showcase my passions and skill set to potential employers.
+
+
+export const realizedContents = <div>Here is a div</div>
+
+However, once I began writing real content to replace the placeholder text, <Details content={realizedContents}>I realized</Details> that due to the large number of projects and wide variety of subject areas, this was not an effective way to showcase my passions and skill set to potential employers.
 I decided I needed to develop an interface that could present a tailored subset of projects in a way that offered an at-a-glance overview of the keywords and interesting visuals associated with each project. 
 This would allow the page's visitors to get an instant eyeful of everything I had to offer while minimizing the odds that a visitor might miss something aligned with their interests simply because it was hidden or further down the page.
 
@@ -47,7 +55,6 @@ there
 
 
 **bold** _italic_ `code`
-
 
 
 #let proj-portfolio-site = define.def-subsection(
