@@ -124,7 +124,7 @@ const ProjectGridSkeletonInner = React.memo(({numColumns}: {numColumns: number})
     // const columns = (new Array(numColumns)).map((_,i)=><ProjectGridSkeletonColumn key={i} elemRefs={columnRefs.current[i]} />)
     const columns = React.useMemo(()=>createElemArray(numColumns, (i)=><ProjectGridSkeletonColumn key={i} elemRefs={columnRefs.current[i]}/>), [numColumns]);
     console.log('COLUMNS:', columns)
-    return <div className="h-full min-h-screen w-full grid grid-flow-col gap-4 px-4 justify-stretch auto-cols-fr outline-1 outline-red-500">
+    return <div className="h-full min-h-svh w-full grid grid-flow-col gap-4 px-4 justify-stretch auto-cols-fr outline-1 outline-red-500">
         {columns}
     </div>
 });

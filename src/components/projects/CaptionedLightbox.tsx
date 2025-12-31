@@ -629,7 +629,7 @@ export default function CaptionedLightbox({
     const sources_ = React.useMemo(()=>sources?.map(x=>{
         // console.log('Source:', x);
         if(typeof x === 'object') {
-            return <div className="flex w-max h-max min-w-[calc(min(50vw,80cqh))] max-w-[100vw] max-h-screen min-h-[calc(min(50vh,80cqh))]">{x}</div>
+            return <div className="flex w-max h-max min-w-[calc(min(50svw,80cqh))] max-w-svw max-h-svh min-h-[calc(min(50svh,80cqh))]">{x}</div>
         }
         return x
     }), [sources]);

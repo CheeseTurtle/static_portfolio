@@ -215,7 +215,8 @@ const ProjectBrowserInner = forwardRef<ProjectBrowserHandle, ProjectBrowserInner
                         }
                     </React.Suspense>
                 </div>
-                <React.Suspense fallback={<div className="absolute inset-0 w-screen h-screen bg-green-400 suspense-fallback">LOADING PROJECT CAROUSEL DIALOG</div>}>
+                {/* <React.Suspense fallback={<div className="absolute inset-0 w-screen h-screen bg-green-400 suspense-fallback">LOADING PROJECT CAROUSEL DIALOG</div>}> */}
+                <React.Suspense>
                     <ProjectCarouselDialog 
                         showToast={showToast}
                         scrollTo={scrollTo}
@@ -461,7 +462,12 @@ export default function ProjectBrowserOuter({children, projects: projectsWithLBS
                 : Array.isArray(_contentElements) 
                     ? _contentElements 
                     : [_contentElements]
-        ).filter((x) => typeof x === 'object').map(x=>hydrateWithLoaderMap(loaderMap, transformTree(x, transformNode, shouldTransformNode, false), undefined === x.key || null === x.key ? undefined : [x.key])) as React.ReactElement[];
+        ).filter((x) => typeof x === 'object').map(x=>{
+            const ret = hydrateWithLoaderMap(loaderMap, transformTree(x, transformNode, shouldTransformNode, false), 
+                                    undefined === x.key ? undefined : [x.key]
+            );
+            return ret;
+        }) as React.ReactElement[];
     }, [contentString]);
 
     const showToast = React.useCallback((message: string, type: 'error' | 'success' | 'warn' | 'info' | 'debug' | 'normal' = 'normal') => {
@@ -510,7 +516,8 @@ export default function ProjectBrowserOuter({children, projects: projectsWithLBS
     }, [])
 
     return <>
-        <div ref={scrollContainer} id='project-browser-wrapper' className="overflow-auto inset-0 w-full h-full p-0 m-0 bg-none border-none outline-none">
+        <div className="overflow-hidden w-full h-full max-w-dvw max-h-dvh">
+        <div ref={scrollContainer} id='project-browser-wrapper' className="overflow-auto inset-0 w-full h-full p-0 m-0 bg-none border-none outline-red-500 outline-1 outline-offset-5">
         <StrictMode>
             <AlertToast/>
             {/* <AlertToast message={toastMessage} onClose={() => setToastMessage(null)} /> */}
@@ -541,6 +548,7 @@ export default function ProjectBrowserOuter({children, projects: projectsWithLBS
                 {/* </HydrationProvider> */}
             </ErrorBoundary>
         </StrictMode>
+        </div>
         </div>
     </>;
 } 

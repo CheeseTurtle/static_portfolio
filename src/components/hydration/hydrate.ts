@@ -28,6 +28,7 @@ type PropsFromFragmentRecord<P extends Record<string, React.ReactNode>> = P exte
 type FragmentsFromProps<P extends Record<string, React.ReactNode>> = ValueOf<PropsFromFragmentRecord<P>>
 
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type PropFromFragment<F extends PropFragmentElement<any,any>> = F extends PropFragmentElement<infer Keys, any> ? {[K in Keys]: F extends PropFragmentElement<K, infer V> ? V : never} : never;
 type PropsFromFragments<F extends PropFragmentElement<any, any> | Iterable<PropFragmentElement<any, any>>> = (
     (F extends Iterable<any> ? (
@@ -68,6 +69,7 @@ type KeysWithMixedValues<P, K extends keyof P = keyof P> = KeysWithReactNodeValu
 // optionally, keys with mixed values (extract react node)
 
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type PreSplitProps<P extends A & Record<Keys, React.ReactNode> & Partial<Record<OptionalKeys, React.ReactNode>>, Keys extends string, OptionalKeys extends string = never, A extends Record<any,any> = Omit<P, Keys | OptionalKeys | 'children'>> = (
     {children: FragmentsFromProps<{[K in OptionalKeys]: P[K]}> | FragmentsFromProps<{[K in Keys]: P[K]}>} & Omit<A, 'children'>
 )
@@ -86,6 +88,7 @@ type PickWithMixedValues<P> = Pick<P, KeysWithMixedValues<P>>
 type ChildrenFromMixedValues<P> = PickWithMixedValues<P> extends Record<string, React.ReactNode> ? FragmentsFromProps<{[K in keyof PickWithMixedValues<P>]: Extract<PickWithMixedValues<P>[K], React.ReactNode>}>: never;
 type PropsFromMixedValues<P> = {[K in keyof PickWithMixedValues<P>]: Exclude<PickWithMixedValues<P>[K], React.ReactNode>}
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type PropsForChildrenFromMixedValues<P> = PickWithMixedValues<P> extends Record<string, React.ReactNode> ? {[K in keyof PickWithMixedValues<P>]: Extract<PickWithMixedValues<P>[K], React.ReactNode>} : never;
 
 export type SplitProps<P> = Omit<PickWithoutReactNodeValues<P> & Partial<PropsFromMixedValues<P>>, 'children'> & {children: ChildrenFromReactNodeValuesOnly<P> | ChildrenFromMixedValues<P>}
@@ -122,7 +125,7 @@ export function splitProps<P extends object>(props: P) {
     // PickWithReactNodeValues<P> & Partial<PropsForChildrenFromMixedValues<P>>
 
     const children = Object.entries(childProps).map(([k,v])=>{
-        return React.createElement('div', {key: k, 'data-react-prop-key': k}, v)
+        return React.createElement('template', {key: k, 'data-react-prop-key': k}, v)
     })
 
     // console.log('New entries:', filteredEntries)
@@ -145,11 +148,15 @@ function fragmentsToEntries<P>(children: ChildrenFromReactNodeValuesOnly<P> | Ch
     }
     return [];
 }
-export function reassembleProps<P>({children, 'data-react-key': keyProp,  ...props}: Omit<SplitProps<P>, 'children'> & {children?: SplitProps<P>['children'], 'data-react-key'?: React.Key | null | undefined}) {
-    console.log(`Reassembling props (keyProp: ${keyProp}):`, children, props)
+export function reassembleProps<P>(
+    hydrationId: string,
+    {children, 'data-react-key': keyProp, ...props}: Omit<SplitProps<P>, 'children'> & {children?: SplitProps<P>['children'], 'data-react-key'?: React.Key | null | undefined},
+) {
+    const key = keyProp ?? `.hyd-${hydrationId}`;
+    console.log(`Reassembling props (keyProp: ${key}):`, children, props)
     const entries = children === null || undefined === children ? [] : fragmentsToEntries(children);
     const assembledProps = Object.fromEntries(entries) as Partial<PropsFromFragments<Exclude<typeof children, undefined>>>;
-    return {...assembledProps, key: keyProp, ...props}  as P
+    return {...assembledProps, key, ...props}  as P
 }
 
 
@@ -180,7 +187,6 @@ export function hydrateNode<P extends DehydratedElemProps<SplitProps<any>>>(getI
         if(!Object.hasOwn(props, 'data-hydration-role')) return [node, true];
         const {"data-hydration-role": hydrationRole, "data-hydration-id": hydrationId, "data-import-path": importPath, "data-hydrate-recurse": hydrateRecurse, "data-hydration": hydration, ...props_} = props;
 
-        // @ts-expect-error Wrong type
         if(hydrationRole === 'placeholder') return [node, false]; // TODO: Check if actually replaced?
 
         
@@ -194,7 +200,7 @@ export function hydrateNode<P extends DehydratedElemProps<SplitProps<any>>>(getI
         const __clientComponent = getImport(importPath);
         console.log('GOT CLIENT COMPONENT:', node, __clientComponent);
 
-        const unsplit = reassembleProps(props_); // Includes children
+        const unsplit = reassembleProps(hydrationId, props_); // Includes children
         console.log('Should transform node?', node, props_, unsplit);
         // @ts-expect-error Untyped children
         const {children: newChildren, ...unsplit_} = unsplit;
@@ -202,7 +208,7 @@ export function hydrateNode<P extends DehydratedElemProps<SplitProps<any>>>(getI
         type PP = P extends DehydratedElemProps<SplitProps<infer PP>> ? PP : never;
         if(__clientComponent) {
             console.log('CREATING ELEMENT:', __clientComponent, unsplit_, newChildren);
-            const component = React.createElement(__clientComponent, unsplit_ as PP, newChildren);
+            const component = React.createElement(__clientComponent, unsplit_ as PP, newChildren as React.ReactNode);
             console.log('RETURNING ELEMENT:', component);
             // component.key = key;
             return [component, hydrateRecurse === "true" || hydrateRecurse === true];
@@ -227,16 +233,16 @@ export function hydrate(getImport: GetImport, node: React.ReactNode) {
 export function hydrateWithLoaderMap(loaderMap: LoaderMap<any,any>, node: React.ReactNode, ensureKey?: [React.Key | undefined | null]): React.ReactNode {
     const getImport = (path: Extract<keyof typeof loaderMap, string>) => getImportWithLoaderMap<LoaderMapP<typeof loaderMap>, LoaderMapT<typeof loaderMap>, typeof loaderMap>(loaderMap, path)
     // console.log('Hydrating with loader map:', node);
-    const ret = transformTreeConditionally(node, (x: React.ReactElement)=>hydrateNode(getImport, x))
+    const ret = transformTreeConditionally(node, (x: React.ReactElement)=>hydrateNode(getImport, x), ensureKey?.[0])
     // console.log('Returning:', ret, ensureKey)
-    if(!ensureKey) return ret;
-    const [key] = ensureKey;
-    if(!React.isValidElement(ret)) {
-        if(key === undefined || key === null) return ret;
-        return React.createElement('span', {key}, ret);
-    }
-    if(undefined === ret.key || null === ret.key) {
-        return React.cloneElement(ret, Object.assign(ret.props || {}, {key}));
-    }
+    // if(!ensureKey) return ret;
+    // const [key] = ensureKey;
+    // if(!React.isValidElement(ret)) {
+    //     if(key === undefined || key === null) return ret;
+    //     return React.createElement('span', {key}, ret);
+    // }
+    // if(undefined === ret.key || null === ret.key) {
+    //     return React.cloneElement(ret, Object.assign(ret.props || {}, {key}));
+    // }
     return ret;
 }

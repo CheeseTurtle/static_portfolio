@@ -40,7 +40,7 @@ type ProjectCarouselDialogProps = {
 
 
 const HovercardContentItem = ({project, index, numSlides}: {project: ProjectInfo, index: number, numSlides: number}) => {
-    const indexSpan = useMemo(()=><span><span>{index}</span>/<span>{numSlides}</span></span>, [index, numSlides]);
+    const indexSpan = useMemo(()=><span><span>{index + 1}</span>/<span>{numSlides}</span></span>, [index, numSlides]);
     return <div className="w-full">
         <div className="text-center w-full text-xs font-normal tabular-nums">{indexSpan}</div>
         <div className="w-full text-sm font-extrabold">{project.title}</div>
@@ -56,6 +56,8 @@ const CarouselFallback = React.memo(({className, ...props}: React.ComponentProps
     </div>
 });
 
+
+export type HovercardContentRef = React.RefObject<Promise<React.JSX.Element>[]>;
 
 export default function ProjectCarouselDialog({ contentElements, showToast, scrollTo }: ProjectCarouselDialogProps) {
     // Get all state and actions from the store
@@ -102,13 +104,18 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
     const numSlides = useMemo(()=>visibleProjects.length, [visibleProjects]);
     
     const alreadyOpenRef = React.useRef<boolean>(false); // or open?
+    //React.ReactElement<HoverCardContentProps, typeof HovercardContentItem>>
+    const hovercardContents = visibleProjects.map((project, i)=>
+            <HovercardContentItem key={`${project.id}-${i}`} project={project} numSlides={numSlides} index={i} />
+    );
 
 
-    const getHovercardContentForIndex = React.useCallback((index: number) => {
-        const project = visibleProjects[index];
-        if(!project) return null;
-        return <HovercardContentItem project={project} numSlides={numSlides} index={index} />;
-    }, [visibleProjects, numSlides]);
+    // const getHovercardContentForIndex = React.useCallback((index: number) => {
+    //     const project = visibleProjects[index];
+    //     console.log('Getting hovercard content for index:', index, project)
+    //     if(!project) return null;
+    //     return <HovercardContentItem key={project.id} project={project} numSlides={numSlides} index={index} />;
+    // }, [visibleProjects, numSlides]);
 
     const debouncedScrollTo = useDebounceCallback(scrollTo, 1000);
 
@@ -390,7 +397,7 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
     const dialogFallback = React.useMemo(()=><CarouselFallback/>, [])
 
     return (
-        <React.Suspense fallback={<div className="z-50 absolute w-screen h-screen bg-red-500 suspense-fallback">LOADING CAROUSEL DIALOG</div>}>
+        <React.Suspense fallback={<div className="z-50 absolute w-lvw h-lvh bg-red-500 suspense-fallback">LOADING CAROUSEL DIALOG</div>}>
             <Dialog open={open} onOpenChange={onOpenChange_} modal={true}>
                 <DialogPortal container={document.getElementById('modal-root')}>
                     <React.Suspense fallback={<div className="w-full h-full bg-orange-400 suspense-fallback">LOADING CAROUSEL DIALOG CONTENT</div>}>
@@ -409,7 +416,7 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
                                     </DialogHeader>
                                 </VisuallyHidden>
                                 <React.Suspense fallback={dialogFallback} /*fallback={<div className="w-full h-full bg-yellow-300 suspense-fallback">LOADING CAROUSEL</div>}*/>
-                                    <ProjectCarousel ref={emblaRef} slides={slides} onCarouselSelect={onSelect} externalApi={embla} showToast={showToast} getHovercardContentForIndex={getHovercardContentForIndex}
+                                    <ProjectCarousel ref={emblaRef} slides={slides} onCarouselSelect={onSelect} externalApi={embla} showToast={showToast} hovercardContents={hovercardContents}
                                         prevRef={prevRef} nextRef={nextRef}
                                     />
                                 </React.Suspense>

@@ -7,6 +7,7 @@ import { useHydrationContext } from './hydrationContext';
 
 type _DehydratedProps = {
     // keyProp: string,
+    id?: string,
     importPath: string,
     Placeholder?: React.HTMLElementType,
     children?: React.ReactNode,
@@ -43,7 +44,7 @@ function omitOwnerFromChildren(x: any): any {
 // type ElementType<P = any, Tag extends keyof React.JSX.IntrinsicElements = keyof React.JSX.IntrinsicElements> = { [K in Tag]: P extends React.JSX.IntrinsicElements[K] ? K : never; }[Tag] | React.ComponentType<P>
 // type ElemTypeTag<P> = keyof React.JSX.IntrinsicElements | React.ComponentType<P>
 export function Dehydrated<P extends object, T extends React.ComponentType<P> = React.ComponentType<P>/*T extends React.ElementType<P, C> = React.ElementType<P,any>, C extends keyof React.JSX.IntrinsicElements = never*/>(
-    {key, importPath, Placeholder='div', children, fallback = false, hydrateRecurse=false, ...props}: DehydratedProps<P>) {
+    {id: nodeKey, importPath, Placeholder='div', children, fallback = false, hydrateRecurse=false, ...props}: DehydratedProps<P>) {
     const isClient = useIsClient()
 
     const id = React.useId();
@@ -53,9 +54,9 @@ export function Dehydrated<P extends object, T extends React.ComponentType<P> = 
     const log = React.useCallback(function <T>(x: T) {
         // @ts-expect-error TODO
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        console.log(`Dehydrated (key: ${key}) returning:`, omitOwner(x), omitOwnerFromChildren(x.props.children));
+        console.log(`Dehydrated (key: ${nodeKey}) returning:`, omitOwner(x), omitOwnerFromChildren(x.props.children));
         return x;
-    }, [])
+    }, [nodeKey])
 
 
     
@@ -70,7 +71,7 @@ export function Dehydrated<P extends object, T extends React.ComponentType<P> = 
         const [newProps, newChildren] = splitProps(transformAstroProps({...props, children}));
 
         // @ts-expect-error TODO
-        const dehydratedProps: DehydratedElemProps<P,T> =  { 'data-react-key': key, 'data-hydration-role': 'template', 'data-hydration-id': id, 'data-hydration': 'dehydrated', 'data-hydrate-recurse': hydrateRecurse, 'data-import-path': importPath, ...(newProps), children: newChildren };
+        const dehydratedProps: DehydratedElemProps<P,T> =  { key: nodeKey, 'data-react-key': nodeKey, 'data-hydration-role': 'template', 'data-hydration-id': id, 'data-hydration': 'dehydrated', 'data-hydrate-recurse': hydrateRecurse, 'data-import-path': importPath, ...(newProps), children: newChildren };
         const template = React.createElement('template', dehydratedProps, newChildren);
         // const placeholder = React.createElement(Placeholder, {'data-hydration-id': id, 'data-hydration-role': 'placeholder'})
         // return log(React.createElement(Placeholder, {...dehydratedProps}, template));

@@ -275,9 +275,9 @@ const CarouselDotButtonHovercard = React.memo(({hovercardContent, isHovered, onH
     </HoverCard> : button;
 });
 
-type CarouselDotButtonPropType = {onButtonClick: (index: number, evt: React.MouseEvent<HTMLButtonElement>) => void, hoverIndex: number | undefined, setHoverIndex: (index: number | undefined) => void, clearHoverIndex: ()=>void, index: number, selected: boolean, getHovercardContentForIndex: (index: number)=>React.ReactNode} & React.ComponentPropsWithRef<'button'>;
+type CarouselDotButtonPropType = {onButtonClick: (index: number, evt: React.MouseEvent<HTMLButtonElement>) => void, hoverIndex: number | undefined, setHoverIndex: (index: number | undefined) => void, clearHoverIndex: ()=>void, index: number, selected: boolean, hovercard: React.ReactNode} & React.ComponentPropsWithRef<'button'>;
 
-const CarouselDotButton = React.memo(({onButtonClick, onClick, getHovercardContentForIndex, hoverIndex, setHoverIndex, clearHoverIndex, children, className, index, selected, ...props}: CarouselDotButtonPropType) => {
+const CarouselDotButton = React.memo(({onButtonClick, onClick, hovercard, hoverIndex, setHoverIndex, clearHoverIndex, children, className, index, selected, ...props}: CarouselDotButtonPropType) => {
 
   const isHovered = React.useMemo(()=>hoverIndex===index, [hoverIndex, index]);
 
@@ -303,15 +303,15 @@ const CarouselDotButton = React.memo(({onButtonClick, onClick, getHovercardConte
       {children}
     </button>;
 
-    const hovercardContent = React.useMemo(()=>getHovercardContentForIndex(index), [index, getHovercardContentForIndex]);
+    // const hovercardContent = React.useMemo(()=>getHovercardContentForIndex(index), [index, getHovercardContentForIndex]);
 
     const onHover = React.useCallback(()=>setHoverIndex(index), [setHoverIndex, index]);
     const onUnhover = React.useCallback(clearHoverIndex, [clearHoverIndex]);
-    return <CarouselDotButtonHovercard hovercardContent={hovercardContent} button={button} onHover={onHover} onUnhover={onUnhover} isHovered={isHovered}/>
+    return <CarouselDotButtonHovercard hovercardContent={hovercard} button={button} onHover={onHover} onUnhover={onUnhover} isHovered={isHovered}/>
 });
 
 
-function CarouselDots({getHovercardContentForIndex}: {getHovercardContentForIndex: (index: number)=>React.ReactNode}) {
+function CarouselDots({hovercards}: {hovercards: React.ReactNode[]}) {
 
   const {api} = useCarousel();
   
@@ -332,7 +332,7 @@ function CarouselDots({getHovercardContentForIndex}: {getHovercardContentForInde
         key={index}
         onButtonClick={onDotButtonClick}
         selected={index === selectedIndex}
-        getHovercardContentForIndex={getHovercardContentForIndex}
+        hovercard={hovercards[index]}
         index={index}
         setHoverIndex={setHoveredIndexDeferred}
         clearHoverIndex={clearHoverIndex}
@@ -343,7 +343,7 @@ function CarouselDots({getHovercardContentForIndex}: {getHovercardContentForInde
   </div>
 }
 
-export function CarouselNav({getHovercardContentForIndex, className}: {getHovercardContentForIndex: (index: number)=>React.ReactNode, className?: string, }) {
+export function CarouselNav({hovercards, className}: {hovercards: React.JSX.Element[], className?: string, }) {
   
   const {api} = useCarousel();
   
@@ -385,8 +385,7 @@ export function CarouselNav({getHovercardContentForIndex, className}: {getHoverc
     // if(lastWidth.current === navRef.current.clientWidth) return;
     handleResize_(navRef.current.clientWidth || lastWidth.current, navRef.current);
   }, [numSlides]);
-  
-  
+   
 
   const setHoveredIndexDeferred = useThrottledDebounce(setHoveredIndex, 150, 250);
 
@@ -413,7 +412,8 @@ export function CarouselNav({getHovercardContentForIndex, className}: {getHoverc
             onButtonClick={onDotButtonClick}
             selected={index === selectedIndex}
             index={index}
-            getHovercardContentForIndex={getHovercardContentForIndex}
+            // getHovercardContentForIndex={getHovercardContentForIndex
+            hovercard={hovercards[index]}
             setHoverIndex={setHoveredIndexDeferred}
             hoverIndex={hoveredIndex}
             clearHoverIndex={clearHoverIndex}
@@ -422,9 +422,11 @@ export function CarouselNav({getHovercardContentForIndex, className}: {getHoverc
       </div>}
       
       {useSlider && <div className={cn('flex',
-        useSlider ? 'visible' : 'hidden'
-      )} data-role='carousel-slider h-[2.6rem]'>
-        <CarouselSlider  className="pointer-events-auto py-[1.4rem]" defaultValue={[selectedIndex]} onValueChange={onValueChange} getHovercardContentForIndex={getHovercardContentForIndex} numSlides={slideIndices.length} />
+        useSlider ? 'visible' : 'hidden',
+        // "h-[2.6rem]",
+         "px-10"
+      )} data-role='carousel-slider'>
+        <CarouselSlider  className="pointer-events-auto py-[1.4rem]" defaultValue={[selectedIndex]} value={[selectedIndex]} onValueChange={onValueChange} numSlides={slideIndices.length} hovercards={hovercards} />
       </div>}
 
   </div> 

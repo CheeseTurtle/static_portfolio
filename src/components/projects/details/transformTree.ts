@@ -1,5 +1,4 @@
 import React, { isValidElement, cloneElement } from "react";
-import { shallow } from "zustand/shallow";
 
 export function transformTree(
   node: React.ReactNode,
@@ -96,9 +95,17 @@ export function transformTreeWithChildren(
 // export type ConditionalTransformFunc<II extends React.ReactElement=any, OO extends React.ReactElement=any> = <I extends React.ReactElement = II, O extends React.ReactElement = OO>(node: I) => [result: O, recurse: boolean];
 export type ConditionalTransformFunc<I extends React.ReactElement = React.ReactElement, O extends React.ReactElement = React.ReactElement> = (node: I) => [result: O, recurse: boolean];
 
+
+function getKey(x: React.ReactNode) {
+  if(React.isValidElement(x))
+    return x.key;
+  return undefined;
+}
+
 export function transformTreeConditionally<F extends ConditionalTransformFunc<any, any>>(
   node: React.ReactNode,
   transform: F,
+  key?: React.Key | null
 ): React.ReactNode {
   if (node === null || undefined === node || typeof node === "string" || typeof node === "number" || typeof node === "boolean" || typeof node === 'bigint' || typeof node === 'symbol' || typeof node === 'undefined') {
     return node;
@@ -106,14 +113,14 @@ export function transformTreeConditionally<F extends ConditionalTransformFunc<an
   // const transform_ = (node: React.ReactElement) => transform(node, transform);
   
   if(node instanceof Promise) {
-    return node.then(x=>transformTreeConditionally(x, transform))
+    return node.then(x=>transformTreeConditionally(x, transform, getKey(x)))
   }
 
   if (Array.isArray(node)) {
     // console.warn('Transforming array:', node);
-    return (node as React.ReactNode[]).map(child => transformTreeConditionally(child, transform));
+    return (node as React.ReactNode[]).map(child => transformTreeConditionally(child, transform, getKey(child)));
   } else if(Symbol.iterator in node) {
-    return Array.from(node).map(child=>transformTreeConditionally(child, transform))
+    return Array.from(node).map(child=>transformTreeConditionally(child, transform, getKey(child)))
   }
 
 
@@ -136,8 +143,7 @@ export function transformTreeConditionally<F extends ConditionalTransformFunc<an
 
   type T = F extends ConditionalTransformFunc<typeof node, infer T extends React.ReactElement> ? T : never;
 
-  // @ts-expect-error Untyped children
-  const originalChildren = node.props?.children as React.ReactNode;
+  // const originalChildren = node.props?.children as React.ReactNode;
   
   const [result, recurse] = (transform as ConditionalTransformFunc<React.ReactElement, T>)(node);
 
@@ -153,15 +159,14 @@ export function transformTreeConditionally<F extends ConditionalTransformFunc<an
   
   if(oldChildren === null || undefined === oldChildren) return result as React.ReactNode;
 
-  const newChildren = transformTreeConditionally(oldChildren, transform);
+  const newChildren = transformTreeConditionally(oldChildren, transform, getKey(oldChildren));
   // if(oldChildren !== newChildren)
   //   console.log('oldChildren:', oldChildren, newChildren, node);
   
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const props_ = (result && typeof result === 'object' && React.isValidElement(result) && result.props ? result.props : {})
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  return cloneElement(result, {...props_}, newChildren);
+  return cloneElement(result, undefined === key ? props_ : {key, ...props_}, newChildren);
   
   // if(!recurse) {
   //   if(!changed) return node;

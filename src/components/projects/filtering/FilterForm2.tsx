@@ -77,7 +77,7 @@ const FilterForm = (({
     const yearValue = useFilterFormStore(s=>s.yearValue, shallow);
     const [year0, year1] = yearValue;
 
-    // console.log('yearValue:', yearValue)
+    console.log('yearValue:', yearValue)
 
     const categoryNames = rangeInfo.categoryNames;
 
@@ -107,6 +107,7 @@ const FilterForm = (({
     }, [setURLSyncFlag])
     const yearSlider = <YearSlider min={rangeInfo.minYear} max={rangeInfo.maxYear} defaultValue={[rangeInfo.minYear, rangeInfo.maxYear]}
         onValueChange={onValueChange} onValueCommit={onValueCommit}
+        value={yearValue}
         // vocab=""
         // color='green'
         disabled={!showYearSlider}

@@ -28,7 +28,7 @@ function _DetailsTooltip({children, ...props}: DetailsTooltipProps) {
     </Tooltip>
 }
 
-export default function DetailsTooltip({content, children, asChild, key}: {content?: React.ReactNode, children?: React.ReactNode, asChild?: boolean, key?: string}) {
+export default function DetailsTooltip({content, children, asChild, "data-react-key": key}: {content?: React.ReactNode, children?: React.ReactNode, asChild?: boolean, "data-react-key"?: string, key?: string}) {
     return <_DetailsTooltip key={key}>
         <DetailsTooltipTrigger asChild={asChild}>{children}</DetailsTooltipTrigger>
         <DetailsTooltipContent>{content}</DetailsTooltipContent>

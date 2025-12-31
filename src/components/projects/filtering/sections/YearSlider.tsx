@@ -1,14 +1,9 @@
 import { SliderTooltip, type SliderTooltipProps } from "./SliderTooltip";
-// import { Slider } from "@/components/ui/slider";
-
-
 
 import * as React from "react"
 import * as SliderPrimitive from "@radix-ui/react-slider"
 
 import { cn } from "@/lib/utils"
-import { useFilterFormStore } from "../common/stores/filterFormStoreContext";
-import { shallow } from "zustand/shallow";
 
 
 type YearSliderThumbProps = {
@@ -92,10 +87,13 @@ function YearSlider({
   //         : [min, max],
   //   [value, defaultValue, min, max]
   // )
-  const _values = useFilterFormStore(s=>s.yearValue, shallow);
+  // const _values = useFilterFormStore(s=>s.yearValue, shallow);
   // const [_values, set_values] = React.useState<[number, number]>([min, max]);
+  const _values = value!;
 
-  // console.log('_values:', _values)
+  // React.useEffect(()=>{
+  //   console.log('value/_values:', _values, value)
+  // }, [_values, value])
 
   // const filterFormStore = useFilterFormStore()
   // filterFormStore.subscribe(s=>s.yearValue, yearValue => set_values(year_value as [number, number]));

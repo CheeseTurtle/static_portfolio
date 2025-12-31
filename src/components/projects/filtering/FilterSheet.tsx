@@ -69,7 +69,7 @@ export default function FilterSheet({contentRef, triggerRef, resetAll, registere
                 <LucideFilter />
             </Button>
         </SheetTrigger>
-        <SheetContent side='top' className='overflow-y-auto max-h-screen top-0 bottom-0 h-min overscroll-none xs:px-1 sm:px-2 mx:px-4 lg:px-8 2xl:px-12' ref={contentRef}>
+        <SheetContent side='top' className='overflow-y-auto max-h-svh top-0 bottom-0 h-min overscroll-none xs:px-1 sm:px-2 mx:px-4 lg:px-8 2xl:px-12' ref={contentRef}>
             {/* <div className="container overscroll-auto max-h-full"> */}
             <SheetHeader>
                 <SheetTitle>Turtles</SheetTitle>

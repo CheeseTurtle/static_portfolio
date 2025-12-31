@@ -263,7 +263,7 @@ const ProjectGrid = React.memo(forwardRef<ProjectGridHandle, ProjectGridProps>((
         className="grid min-w-full overflow-visible"
         style={{
           gridTemplateRows: `auto minmax(0, ${maxExtraHeight}px)`,
-          minHeight: collapsedGridHeight > 0 ? `max(100vh, ${totalReservedHeight}px)` : '100vh',
+          minHeight: collapsedGridHeight > 0 ? `max(100dvh, ${totalReservedHeight}px)` : '100dvh',
         }}
       >
         <div ref={gridContainerRef} className={cn("w-full max-w-full grid grid-flow-col auto-cols-fr gap-4 py-4 px-2 md:px-4 xl:p-8 pt-4 h-min overflow-y-visible",

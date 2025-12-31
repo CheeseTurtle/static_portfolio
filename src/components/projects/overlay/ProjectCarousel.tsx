@@ -20,6 +20,8 @@ import useAnimateMount from "@/hooks/useAnimateHeight";
 
 import {gsap} from 'gsap';
 import { useDebounceCallback } from "@/hooks/use-debounce-callback";
+// import type { BrowserStore } from "../filtering/common/stores/browserStore";
+// import type { ProjectInfo } from "../types";
 
 type ProjectCarouselProps = Omit<React.ComponentProps<typeof Carousel>, 'externalCarouselRef'> & {
     ref?: EmblaViewportRefType,
@@ -29,7 +31,8 @@ type ProjectCarouselProps = Omit<React.ComponentProps<typeof Carousel>, 'externa
     onCarouselSelect: (emblaApi: EmblaCarouselType | undefined, evtType?: EmblaEventType) => void,
     externalApi?: EmblaCarouselType,
     showToast: ShowToastFn,
-    getHovercardContentForIndex: (index: number) => React.ReactNode,
+    // getHovercardContentForIndex: (index: number) => React.ReactNode,
+    hovercardContents: React.JSX.Element[],
 }
 
 
@@ -171,7 +174,6 @@ const ProjectCarouselItemCard = React.memo(({ ref, isCurrent, divRef, selectable
                 }
             )
         })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [startHeightTransition])
     const animateCardInDebounced = useDebounceCallback(animateCardIn, 750);
     const animateCardOut = React.useCallback(()=>{
@@ -183,7 +185,6 @@ const ProjectCarouselItemCard = React.memo(({ ref, isCurrent, divRef, selectable
         // animateCardInDebounced.cancel()
         setIsAnimating(true);
         skeletonHeight.current = el.clientHeight;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
     const [refCallback,] = useAnimateMount(animateCardIn, animateCardOut)
     const [skeletonRefCallback,] = useAnimateMount(animateCardOut, animateSkeletonOut);
@@ -200,41 +201,53 @@ const ProjectCarouselItemCard = React.memo(({ ref, isCurrent, divRef, selectable
     const isCurrentDeferred = React.useDeferredValue(isCurrent);
 
     const className = React.useMemo(()=>cn(
-        "project-carousel-item-card relative w-full flex pointer-events-auto max-h-[calc(100vh-(--spacing(25)))] select-none",
+        "project-carousel-item-card relative w-full flex pointer-events-auto max-h-[calc(100svh-(--spacing(25)))] select-none",
         !isCurrentDeferred || isAnimatingDeferred ? 'overflow-hidden' : 'overflow-y-auto',
         selectableText ? 'enable-text-selection' : undefined
     ), [isCurrentDeferred, isAnimatingDeferred, selectableText]);
 
     return (
         <Card ref={divRef} className={className} {...props}>
-            <CardHeader className="w-full">
-                <CardTitle>
-                    <div className="text-wrap lg:mr-50 max-lg:pt-6">
-                        <span className="project-carousel-item-text">{slide.title}</span>
-                    </div>
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="project-carousel-item-card-content pointer-events-auto overflow-y-visible">
+            {/* <div className="absolute w-full h-16 bg-yellow-500 top-[calc(-4*var(--spacing))]">
                 <DialogClose data-slot="dialog-close" aria-label="Close project details carousel"
-                    className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 not-disabled:cursor-pointer">
+                    className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sticky top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 not-disabled:cursor-pointer">
                     <XIcon></XIcon>
                 </DialogClose>
-                <ShareButton className="absolute lg:right-12 max-lg:left-4 top-3" disabled={!isCurrent} showToast={showToast} openProjectId={slide.props["data-project-id"]} />    
+            </div> */}
+            {/* <div className="relative w-full h-full"> */}
+                <CardHeader className="w-full">
+                    <CardTitle>
+                        <div className="text-wrap lg:mr-50 max-lg:pt-6">
+                            <span className="project-carousel-item-text">{slide.title}</span>
+                        </div>
+                    </CardTitle>
+                </CardHeader>
+                {/* <div className="absolute w-full h-full pointer-events-none bg-none inset-0">
+                    <div className="relative">
+                    </div>
+                </div> */}
+                <CardContent className="project-carousel-item-card-content pointer-events-auto overflow-y-visible">
+                    <DialogClose data-slot="dialog-close" aria-label="Close project details carousel"
+                        className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 not-disabled:cursor-pointer">
+                        <XIcon></XIcon>
+                    </DialogClose>
+                    <ShareButton className="absolute lg:right-12 max-lg:left-4 top-3" disabled={!isCurrent} showToast={showToast} openProjectId={slide.props["data-project-id"]} />    
 
-                {/* accessible close: give button an explicit aria-label */}
-                {/* <DialogClose aria-label="Close carousel" data-slot="dialog-close" className="sr-only" /> */}
-                {/* above sr-only DialogClose is a compact additional accessible control -- main visual close still has icon */}
-                <ProjectProvider project={project}>
-                    {isCurrent ? 
-                        <React.Suspense fallback={skeleton}>
-                            <div ref={refCallback} className="project-carousel-item-text w-full h-full overflow-visible">
-                                {slide}
-                            </div>
-                        </React.Suspense>
-                        : skeleton
-                    }
-                </ProjectProvider>
-            </CardContent>
+                    {/* accessible close: give button an explicit aria-label */}
+                    {/* <DialogClose aria-label="Close carousel" data-slot="dialog-close" className="sr-only" /> */}
+                    {/* above sr-only DialogClose is a compact additional accessible control -- main visual close still has icon */}
+                    <ProjectProvider project={project}>
+                        {isCurrent ? 
+                            <React.Suspense fallback={skeleton}>
+                                <div ref={refCallback} className="project-carousel-item-text w-full h-full overflow-visible">
+                                    {slide}
+                                </div>
+                            </React.Suspense>
+                            : skeleton
+                        }
+                    </ProjectProvider>
+                </CardContent>
+                {/* </div> */}
         </Card>
     )
 });
@@ -250,7 +263,7 @@ const ProjectCarousel = (({
     prevRef,
     nextRef,
     showToast,
-    getHovercardContentForIndex,
+    hovercardContents,
 }: ProjectCarouselProps) => {
 
     const slideHandles = React.useRef<Record<string, React.RefObject<ProjectCarouselItemHandle>>>({});
@@ -341,10 +354,33 @@ const ProjectCarousel = (({
 
 
     return <>
-        <ProjectCarouselInner ref={emblaRef} externalApi={embla} opts={opts} prevRef={prevRef} nextRef={nextRef} getHovercardContentForIndex={getHovercardContentForIndex} onCarouselSelect={onSelect_} slideElems={slideElems}/>
+        <ProjectCarouselInner ref={emblaRef} externalApi={embla} opts={opts} prevRef={prevRef} nextRef={nextRef} hovercardContents={hovercardContents} onCarouselSelect={onSelect_} slideElems={slideElems}/>
         <SelectionToolbar open={toolbarOpen} onOpenChange={onToolbarOpenChange} setTextSelectionMode={setSelectableText} anySelection={anySelection} fullSelection={fullSelection} buttonGroupProps={undefined} selectAll={selectAll} selectNone={selectNone}/>
     </>
 });
+
+
+
+
+
+// const CarouselHoverCard = React.memo(({index, project, numCards}: {index: number, numCards: number, project: ProjectInfo}) => {
+//     const resolveRef = React.useRef<undefined | ((value: any) => any)>(undefined);
+//     const promiseRef = React.useRef<Promise<any>>(new Promise(resolve=>{resolveRef.current = resolve;}))
+
+//     const component = React.use(promiseRef.current);
+
+//     React.useEffect(()=>{
+//         if(!resolveRef.current)
+//             promiseRef.current = new Promise(resolve=>{resolveRef.current = resolve});
+    
+//         resolveRef.current?.(<)
+
+
+//     }, [browserStore]);
+
+// });
+
+
 
 const ProjectCarouselInner = React.memo(({
     ref: emblaRef,
@@ -353,11 +389,15 @@ const ProjectCarouselInner = React.memo(({
     onCarouselSelect,
     prevRef,
     nextRef,
-    getHovercardContentForIndex,
+    hovercardContents,
     slideElems,
 }: Omit<ProjectCarouselProps, 'slides' | 'showToast'> & {
     slideElems: React.JSX.Element[]
 }) => {
+
+
+
+
     return (
         <Carousel
             ref={emblaRef}
@@ -371,7 +411,7 @@ const ProjectCarouselInner = React.memo(({
             id="embla-container"
             className="overflow-visible pointer-events-none
                 items-center 
-                max-h-[calc(100%-(--spacing(20)))]
+                max-h-[calc(min(100svh,100%)-(--spacing(20)))]
                 will-change-transform transform-[translateZ(0)]"
         >
             {...slideElems}
@@ -379,7 +419,7 @@ const ProjectCarouselInner = React.memo(({
         <CarouselPrevious ref={prevRef} size="lg" className='pointer-events-auto max-md:hidden' />
         <CarouselNext ref={nextRef} size="lg" className='pointer-events-auto max-md:hidden' />
 
-        <CarouselNav className='z-10000 pointer-events-auto' getHovercardContentForIndex={getHovercardContentForIndex}/>
+        <CarouselNav className='z-10000 pointer-events-auto' hovercards={hovercardContents}/>
     </Carousel>)
 });
 

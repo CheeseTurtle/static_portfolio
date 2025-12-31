@@ -9,7 +9,8 @@ type PlaceholderElement = React.ReactElement<{
     'data-media-id': string,
     'data-media-use-fallback'?: 'true' | 'false',
     'data-media-kind'?: string,
-    'data-media-props'?: string
+    'data-media-props'?: string,
+    'data-react-key': string,
 }, 'div'>;
 
 function createReplacement(placeholder: PlaceholderElement): React.ReactElement<ProjectMediaProps, typeof ProjectMedia> {
@@ -17,6 +18,7 @@ function createReplacement(placeholder: PlaceholderElement): React.ReactElement<
     const props = propsStr && JSON.parse(propsStr) as React.ComponentProps<'div'>;
     return <ProjectMedia 
         key={placeholder.key}
+        data-react-key={placeholder.key}
         id={placeholder.props["data-media-id"]} 
         kind={(placeholder.props['data-media-kind'] || undefined) as ProjectMediaType | undefined} 
         useFallback={placeholder.props['data-media-use-fallback'] === 'true'}

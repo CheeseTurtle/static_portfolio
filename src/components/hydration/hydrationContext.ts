@@ -31,7 +31,7 @@ export const loaderMap = import.meta.glob('@/src/components/**/*.{tsx,jsx}', { e
 function resolveLoader<P, T extends React.ComponentType<P> = React.ComponentType<P>>(path: string) {
     if(path.startsWith('@/'))
         path = '/src/' + path.slice(2)
-    console.log('Resolving path:', path, Object.keys(loaderMap));
+    // console.log('Resolving path:', path, Object.keys(loaderMap));
     // try exact key or with extension; adjust to match how you reference paths
     const loader = loaderMap[path] ?? loaderMap[`${path}.tsx`] ?? loaderMap[`${path}.jsx`];
     if (!loader) throw new Error(`Unknown hydration path: ${path}`);
@@ -51,7 +51,7 @@ function getImport<P, T extends React.ComponentType<P> = React.ComponentType<P>>
 function resolveLoaderWithLoaderMap<P, T extends React.ComponentType<P> = React.ComponentType<P>, L extends LoaderMap<P,T> = LoaderMap<P,T>>(loaderMap: L, path: Extract<keyof L, string>) {
     if(path.startsWith('@/'))
         path = '/src/' + path.slice(2) as Extract<keyof L, string>;
-    console.log('Resolving path:', path, Object.keys(loaderMap));
+    // console.log('Resolving path:', path, Object.keys(loaderMap));
     // try exact key or with extension; adjust to match how you reference paths
     const loader = loaderMap[path] ?? loaderMap[`${path}.tsx`] ?? loaderMap[`${path}.jsx`];
     if (!loader) {

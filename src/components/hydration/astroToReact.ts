@@ -43,8 +43,12 @@ function omitOwnerFromChildren(x: any): any {
 
 
 
+type AwaitedSingleReactNode = Awaited<Exclude<React.ReactNode, Iterable<any> | Promise<any>> | string>
+type SingleReactNode = Exclude<React.ReactNode, Iterable<any> | Promise<React.ReactNode>> | string | Promise<AwaitedSingleReactNode>
+
+
 // Convert Astro JSX to React elements
-export function astroJSXToReact(node: AstroJSX): React.ReactElement {
+export function astroJSXToReact(node: AstroJSX, key?: string): React.ReactElement {
     
     const { type, props } = node;
     const { children, ...restProps } = props || {};
@@ -52,35 +56,55 @@ export function astroJSXToReact(node: AstroJSX): React.ReactElement {
     // Recursively convert children
     const convertedChildren = children ? transformAstroChildren(children) : children as React.ReactNode;
     
-    const reactElem = React.createElement(type, restProps, convertedChildren);
+    const reactElem = React.createElement(type, 
+        (undefined === key || null === key ? restProps : {key, ...restProps}),
+        convertedChildren);
 
     console.log('Converting AstroJSX to React:', omitOwner(node), omitOwner(reactElem));
     return reactElem;
 }
 
 
-function ensureReact(x: AstroJSX): React.ReactElement;
-function ensureReact<T extends NoInfer<React.ReactNode>>(x: NoInfer<T>): T;
-function ensureReact(x: any): React.ReactNode;
-function ensureReact(x: any): React.ReactNode {
-    const ret = isAstroJSX(x) ? astroJSXToReact(x) : x as React.ReactNode;
+function isNilValue<T extends NonNullable<any>>(x: null | undefined | T): x is null | undefined {
+    return undefined === x || null === x;
+}
+function isNonNilValue<T extends NonNullable<any>>(x: null | undefined | T): x is T {
+    return !(undefined === x || null === x);
+}
+
+function ensureReact(x: AstroJSX, index?: number): React.ReactElement;
+function ensureReact<T extends NoInfer<SingleReactNode>>(x: NoInfer<T>, index?: number): T;
+// function ensureReact<T extends NoInfer<null | undefined>>(x: NoInfer<T>): T;
+function ensureReact(x: any, index?: number): SingleReactNode;
+function ensureReact(x: any, index?: number): SingleReactNode {
+    if(!x) return x as SingleReactNode;
+    if(x instanceof Promise)
+        return x.then(result=>ensureReact(result, index))
+    const ret = isAstroJSX(x) ? astroJSXToReact(x, undefined === index ? undefined : `.$${index}`) : x as SingleReactNode;
     if(React.isValidElement(ret) && ret.props) {
         // @ts-expect-error Untyped children
         const {children, ...props} = ret.props;
         if(children)
             return React.cloneElement(ret, props, transformAstroChildren(children));
+        // if(children)
+        //     return React.cloneElement(ret, (undefined === index || !isNilValue(ret.key) ? props : {key: `.$${index}`, ...props}), transformAstroChildren(children));
+        // if(undefined !== index && isNilValue(ret.key))
+        //     return React.cloneElement(ret, {key: `.${index}`, ...props});
     }
     return ret;
 }
 
-export function transformAstroChildren(children: any): React.ReactNode {
+
+export function transformAstroChildren(children: any, index?: number): React.ReactNode {
     if (Array.isArray(children)) {
         return children.map(transformAstroChildren);
     } else if(typeof children === 'object' && Symbol.iterator in children) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         return Array.from(children).map(transformAstroChildren)
     }
-    return ensureReact(children);
+
+    // Single child
+    return ensureReact(children, index);
 }
 
 // Transform props that contain Astro JSX
