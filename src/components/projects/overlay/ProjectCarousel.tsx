@@ -2,7 +2,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNav, CarouselNext, Car
 import { type EmblaViewportRefType } from "embla-carousel-react";
 import React, { type PointerEventHandler } from "react";
 import type { EmblaCarouselType, EmblaEventType } from "embla-carousel";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardScrollArea, CardTitle } from "@/components/ui/card";
 import { DialogClose } from "./TransparentDialog";
 import { XIcon } from "lucide-react";
 import { ShareButton } from "../grid/items/sharing/ShareCard";
@@ -214,6 +214,11 @@ const ProjectCarouselItemCard = React.memo(({ ref, isCurrent, divRef, selectable
                     <XIcon></XIcon>
                 </DialogClose>
             </div> */}
+            <DialogClose data-slot="dialog-close" aria-label="Close project details carousel"
+                className="z-2 pointer-events-auto ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 not-disabled:cursor-pointer">
+                <XIcon></XIcon>
+            </DialogClose>
+            <CardScrollArea>
             {/* <div className="relative w-full h-full"> */}
                 <CardHeader className="w-full">
                     <CardTitle>
@@ -227,10 +232,10 @@ const ProjectCarouselItemCard = React.memo(({ ref, isCurrent, divRef, selectable
                     </div>
                 </div> */}
                 <CardContent className="project-carousel-item-card-content pointer-events-auto overflow-y-visible">
-                    <DialogClose data-slot="dialog-close" aria-label="Close project details carousel"
+                    {/* <DialogClose data-slot="dialog-close" aria-label="Close project details carousel"
                         className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 not-disabled:cursor-pointer">
                         <XIcon></XIcon>
-                    </DialogClose>
+                    </DialogClose> */}
                     <ShareButton className="absolute lg:right-12 max-lg:left-4 top-3" disabled={!isCurrent} showToast={showToast} openProjectId={slide.props["data-project-id"]} />    
 
                     {/* accessible close: give button an explicit aria-label */}
@@ -248,6 +253,7 @@ const ProjectCarouselItemCard = React.memo(({ ref, isCurrent, divRef, selectable
                     </ProjectProvider>
                 </CardContent>
                 {/* </div> */}
+            </CardScrollArea>
         </Card>
     )
 });

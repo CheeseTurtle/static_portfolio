@@ -2,17 +2,27 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+function Card({ className, children, fixed, ...props }: React.ComponentProps<"div"> & {fixed?: boolean}) {
   return (
     <div
       data-slot="card"
       className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
+        "bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden flex flex-col",
         className
       )}
       {...props}
-    />
+    >
+      {/* {fixed ? children : <div className="absolute top-4 right-4 z-25">{children}</div>} */}
+      {fixed ? children : <CardScrollArea>{children}</CardScrollArea>}
+    </div>
   )
+}
+
+function CardScrollArea({className, ...props}: React.ComponentProps<'div'>) {
+  return <div className={cn(
+    "w-full h-full overflow-scroll flex flex-col gap-6 py-6 relative",
+    className
+  )} {...props}/>;
 }
 
 function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
@@ -89,4 +99,5 @@ export {
   CardAction,
   CardDescription,
   CardContent,
+  CardScrollArea
 }

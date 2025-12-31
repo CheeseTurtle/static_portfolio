@@ -424,7 +424,11 @@ export function CarouselNav({hovercards, className}: {hovercards: React.JSX.Elem
       {useSlider && <div className={cn('flex',
         useSlider ? 'visible' : 'hidden',
         // "h-[2.6rem]",
-         "px-10"
+        "px-[calc(min(10svw,2*var(--spacing)))]",
+        "sm:px-4",
+        "md:px-6",
+        "xl:px-8",
+        "2xl:px-10",
       )} data-role='carousel-slider'>
         <CarouselSlider  className="pointer-events-auto py-[1.4rem]" defaultValue={[selectedIndex]} value={[selectedIndex]} onValueChange={onValueChange} numSlides={slideIndices.length} hovercards={hovercards} />
       </div>}
