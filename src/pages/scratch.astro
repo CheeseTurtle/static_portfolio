@@ -15,12 +15,14 @@ import "../styles/carousel.css";
 import "../styles/details.css";
 
 
+import { PROJECT_BROWSER_TITLE } from "@/constants";
+
 export const ssr = false;
 
 ---
 
 
-<Layout pageTitle="Turtle" description="Turtles turtles" storyPage="true" overflowHidden={true}>
+<Layout pageTitle={PROJECT_BROWSER_TITLE} description="Stanley Soo's portfolio" storyPage="true" overflowHidden={true}>
   <ProjectBrowser/>
 <!-- 
   {

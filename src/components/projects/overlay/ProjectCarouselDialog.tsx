@@ -13,6 +13,7 @@ import useThrottledDebounce from "@/hooks/useThrottledDebounce";
 import { CustomSpinner } from "@/components/ui/CustomSpinner";
 import { LucideTurtle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PROJECT_BROWSER_TITLE } from "@/constants";
 // import { useStore } from "zustand";
 // import useSyncedRef from "@/hooks/useSyncedRef";
 // import ProjectCarousel from "./ProjectCarousel";
@@ -56,6 +57,22 @@ const CarouselFallback = React.memo(({className, ...props}: React.ComponentProps
     </div>
 });
 
+
+
+type JSXElement = React.JSX.Element & {props?: {children?: React.ReactNode}};
+function extractTitle(elem: React.ReactNode): string | undefined {
+    if(elem === undefined || null === elem) return undefined;
+    if(typeof elem === 'string') return elem;
+    if(typeof elem !== 'object') return elem.toString();
+    if(elem instanceof Promise) return undefined; // TODO: Warn?
+    if(React.isValidElement(elem)) {
+        const children = (elem as React.ReactElement & {props?: {children?: React.ReactNode}}).props?.children;
+        return extractTitle(children);
+    } else {
+        const strs = Array.from(elem).map(x=>(extractTitle(x) ?? ''));
+        return strs.join('');
+    }
+}
 
 export type HovercardContentRef = React.RefObject<Promise<React.JSX.Element>[]>;
 
@@ -126,16 +143,43 @@ export default function ProjectCarouselDialog({ contentElements, showToast, scro
     const debouncedScrollTo_cancel = useEffectEvent(() => debouncedScrollTo.cancel());
 
 
+    const resetWindowTitle = React.useEffectEvent(()=>{
+        document.title = PROJECT_BROWSER_TITLE;
+    });
+
+    const activeProjectTitle = React.useMemo(()=>{
+        if(undefined === activeProjectIndex || null === activeProjectIndex)
+            return undefined;
+        const project = visibleProjects[activeProjectIndex];
+        if(!project) return undefined;
+        const title = project.title;
+        if(typeof title === 'string') return title;
+        return extractTitle(title);
+    }, [visibleProjects, activeProjectIndex]);
+
+    useEffect(()=>{
+        if(open && activeProjectTitle) {
+            document.title = `${activeProjectTitle} | ${PROJECT_BROWSER_TITLE}`
+        } else {
+            resetWindowTitle()
+            return;
+        }
+        return ()=>{
+            resetWindowTitle();
+        }
+    }, [open, activeProjectTitle]);
+
+
     // Handle carousel open/close
     useEffect(() => {
-        console.log('[Carousel] open changed:', open, 'activeIndex:', activeProjectIndexRef.current, 'embla:', !!embla);
+        // console.log('[Carousel] open changed:', open, 'activeIndex:', activeProjectIndexRef.current, 'embla:', !!embla);
         if (!embla) return;
         if(!open) {
             if(wasOpen.current) debouncedScrollTo_cancel(); // or flush?
         } else {
             const index = (activeProjectIndexRef.current)
             if(index !== null) {
-                console.log('[Carousel] Opening - reInit and scroll to:', index, activeProjectIndexRef.current, carouselProjectIndexRef.current)
+                // console.log('[Carousel] Opening - reInit and scroll to:', index, activeProjectIndexRef.current, carouselProjectIndexRef.current)
                 if(!wasOpen.current) {
                     // console.log('Starting reInit')
                     embla.reInit({ startIndex: index });
