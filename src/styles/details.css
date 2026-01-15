@@ -4,17 +4,20 @@
 
 .project-carousel-item {
     & h1 {
-        @apply scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance;
+        @apply scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance mt-8;
     }
     & h2 {
-        @apply scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight;
-        &:first { @apply mt-0; }
+        @apply scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight mt-8;
     }
     & h3 {
-        @apply scroll-m-20 text-2xl font-semibold tracking-tight;
+        @apply scroll-m-20 text-2xl font-semibold tracking-tight mt-5;
     }
     & h4 {
-        @apply scroll-m-20 text-xl font-semibold tracking-tight;
+        @apply scroll-m-20 text-xl font-semibold tracking-tight mt-4;
+    }
+    & h1, & h2, & h3, & h4, & h5, & h6 {
+        &:first { @apply mt-0; }
+
     }
     /* & h5 {
         
@@ -93,5 +96,47 @@
     }
 
     
-
+    & pre:has(>code:only-child):not([data-language]) {
+        overflow-x: auto;
+    }
 }
+
+
+
+.TooltipContent {
+    width: max-content;
+    max-width: calc(min(90svw, 150*var(--spacing)));
+}
+
+.TooltipContent > div {
+    /* width: max-content; */
+    width: 100%;
+    max-width: 100%;
+}
+
+.TooltipContent p {
+    width: 100%;
+    /* width: max-content; */
+    /* max-width: 100%; */
+    margin: 0;
+}
+
+/*
+.TooltipContent, .TooltipContent * {
+    white-space: collapse;
+    text-wrap-mode: wrap;
+    text-wrap-style: pretty;
+}
+*/
+
+/* .TooltipContent>*{
+    outline: 1px solid blue;
+}
+
+.TooltipContent>*>* {
+    outline: 1px solid green;
+}
+
+.TooltipContent>*>*>* {
+    outline: 1px solid magenta;
+} */

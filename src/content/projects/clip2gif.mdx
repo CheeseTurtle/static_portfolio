@@ -23,6 +23,24 @@ images: [
 ]
 ---
 
+Clip2GIF is a desktop application that makes it fast and intuitive to turn long videos into short, high-quality GIFs. 
+The app is designed for people who want precise control without the complexity of a full video editor: users can quickly scrub through a video, 
+narrow in on an exact moment, crop it, and export a GIF with minimal waiting.
+
+To keep the interface responsive even with large video files, the app processes only the parts of the video the user actually needs, 
+instead of decoding everything up front (on-demand frame decoding via FFmpeg / libav with NumPy-backed proxy and memory-mapped caches). 
+It provides both fine and coarse playback controls, visual timelines with thumbnails, and adjustable sliders for selecting the exact start and end of the clip
+(custom preview UI with synchronized playback, timeline, and export-range controls). 
+Behind the scenes, preview images are managed dynamically so playback feels smooth while avoiding unnecessary work (threaded and multi-process cache coordination with cancellation-aware tasks).
+
+The export system is optimized specifically for GIFs, which typically use very low frame rates 
+(adaptive decoding strategy based on target output FPS), and includes flexible filename formatting that automatically inserts 
+useful details like frame range, resolution, and timestamps (custom string interpolation for derived metadata fields). 
+The project emphasizes performance, reliability, and usability, with extensive automated testing to ensure consistent 
+behavior under heavy interaction (pytest, coverage analysis, and mock-based testing).
+
+
+{/* 
 #let proj-clip2gif = define.def-subsection(
   "Clip2GIF: Video Editor / GIF Creator Desktop Application",
   [2025],
@@ -53,4 +71,4 @@ images: [
       )
     )
   )
-)
+) */}

@@ -23,4 +23,58 @@ images: [
   }
 ]
 ---
-TODO
+
+This project is a utility module for analyzing Mandarin Chinese characters and their Pinyin (romanization). 
+Built on top of the `hanzipy` ecosystem, it brings together dictionary lookup, frequency analysis, phonetic regularity, and character decomposition into a single interface.
+
+At its core, the file provides tools for querying Chinese-English dictionaries, retrieving pinyin pronunciations, and inspecting how characters behave in actual usage. 
+Characters can be ranked by frequency, examined for phonetic regularity, and broken down into radicals or graphical components, 
+making the module useful for linguistic research, language-learning tools, and corpus analysis alike.
+
+The pinyin side of the toolkit treats pronunciation as a many-to-many relationship rather than a lookup table. It supports ranking pinyin syllables 
+by how many meanings or characters they cover, mapping pronunciations back to characters, and aggregating semantic information across homophones. 
+Pre-computed data structures allow these queries to be fast enough for interactive use.
+
+The module also includes filtering utilities to clean dictionary data by removing archaic, dialectal, or variant definitions, 
+helping downstream consumers focus on modern, high-signal entries.
+
+Overall, this file serves as a practical exploration of Mandarin's written and phonetic structure: 
+part dictionary interface, part statistical analysis tool, and part character anatomy lab. 
+It focuses on simplified characters with meaningful usage frequency, trading exhaustive coverage for clarity and relevance.
+
+{/* 
+
+This Python file (zhfind.py) provides utilities for analyzing Chinese (Mandarin) characters and pinyin. Here's a summary of its main exposed functions:
+Character Lookup & Information
+
+dict_lookup(cn_word) - Looks up dictionary definition for a Chinese word
+dict_search(characters, only=True) - Searches dictionary for characters
+wr_lookup(cn_word) - Retrieves translation from WordReference (Chinese to English)
+get_pinyin(character) - Gets pinyin pronunciation(s) for a character
+get_freq(character, return_none=True) - Gets character frequency data (rank, count, percentage)
+get_pct(character) - Gets frequency percentage as float
+get_reg(character) - Determines phonetic regularity (0-4 scale)
+get_examples(character) - Gets usage examples
+
+Character Decomposition
+
+decomp(character, decomp_type) - Decomposes character (types: 1=radical, 2=graphical, 3=once)
+
+Pinyin Analysis
+
+chars_for_pinyin(py) - Returns set of characters and count for a given pinyin
+meanings_for_pinyin(py) - Returns set of meanings and count for a given pinyin
+rank_pinyin(pydict, metric='meanings') - Ranks pinyin by meanings or character count
+
+Filtering
+
+filter_definition(d) - Filters out variant/archaic/dialect definitions
+filter_definitions(entries, key='definition') - Filters multiple definition entries
+
+Pre-computed Data Structures
+
+PINYIN, PINYIN1 - Pinyin to character/definition mappings (with/without tones)
+MPYRANKED, CPYRANKED - Ranked lists by meanings and characters
+COMPONENTS, RADICALS, CHARACTERS - Character component databases
+
+The file uses the hanzipy library as its core engine and focuses on simplified Chinese characters with frequency >= 20%. */}

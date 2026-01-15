@@ -1,5 +1,6 @@
 .CollapsibleContent {
-	overflow: hidden;
+	overflow-y: hidden;
+	/* overflow: hidden; */
 	/* height: 0; */
 }
 .CollapsibleContent[data-state="open"] {

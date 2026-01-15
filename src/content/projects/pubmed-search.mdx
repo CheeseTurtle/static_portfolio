@@ -23,8 +23,132 @@ images: [
 ]
 ---
 
+This project is a small PowerShell-based toolkit for programmatic access to the NCBI E-utilities API, with an emphasis on PubMed literature search and analysis. It provides a clean command-line interface for running standard NCBI queries—searching for publications, fetching full records, retrieving summaries, and inspecting database metadata—without relying on external tools or web interfaces.
 
-#let proj-pubmed-search = define.def-subsection(
+Beyond basic querying, the scripts support structured MeSH-based searches, including major and minor topic qualifiers, combinatorial queries, and time-sliced result counts. This makes it well suited for bibliometric analysis, trend tracking, and systematic literature reviews. A companion configuration file defines reusable domain-specific queries (for example, proteins, diseases, and computational biology topics), while helper functions handle rate limiting, result caching, and CSV export for downstream analysis.
+
+Core Components
+1. Main Script (ncbi.ps1)
+The primary interface for NCBI E-utilities API access.
+Key Functions:
+
+esearch - Search NCBI databases
+
+```powershell 
+esearch -dbase "pubmed" -term "prion proteins" -retmax 100 -dateRange "2020-2023"
+```
+
+efetch - Retrieve full records
+
+```powershell  
+efetch -dbase "pubmed" -uids @("12345678", "87654321")
+```
+
+einfo - Get database information
+
+```powershell
+einfo -dbname "pubmed"
+```
+
+esummary - Get document summaries
+
+```powershell
+esummary -dbase "pubmed" -uids "12345678"
+```
+
+2. Configuration (ncbi.psd1)
+Stores predefined queries and qualifiers for MeSH terms.
+Pre-configured queries include:
+
+Protein-related searches (IDPs, chaperones, proteome)
+Disease searches (prion diseases, amyloidosis, Parkinson's)
+Computational modeling searches
+Drug design queries
+
+3. Advanced Query Functions
+CountMatches - Count articles matching a query over time:
+```powershell
+CountMatches -term "prion proteins[majr]" -dateRange "1995-2024" -yearIvl 5
+```
+CountCombos - Complex combinatorial queries with MeSH terms and qualifiers:
+```powershell
+CountCombos -maj @("Prions", "Prion Proteins") `
+            -min @("pathology", "metabolism") `
+            -dateRange "2000-2023" `
+            -AsVector -yearIvl 1
+```
+FetchQualsForHeading - Get valid qualifiers for a MeSH heading:
+```powershell
+FetchQualsForHeading -heading "Prions"
+```
+
+Common Workflows
+Simple Search
+```powershell
+# Load the script
+. .\ncbi.ps1
+
+# Search for article
+$results = esearch -dbase "pubmed" -term "amyloid[majr]" -retmax 50
+$results.idlist  # Get article IDs
+```
+
+Search with Date Filtering
+```powershell
+$results = esearch -dbase "pubmed" `
+                   -term "protein folding" `
+                   -dateRange "2020-2023" `
+                   -retmax 100
+```
+
+Trend Analysis
+
+```powershell
+# Count articles by year
+$counts = CountMatches -term "machine learning[majr] AND proteins[mh]" `
+                       -dateRange "2015-2024" `
+                       -yearIvl 1
+```
+
+Complex MeSH Queries
+```powershell
+# Major topics with specific qualifiers
+$data = CountCombos -maj @{"Prions"="Prions"} `
+                    -quals @{"*"=@("GE","ME","CH")} `
+                    -dateRange "1995-2024" `
+                    -FetchQuals `
+                    -AsVector
+```
+
+Export Results to CSV
+```powershell
+# Use pre-configured queries
+$results = Export-Queries $global:NCBI_DATA.QUERIES2 `
+                          -DateRange "2000-2023" `
+                          -YearIvl 1 `
+                          -RootDir "./output"
+
+```
+Key Features
+
+MeSH Term Support: Use [majr] for major topics, [minr] for minor topics, [mh] for any mesh heading
+Qualifier Management: Built-in abbreviation system for MeSH qualifiers (GE=Genetics, ME=Metabolism, etc.)
+Date Filtering: Support for year ranges and intervals
+Result Caching: PickleFromPubmed saves large result sets
+CSV Export: Automated data export with ExportDataTo-Csv
+
+Tips
+
+Always load configuration first: $global:NCBI_DATA = Import-PowerShellDataFile -Path "ncbi.psd1"
+Use -AsVector for time-series data
+The API key is embedded in $SUFFIX variable
+Rate limiting is handled automatically (max 10 retries, 30 sec intervals)
+Use $global:SHOW_URL = $true for debugging queries
+
+This toolkit is particularly powerful for bibliometric analysis, trend tracking, and systematic literature reviews in biomedical research.
+
+
+{/* #let proj-pubmed-search = define.def-subsection(
   "PubMed Search Utility",
   [2024],
   summary: [==PowerShell== script for fine-tuned PubMed searches],
@@ -33,4 +157,4 @@ images: [
     [Defined a simple boolean search syntax with grouping and distributive operators],
     [Implemented filtering and grouping by year(s), publications, authors, abstract/title, and more]
   )),)
-)
+) */}

@@ -2,28 +2,56 @@
 title: Google Scholar Citation Tree Counter
 date: 2024
 description: Python script that recursively tallies a publication's citations for multiple generations
-summary: n/a
+summary: Google Scholar Citation Network & Caching Utility (Python)
 category: utility
 tags:
     languages: ["Python"]
     skills: ["abc"]
     topics: ["def"]
-images: [
-  ['testImage', 'A test image.'],
-  ['testImage', 'A test image.'],
-  ['testImage', 'A test image.'],
-  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
-  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
-  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
-  {
-    type: content,
-    path: testFigure,
-    captionPath: testCaption,  
-  }
-]
+# images: [
+#   ['testImage', 'A test image.'],
+#   ['testImage', 'A test image.'],
+#   ['testImage', 'A test image.'],
+#   ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+#   ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+#   ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+#   {
+#     type: content,
+#     path: testFigure,
+#     captionPath: testCaption,  
+#   }
+# ]
 ---
 
+This utility library turns Google Scholar into a structured, queryable citation graph rather than a temperamental web page. It retrieves publications, traces who cites whom across multiple generations, and persists the results in a carefully layered cache—so large-scale citation analysis becomes reproducible, inspectable, and fast instead of brittle and repetitive.
 
+At its core, the library treats academic literature as a graph: a paper is a node, citations are edges, and each traversal step can be constrained, cached, validated, and resumed. It supports both “needle” queries (precise single-paper lookups) and “nets” (iterative searches filtered by author, year, or venue), automatically filling in missing metadata when higher-fidelity records become available.
+
+A major design goal is resilience. Google Scholar is rate-limited, proxy-hostile, and occasionally fickle. This library compensates with automatic proxy rotation, retry logic, adaptive timeouts, and graceful recovery from hard failures—while keeping a persistent on-disk cache to minimize redundant requests.
+
+The result is a tool aimed at researchers, bibliometric analysts, and technically inclined scholars who want citation networks at scale without turning every experiment into a multi-day scrape.
+
+### Highlights
+
+**Multi-level citation graph traversal**
+Builds citation networks to arbitrary depth (papers → citing papers → citing those papers), tracking per-level and cumulative citation counts (internally modeled as structured TypedDict records).
+
+**Flexible publication querying**
+Supports exact-title lookups, expression-based title searches, and iterator-driven result streams (wrapping scholarly.search_pubs and search_single_pub with retry-aware call guards).
+
+**Smart, layered caching system**
+Query results, filled publication metadata, per-paper “cited by” lists, and full citation graphs are cached independently using deterministic, URL-safe filenames (base64/base85 encoding + metadata hashing). Cache behavior is controlled via a bitmask flag system rather than ad hoc booleans.
+
+**Robust deduplication & validation**
+Publications are matched and merged using multiple identifiers (bib_id, cites_id, author_pub_id, URLs), with conservative overwrite rules to prevent higher-quality data from being replaced by partial results.
+
+**Failure-tolerant scraping**
+Automatically rotates free proxies, retries failed calls up to configurable limits, and recovers transparently from MaxTriesExceededException without corrupting cache state.
+
+**Traceable execution**
+Dual logging to console and file provides detailed insight into query paths, cache hits, and error recovery—useful both for debugging and for auditability of results.
+
+{/* 
 #let proj-pubmed-scraper = define.def-subsection(
   "Google Scholar Citation Tree Counter",
   [2024],
@@ -35,4 +63,4 @@ images: [
       [Devised configurable deduplication mechanism]
     )),
   )
-)
+) */}

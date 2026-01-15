@@ -8,21 +8,21 @@ tags:
     languages: ["Typst"]
     skills: ["abc"]
     topics: ["def"]
-images: [
-  ['testImage', 'A test image.'],
-  ['testImage', 'A test image.'],
-  ['testImage', 'A test image.'],
-  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
-  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
-  ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
-  {
-    type: content,
-    path: testFigure,
-    captionPath: testCaption,  
-  }
-]
+# images: [
+#   ['testImage', 'A test image.'],
+#   ['testImage', 'A test image.'],
+#   ['testImage', 'A test image.'],
+#   ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+#   ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+#   ['photo-1506744038136-46273834b3fb (1)', 'Another image.'],
+#   {
+#     type: content,
+#     path: testFigure,
+#     captionPath: testCaption,  
+#   }
+# ]
 ---
-
+{/* 
 
 #let proj-typst-resume = define.def-subsection(
   "Modular Resume Template",
@@ -49,4 +49,143 @@ images: [
   //     )
   //   )
   // )
+) */}
+
+```typst
+#import "minimal/minimal-modular.typ": minimal-modular
+#import "/editions/creative.typ" as edition
+
+#minimal-modular(edition)
+```
+
+```typst
+#import "../minimal/builder/define.typ"
+#import "/content.typ": *
+
+#let project-section = define.def-section(
+  "Projects", [],
+  subsections: (
+    // projects.proj-phonphon,
+    projects.proj-dodgy-car,
+    projects.proj-senior-design,
+    projects.proj-biomed,
+    projects.proj-nlp,
+    // projects.proj-pointerjump,
+    projects.proj-pubmed-search
+    // projects.proj-pointerjump,
+    // projects.proj-hungarians
+    // define.def-subsection-columns(
+    // )
+  )  
 )
+
+#let education-section = define.def-section("Education",
+  subsections: (
+    education.edu-utsa,
+    // education.edu-baylor
+  )
+)
+
+#let content = (
+  summary: [],
+  tagline: none,
+  sections: (
+    project-section,
+    education-section
+  )  
+)
+```
+
+
+
+
+```typst
+#let proj-nlp = (
+  title: "Neural network for analysis of multidimensional spectral time series",
+  year: 2024,
+  summary: "Natural Language Processing research project and presentation on speech signal analysis",
+  columns: (
+    (items: (
+      [Investigated real-time analysis of time series, esp. trajectory prediction and motif detection],
+      [Studied ==LSTM/GRU (recurrent network)== variants],
+      [Consulted relevant computing/linguistics lit.]
+    )),
+    (items: (
+      [Wrote custom neural architecture in ==PyTorch==],
+      [Integrated other ==PyPI packages== such as SpeechBrain to extract speech features],
+      [Used ==HuggingFace== API to stream datasets],
+    ))
+  )
+)
+```
+
+```typst
+#let proj-phonphon = define.def-subsection(
+  [Educational software for real-time visualization of digital audio concepts],
+  [2019, 2022],
+  summary: [Solo project for Phonetics & Phonology (2019); revamped for Math in Signals and Systems (2022)],
+  extra: columns(2,)[
+    - DSP concepts
+    - Real-time filtering and synthesis
+
+    #colbreak()
+
+    - Spectrogram, oscilloscope, sonogram
+    - Interactive, microphone / keyboard, click-and-drag filter design
+    
+  ]
+)
+```
+
+
+```typst
+#let proj-phonphon = define.def-subsection(
+  [Educational software for real-time visualization of digital audio concepts],
+  [2019, 2022],
+  summary: [Solo project for Phonetics & Phonology (2019); revamped for Math in Signals and Systems (2022)],
+  extra: columns(2,)[
+    - DSP concepts
+    - Real-time filtering and synthesis
+
+    #colbreak()
+
+    - Spectrogram, oscilloscope, sonogram
+    - Interactive, microphone / keyboard, click-and-drag filter design
+    
+  ]
+)
+```
+
+```typst
+#let edu-baylor = def-education-subsection(
+    "Baylor University",
+    2020,
+    "University Scholars",
+    concentrations: (
+      "Music Composition",
+      "Linguistics",
+      "Philosophy"        
+    ),
+    courses: (
+      "Music Theory IV",
+      "Counterpoint II",
+      "Orchestration",
+      "Undergrad. Thesis I/II",
+      "Electronic Music Studio II",
+      "Composition",
+      "Adv. Logic",
+      "Phonetics & Phonology",
+      "Syntax",
+      "Language and Culture",
+      "Ancient Greek (3 sem.)",
+      "Italian III"
+    )
+  )
+```
+
+```typst
+#let summary-creative = [
+  - One-of-a-kind inventor with the analytical mind of an ==engineer== and the heartfelt musicality of a ==composer==
+  - Strong ==writer== with a knack for the effective use of space and motion to convey information ==visually==
+]
+```

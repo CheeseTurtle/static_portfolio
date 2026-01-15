@@ -25,14 +25,33 @@ images:
     caption: Test video
 ---
 
-<div>
+This project explored how medical implants can be reliably identified using X-ray imaging, even when images are noisy, distorted, or partially occluded. 
+Working as part of a six-person capstone team for NVision Biomedical, I focused on the design of a structural encoding and decoding system that embeds 
+machine-readable identification information directly into the physical geometry of an implant.
+
+I researched existing error-correcting codes and then designed a novel code specifically adapted to X-ray imaging, where perspective distortion, material attenuation, 
+and manufacturing constraints rule out traditional printed markers. The encoding was shaped to respect the implant’s spatial and morphological limits, 
+ensuring that the code remained legible without compromising structural or clinical requirements.
+
+On the decoding side, I designed a fault-tolerant weighted decoding algorithm that prioritizes the most reliable features in a noisy image 
+(implemented using a binary heap for efficient candidate selection). The decoder was written in C++ for performance, compiled as a MATLAB .mex module, 
+and integrated into a MATLAB GUI application used by the team for testing and demonstration.
+
+I also contributed to the image-processing pipeline design, directed teammates’ MATLAB implementations, and maintained the project’s GitHub repository. 
+To validate the encoding visually, I even built a lightweight pixel-art visualization tool in Excel VBA, allowing rapid iteration on code shapes and resolutions 
+before full MATLAB integration.
+
+The result was a complete end-to-end system—from physical encoding design to image-based decoding—demonstrating how algorithm design, low-level performance work, 
+and practical tooling can intersect in a real biomedical engineering context.
+
+{/* <div>
 Hello.
 </div>
 
 import ProjectMedia from '@/components/projects/details/ProjectMedia';
 
-<ProjectMedia id="testvideo"/>
-
+<ProjectMedia id="testvideo"/> */}
+{/* 
 #let proj-senior-design = (
   title: "Structural encoding/decoding system for biomedical implants",
   year: [2022 #sym.dash.en 2023],
@@ -129,4 +148,4 @@ import ProjectMedia from '@/components/projects/details/ProjectMedia';
       )
     )
   )
-)
+) */}

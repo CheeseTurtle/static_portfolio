@@ -25,7 +25,7 @@ tags:
   # {path: 'testImage', caption: 'turtle'}
 ---
 
-#let proj-biomed = (
+{/* #let proj-biomed = (
   title: "Real-time data collection and analysis application",
   year: [2022-2024],
   summary: [Created software in MATLAB as volunteer developer for UTSA Biomedical Engineering lab],
@@ -41,7 +41,7 @@ tags:
       [Provided image & CSV export via clipboard, menu]
     ))
   )
-)
+) */}
 
 {/* #let proj-biomed-short = (
   title: "Real-time data collection and analysis application",
@@ -61,8 +61,19 @@ tags:
   )
 ) */}
 
-**SBSense** is a **real-time data collection and analysis application** developed for the **UTSA Biomedical Engineering Lab**, designed to streamline experimental workflows and enhance data processing efficiency. The tool enables researchers to **capture, visualize, and analyze high-resolution data** from biomedical experiments in real time, reducing manual effort and improving accuracy. Built in **MATLAB**, it integrates **multithreaded execution** and **event-handling pipelines** to ensure smooth performance during data-intensive tasks. Key features include **weighted object detection** (leveraging curve fitting for validation), **drag-and-drop visual cropping**, and **real-time image and plot display**, allowing users to configure inputs dynamically and export results in **image or CSV formats**. The system’s **custom queue pipeline** optimizes resource management, ensuring responsiveness even with large datasets.
+
+
+This project is a real-time biomedical data collection and analysis system built in MATLAB for a university research lab, designed to turn raw experimental signals into immediately usable insight. At its core, the application continuously ingests live data, identifies meaningful structures in that data, and presents the results visually as they happen—allowing researchers to adjust experiments on the fly instead of waiting for post-processing.
+
+Under the hood, I designed a custom object-detection pipeline that evaluates candidate features using weighted scoring and mathematical curve fitting, allowing noisy or ambiguous data to be validated statistically rather than heuristically (weighted detection, regression-based validation). To keep the system responsive under live experimental conditions, I implemented a bespoke queue-driven execution model that supports concurrent processing and event-based coordination across multiple threads (producer–consumer queues, asynchronous event handling, MATLAB parallel execution).
+
+The user interface was built to make advanced analysis approachable. Researchers can configure inputs through an interactive graphical interface, visually crop regions of interest via drag-and-drop controls, and monitor incoming images and plots in real time as data is acquired (GUI programming, interactive ROI selection, real-time rendering). The application also supports seamless export of processed images and numerical results through both menu actions and clipboard integration, enabling rapid transfer into reports, spreadsheets, or publications (CSV generation, image serialization, system clipboard access).
+
+Overall, the project balances mathematical rigor, performance-oriented architecture, and usability—bridging the gap between experimental hardware and human interpretation in a live research setting.
+
+
+{/* **SBSense** is a **real-time data collection and analysis application** developed for the **UTSA Biomedical Engineering Lab**, designed to streamline experimental workflows and enhance data processing efficiency. The tool enables researchers to **capture, visualize, and analyze high-resolution data** from biomedical experiments in real time, reducing manual effort and improving accuracy. Built in **MATLAB**, it integrates **multithreaded execution** and **event-handling pipelines** to ensure smooth performance during data-intensive tasks. Key features include **weighted object detection** (leveraging curve fitting for validation), **drag-and-drop visual cropping**, and **real-time image and plot display**, allowing users to configure inputs dynamically and export results in **image or CSV formats**. The system’s **custom queue pipeline** optimizes resource management, ensuring responsiveness even with large datasets.
 
 The project demonstrates expertise in **signal processing, GUI development, and algorithm optimization**, making it particularly valuable for **biomedical research, diagnostic imaging, and experimental automation**. By providing **intuitive visualization and export capabilities**, SBSense bridges the gap between raw data acquisition and actionable insights, accelerating research in **neurodegenerative studies, implant testing, and physiological monitoring**. Its modular design and **user-friendly interface** reflect a focus on **practical usability** while maintaining robust technical performance.
 
-This tool highlights skills in **software engineering, digital signal processing, and real-time systems**—critical for roles in **biomedical technology, research instrumentation, and data-driven healthcare solutions**.
+This tool highlights skills in **software engineering, digital signal processing, and real-time systems**—critical for roles in **biomedical technology, research instrumentation, and data-driven healthcare solutions**. */}

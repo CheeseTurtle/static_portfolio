@@ -26,12 +26,8 @@ tags:
 
 import Details from "@/components/projects/details/interp/HoverDetails.tsx";
 
-
-
 This portfolio website was originally envisioned as a single scrollable page of content recounting the past decade or so of my life through the projects I've worked on in that timeframe.
 To that end, I learned the Preact web framework and pored over the GSAP animation library documentation to create a dynamic, scroll-synced sidebar of multimedia items to go along with the main column.
-
-
 
 export const realizedContents = <div>Here is a div</div>
 
@@ -40,46 +36,129 @@ I decided I needed to develop an interface that could present a tailored subset 
 This would allow the page's visitors to get an instant eyeful of everything I had to offer while minimizing the odds that a visitor might miss something aligned with their interests simply because it was hidden or further down the page.
 
 
-# Astro + MDX magic
+## Astro + MDX magic
+
+Each project included in the project browser is defined with a single MDX (JSX-enabled Markdown) file. At the top of the file, a YAML header (see below) specifies the project's
+display title, its date (year and optional month), a description and summary, and other fields used for filtering.
+
+Here is an example (it's the frontmatter for this project's file):
 
 ```mdx
-# Mdx
-
-hello there
-there
-
-
-hello
-there
+---
+title: Portfolio website
+date: 2025
+description: n/a
+summary: n/a
+category: webdev
+tags:
+    languages: ["Typescript", "HTML", "CSS", "Astro"]
+    skills: ["abc"]
+    topics: ["def"]
+---
 ```
 
+The project definition MDX files are stored in a designated folder so that they can be <Details content={<div>
+    <p>I use a combination of <code>import.meta.glob</code>, custom Astro content collections, server-side rendering to string, and client-side reconstruction of file contents and frontmatter fields.</p>
+    <p>I also defined a custom wrapper component that provides partial hydration for any component, allowing me to use interactive components like this one in my MDX.</p></div>
+}>easily found and collected</Details> for content generation. 
+They are used to generate the project cards in the grid, populate the project details carousel, and provide metadata for filtering.
 
-**bold** _italic_ `code`
+I can also specify audiovisual media items (or even arbitrary HTML content, including from MDX) and captions (which can also be HTML content), which are shown in the expanded project card
+and are used to populate the lightbox (which I also modded to add an animated, slide-synced caption overlay).
+
+To illustrate, is another excerpt from this project's MDX file:
+
+`````mdx
+import Details from "@/components/projects/details/interp/HoverDetails.tsx";
+
+This portfolio website was originally envisioned as a single scrollable page of content recounting the past decade or so of my life through the projects I've worked on in that timeframe.
+To that end, I learned the Preact web framework and pored over the GSAP animation library documentation to create a dynamic, scroll-synced sidebar of multimedia items to go along with the main column.
+
+export const realizedContents = <div>Here is a div</div>
+
+However, once I began writing real content to replace the placeholder text, <Details content={realizedContents}>I realized</Details> that due to the large number of projects and wide variety of subject areas, this was not an effective way to showcase my passions and skill set to potential employers.
+I decided I needed to develop an interface that could present a tailored subset of projects in a way that offered an at-a-glance overview of the keywords and interesting visuals associated with each project. 
+This would allow the page's visitors to get an instant eyeful of everything I had to offer while minimizing the odds that a visitor might miss something aligned with their interests simply because it was hidden or further down the page.
 
 
-#let proj-portfolio-site = define.def-subsection(
-  "Astro/React portfolio website and animated narrative page (static generation)",
-  [2025],
-  summary: [Used ==Astro.js== and ==React.js== to create website showcasing projects and educational background],
-  columns: (
-    (
-      title: "Landing Page",
-      items: (
-        [Found an existing ==Astro== template and used it as a starting point],
-        [Tweaked boilerplate structure and modified provided components to suit project needs],
-        [Migrated from ==Preact.js== to ==React.js==],
-        [Used ==GSAP== animation library to automatically hide/show header based on scroll gestures],
-      ),
-    ),
-    (
-      title: "Timeline / 'My Story' Page",
-      items: (
-        [Created custom markdown metadata schema for coordinating main column content with scroll-activated sidebar content],
-        [Wrote ==Astro== and ==React components== for generating transition markers in the HTML output],
-        [Designed dynamically-generated, content-aligned, animated SVG "trail" with year markers in the margin],
-        [Implemented conditionally-pinned sidebar with ==GSAP==],
-        [Used ==shadcn== drawer component for details pane]
-      )
-    )
-  )  
-)
+## Astro + MDX magic
+
+Each project included in the project browser is defined with a single MDX (JSX-enabled Markdown) file. At the top of the file, a YAML header (see below) specifies the project's
+display title, its date (year and optional month), a description and summary, and other fields used for filtering.
+
+```mdx
+---
+title: Portfolio website
+date: 2025
+description: n/a
+summary: n/a
+category: webdev
+tags:
+    languages: ["Typescript", "HTML", "CSS", "Astro"]
+    skills: ["abc"]
+    topics: ["def"]
+---
+```
+
+The project definition MDX files are stored in a designated folder so that they can be <Details content={<div>
+    <p>I use a combination of <code>import.meta.glob</code>, custom Astro content collections, server-side rendering to string, and client-side reconstruction of file contents and frontmatter fields.</p>
+    <p>I also defined a custom wrapper component that provides partial hydration for any component, allowing me to use interactive components like this one in my MDX.</p></div>
+}>easily found and collected</Details> for content generation. 
+They are used to generate the project cards in the grid, populate the project details carousel, and provide metadata for filtering.
+
+I can also specify audiovisual media items (or even arbitrary HTML content, including from MDX) and captions (which can also be HTML content), which are shown in the expanded project card
+and are used to populate the lightbox (which I also modded to add an animated, slide-synced caption overlay).
+
+`````
+
+
+
+## Grid and Carousel
+
+The projects are displayed in a grid of "cards", or compact tiles containing basic information about each project.
+This allows the user to see many projects all at once and to be drawn to whatever catches their eye.
+
+Hovering (with a mouse) or tapping (with a stylus or finger) on a project card expands it to show slightly more detail,
+such as a brief summary or media item thumbnails (which can be clicked for full-screen viewing).
+
+Clicking/tapping an expanded project card opens a popover dialog with detailed, long-form information about the project.
+This popover is one of many in a "carousel" display that provides buttons for easily moving to the previous or next project's details.
+Below the carousel, a row of buttons (or, on narrower devices, a slider) allows the user to jump quickly to any project.
+
+When the user navigates to a different project's details, the corresponding project card is automatically expanded and,
+if necessary, scrolled to in the background. That way, the "active" project' grid card is always in view whenever the user
+closes the carousel, avoiding disorientation and confusion.
+
+The URL automatically syncs with the current open project details so that it is easy to share a link to a specific project's details.
+
+
+## Filters (with Zustand!)
+
+Filtering the projects is straightforward. The range of years can be restricted with a slider, and the tags and categories
+can be toggled with designated buttons.
+
+To maximize shareability, the filter combinations are synced with the URL (in both directions), so that users can share or bookmark
+links to specific filter configurations.
+
+I used Zustand stores to maximize reactivity while minimizing unnecessary recomputation.
+
+
+## Animation
+
+I used a combination of CSS transitions and GSAP-driven animations to animate the project browser. 
+To keep the interface responsive even with rapid input sequences (button clicks, hovering, scrolling, etc.),
+I studied and made use of <Details content={
+  <span>Namely, <code>useTransition</code>, <code>Suspense</code>, <code>useDeferredValue</code>, and some custom React hooks providing debouncing and throttling.</span>
+}>many React framework features</Details> geared towards this.
+
+I noticed that the animation of the collapsing/expanding project cards in the grid was causing the grid to "jump" in scroll position when one of the items at the
+bottom of its column collapsed from the expanded state. This was because the height of the grid was decreasing. So, I added an extra element to the bottom of the
+grid that would "reserve" the height of the tallest hidden expanded content, so that the overall height of the grid would not change when items expanded/collapsed.
+To keep this reserved height up-to-date even after window resizing or filtering changed the items and/or their height, I remeasured after changes to the set
+of visible projects and also configured a `ResizeObserver` to update when the width of the project browser's container changed.
+
+I also noticed that the carousel was laggy due to loading and rendering all of the carousel cards' content, which slowed the animation when navigating the carousel.
+Thus, the carousel displays a placeholder on each card and only loads the real content after a delay (to put it simply). On narrower devices, the carousel "dot" buttons
+are replaced by a slider. The aforementioned and other optimizations allow the carousel to respond smoothly as the user drags the slider.
+
+I also used state variables to pause or defer certain operations during animation (ex. project card expanding/collapsing) and/or user interaction (ex. scrolling).

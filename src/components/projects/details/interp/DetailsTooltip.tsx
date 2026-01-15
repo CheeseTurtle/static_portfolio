@@ -91,8 +91,8 @@ export function DetailsTooltipTrigger({className, children, asChild, style, ...p
 }
 
 
-export function DetailsTooltipContent(props: DetailsTooltipContentProps) {
-    return <TooltipContent {...props}></TooltipContent>
+export function DetailsTooltipContent({className, ...props}: DetailsTooltipContentProps) {
+    return <TooltipContent className={cn("TooltipContent text-wrap bg-background text-primary", className)} {...props}></TooltipContent>
 }
 
 
